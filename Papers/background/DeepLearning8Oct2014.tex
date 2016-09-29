@@ -1,0 +1,2546 @@
+\pdfoutput=1
+\documentclass[letterpaper]{article}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{breakcites}
+%\usepackage{authorindex}
+\usepackage{algorithm,algorithmic,a4wide,amssymb,natbib,multicol,enumitem,url}
+%\usepackage{hyperref}
+%\usepackage[hyphenbreaks]{breakurl}
+\usepackage[breaklinks]{hyperref}
+%\usepackage{algorithm,algorithmic,a4wide,amssymb,natbib,multicol,enumitem,hyperref,url}
+% natbib link joining; somewhat breaks \cite, \citet, but is ok for \citep
+ \usepackage[top=3.7cm, bottom=3.7cm, left=3.7cm, right=3.7cm]{geometry} 
+\makeatletter
+\renewcommand\hyper@natlinkbreak[2]{#1}
+\makeatother
+\newcommand{\mytilde}{\raise.17ex\hbox{$\scriptstyle\mathtt{\sim}$}}
+\begin{document}
+
+\title{Deep Learning in  Neural Networks: An Overview  \\
+{\small Technical Report IDSIA-03-14 / arXiv:1404.7828 v4 [cs.NE] (88 pages, 888 references)}}
+
+\date{8 October 2014}
+\author{J\"{u}rgen Schmidhuber~\\
+The Swiss AI Lab IDSIA \\
+Istituto Dalle Molle di Studi sull'Intelligenza  Artificiale\\
+University of Lugano~\& SUPSI \\
+Galleria 2, 6928 Manno-Lugano~\\
+Switzerland}
+\maketitle
+
+
+\begin{abstract}
+In recent years, deep artificial neural networks (including recurrent ones) have won numerous contests in pattern recognition and machine learning.
+%triggering a {\em reNNaissance} (title of IJCNN 2011 keynote).
+This historical survey compactly summarises relevant work, much of it from the previous millennium. Shallow and deep learners are distinguished by the depth of their {\em credit assignment paths}, which are chains of possibly learnable, causal links between 
+actions and effects. I review deep supervised learning (also recapitulating the history of backpropagation), unsupervised learning, reinforcement learning \& evolutionary computation, and indirect search for short programs encoding deep and large networks.
+
+\vspace{7mm}
+\noindent
+LATEX source: \url{http://www.idsia.ch/~juergen/DeepLearning8Oct2014.tex} \\
+Complete BIBTEX file (888 kB): \url{http://www.idsia.ch/~juergen/deep.bib}
+
+\end{abstract}
+
+%arxiv: In recent years, deep artificial neural networks (including recurrent ones) have won numerous contests in pattern recognition and machine learning. This historical survey compactly summarises relevant work, much of it from the previous millennium. Shallow and deep learners are distinguished by the depth of their credit assignment paths, which are chains of possibly learnable, causal links between actions and effects. I review deep supervised learning (also recapitulating the history of backpropagation), unsupervised learning, reinforcement learning & evolutionary computation, and indirect search for short programs encoding deep and large networks.
+
+
+\vspace{1cm}
+\subsubsection*{Preface}
+\label{foreword}
+This is the preprint of an invited {\em Deep Learning} (DL) overview. One of its goals is to assign credit to those who contributed to the present state of the art. I acknowledge the limitations of attempting to achieve this goal. The DL research community itself may be viewed as a continually evolving, deep network of scientists who have influenced each other in complex ways. Starting from recent DL results, I tried to trace back the origins of relevant ideas through the past half century and beyond, sometimes using ``local search" to follow citations of citations  backwards in time. Since not all DL publications properly acknowledge earlier relevant work, additional global search strategies were employed, aided by consulting numerous neural network experts. As a result, the present preprint mostly consists of references. Nevertheless, through an expert selection bias I may have missed important work. A related bias was surely introduced by my special familiarity with the work of my own DL research group in the past quarter-century. For these reasons, this work should be viewed as merely a snapshot of an ongoing credit assignment process. To help improve it, please do not hesitate to send corrections and  suggestions to {\em juergen@idsia.ch}.
+
+%{\em Note:} This is the draft of an invited {\em Deep Learning} survey. It mostly  consists of references (over 850 entries so far). Important references are still missing though. As a machine learning researcher, I am obsessed with accurate credit assignment---please do not hesitate to send corrections / improvements / suggestions / additional DL success stories to {\em juergen@idsia.ch}.
+
+
+
+\newpage
+%\vspace*{-7\baselineskip}
+%\vspace*{4\baselineskip}
+\tableofcontents
+
+\subsubsection*{Abbreviations in Alphabetical Order}
+\label{abb}
+\vspace{-0.5cm}
+\begin{multicols}{2}
+\begin{itemize}[leftmargin=0cm,itemindent=0cm,labelwidth=\itemindent,labelsep=0cm,align=left,noitemsep,nolistsep]
+\item[] AE: Autoencoder    
+\item[] AI: Artificial Intelligence 
+\item[] ANN: Artificial Neural Network    
+\item[] BFGS: Broyden-Fletcher-Goldfarb-Shanno    
+\item[] BNN: Biological Neural Network 
+\item[] BM: Boltzmann Machine 
+\item[] BP: Backpropagation 
+\item[] BRNN: Bi-directional Recurrent Neural Network 
+\item[] CAP: Credit Assignment Path 
+\item[] CEC: Constant Error Carousel 
+\item[] CFL: Context Free Language 
+\item[] CMA-ES: Covariance Matrix Estimation ES 
+\item[] CNN: Convolutional Neural Network 
+\item[] CoSyNE: Co-Synaptic Neuro-Evolution 
+\item[] CSL: Context Senistive Language
+\item[] CTC : Connectionist Temporal Classification 
+\item[] DBN: Deep Belief Network 
+\item[] DCT: Discrete Cosine Transform
+\item[] DL: Deep Learning 
+\item[] DP: Dynamic Programming  
+\item[] DS: Direct Policy Search
+\item[] EA: Evolutionary Algorithm 
+\item[] EM: Expectation Maximization 
+\item[] ES: Evolution Strategy 
+\item[] FMS: Flat Minimum Search
+\item[] FNN: Feedforward Neural Network  
+\item[] FSA: Finite State Automaton 
+\item[] GMDH: Group Method of Data Handling  
+\item[] GOFAI: Good Old-Fashioned AI  
+\item[] GP: Genetic Programming 
+\item[] GPU: Graphics Processing Unit 
+\item[] GPU-MPCNN: GPU-Based MPCNN  
+\item[] HMM: Hidden Markov Model 
+\item[] HRL: Hierarchical Reinforcement Learning 
+\item[] HTM:  Hierarchical Temporal Memory 
+\item[] HMAX:  Hierarchical Model ``and X"
+\item[] LSTM: Long Short-Term Memory (RNN) 
+\item[] MDL: Minimum Description Length 
+\item[] MDP:  Markov Decision Process 
+\item[] MNIST: Mixed National Institute of Standards and Technology Database 
+\item[] MP: Max-Pooling 
+\item[] MPCNN: Max-Pooling CNN
+%\item[] NARX: Nonlinear AutoRegressive with eXogenous inputs
+\item[] NE: NeuroEvolution 
+\item[] NEAT: NE of Augmenting Topologies 
+\item[] NES: Natural Evolution Strategies 
+\item[] NFQ: Neural Fitted Q-Learning 
+\item[] NN: Neural Network 
+\item[] OCR: Optical Character Recognition
+\item[] PCC: Potential Causal Connection 
+\item[] PDCC: Potential Direct Causal Connection 
+\item[] PM: Predictability Minimization 
+\item[] POMDP:  Partially Observable MDP 
+\item[] RAAM: Recursive Auto-Associative Memory  
+\item[] RBM: Restricted Boltzmann Machine 
+\item[] ReLU: Rectified Linear Unit
+\item[] RL: Reinforcement Learning 
+\item[] RNN: Recurrent Neural Network 
+\item[] R-prop: Resilient Backpropagation 
+\item[] SL: Supervised Learning 
+\item[] SLIM NN: Self-Delimiting  Neural Network  
+\item[] SOTA: Self-Organising Tree Algorithm
+\item[] SVM: Support Vector Machine 
+\item[] TDNN: Time-Delay Neural Network 
+\item[] TIMIT: TI/SRI/MIT Acoustic-Phonetic Continuous Speech Corpus
+\item[] UL: Unsupervised Learning 
+\item[] WTA:  Winner-Take-All   
+\end{itemize}
+\end{multicols}
+
+
+
+%\newpage
+\section{Introduction to Deep Learning (DL) in Neural Networks (NNs)}
+\label{intro}
+
+Which modifiable components of a learning system are responsible for its success or failure?
+What changes to them improve performance? 
+This has been called the {\em fundamental credit assignment problem}~\citep{Minsky:63}.
+There are general credit assignment methods for {\em universal problem solvers} 
+that are 
+time-optimal in various theoretical senses
+%~\citep{Levin:73,Hutter:05book+,Schmidhuber:05gmai} 
+(Sec.~\ref{unirl}).
+The present survey, however, will focus on the narrower, but now commercially important, subfield
+of {\em Deep Learning} (DL) in {\em Artificial Neural Networks} (NNs).
+
+
+A standard neural network (NN) consists of many simple, connected
+processors called neurons, each producing a sequence of real-valued
+activations.  Input neurons get activated through sensors perceiving the
+environment, other neurons get activated through weighted 
+connections from previously active neurons (details in Sec.~\ref{notation}).  
+Some neurons may influence the environment
+by triggering actions.  {\em Learning} or {\em credit assignment} is
+about finding weights that make the NN exhibit {\em desired} behavior,
+such as driving a car.  Depending on the problem and how the neurons
+are connected, such behavior may require long causal chains of
+computational stages (Sec.~\ref{caps}), where each stage transforms
+(often in a non-linear way) the aggregate activation of the
+network. Deep Learning is about accurately assigning credit across
+{\em many} such stages.
+
+
+
+{\em Shallow} NN-like models with {\em few} such stages have been around for many decades 
+if not centuries  (Sec.~\ref{1940}).
+Models with several successive nonlinear layers of  neurons date back at least 
+to the 1960s (Sec.~\ref{1965}) and  1970s (Sec.~\ref{1970}).
+An efficient gradient descent method for teacher-based {\em Supervised Learning} (SL) in discrete,
+differentiable networks 
+of arbitrary depth 
+called {\em  backpropagation} (BP)
+was developed in the 1960s and 1970s, and applied to NNs in 1981 (Sec.~\ref{1970}).  
+BP-based 
+training of {\em deep} NNs with {\em many} layers, however, 
+had been found to be difficult in practice by the late 1980s (Sec.~\ref{1990}), and had
+become an explicit research subject 
+by the early 1990s (Sec.~\ref{1991a}). 
+DL became 
+practically feasible to some extent through the help of
+{\em Unsupervised Learning} (UL), e.g., Sec.~\ref{1991b} (1991), Sec.~\ref{2006} (2006).
+The 1990s and 2000s also saw many improvements of 
+purely supervised DL (Sec.~\ref{super}). 
+In the new millennium, deep NNs have finally attracted wide-spread attention,
+mainly by outperforming alternative machine learning methods
+such as kernel machines~\citep{Vapnik:95,advkernel}
+in numerous important applications.
+In fact, since 2009,
+supervised deep NNs
+have won many
+official international pattern recognition competitions (e.g.,
+Sec.~\ref{2009},~\ref{2011},~\ref{2012},~\ref{2013}),  
+achieving the first superhuman visual pattern recognition results in
+limited domains (Sec.~\ref{2011}, 2011).
+Deep NNs also have become relevant for the more general field of 
+{\em Reinforcement Learning} (RL) where there is no supervising teacher (Sec.~\ref{deeprl}).
+
+
+Both {\em feedforward} (acyclic) NNs (FNNs)
+and {\em recurrent} (cyclic) NNs (RNNs) have won contests 
+(Sec. \ref{1994}, \ref{2003}, \ref{2009}, \ref{2011}, \ref{2012}, \ref{2013}). 
+In a sense, RNNs are the deepest of all NNs (Sec.~\ref{caps})---they are general computers
+%~\citep{Goedel:31,Church:36,Turing:36,Post:36}
+more powerful than FNNs, 
+and can in principle create and process
+ memories of arbitrary sequences of input patterns~\citep[e.g.,][]{siegelmann91turing,schmidhuber1990}. 
+Unlike traditional methods for automatic sequential program synthesis~\citep[e.g.,][]{waldinger69,balzer1985,soloway1986,Deville:94}, RNNs can learn programs that mix sequential and parallel information processing in a natural and efficient way, exploiting the massive parallelism viewed as crucial for sustaining the rapid decline of computation cost observed over the past 75 years. 
+
+The rest of this paper is
+structured as follows.
+Sec.~\ref{notation} introduces
+a compact, event-oriented notation that is simple yet general enough to accommodate both
+FNNs and RNNs. 
+Sec.~\ref{caps} introduces the concept of {\em Credit Assignment Paths} (CAPs) to measure whether learning in a given  NN application is of the {\em deep} or {\em shallow} type.
+Sec.~\ref{themes} lists recurring themes of DL in SL, UL, and RL. 
+Sec.~\ref{super}  focuses on SL and UL, 
+and on how UL can facilitate SL, although pure SL
+has become dominant in recent competitions  
+(Sec.~\ref{2009}--\ref{dominant}).
+Sec.~\ref{super} is arranged in a
+historical timeline format with 
+subsections on
+important inspirations and technical contributions.
+Sec.~\ref{deeprl} on deep RL discusses traditional
+{\em Dynamic Programming} (DP)-based RL 
+combined with gradient-based search techniques for SL or UL in deep NNs, 
+as well as general methods for direct and indirect search in the weight space of deep 
+FNNs and RNNs, 
+including successful policy gradient and evolutionary methods.
+
+ 
+
+
+
+
+\section{Event-Oriented Notation for Activation Spreading in NNs}
+\label{notation}
+
+Throughout this paper, let $i,j,k,t,p,q,r$ denote positive integer variables
+assuming ranges implicit in the given contexts. 
+Let $n,m,T$ denote positive integer constants.
+
+An NN's topology may change over time (e.g., Sec.~\ref{1965},~\ref{mdlnn}).
+At any given moment, 
+it can be described as a finite subset of units (or nodes or neurons)  $N=\{u_1,u_2, \ldots, \}$ and a finite set 
+$H \subseteq N \times N$ of directed edges or connections between nodes.
+FNNs are acyclic graphs, RNNs cyclic. 
+The first (input) layer is the set of input units, a subset of $N$.
+In FNNs, the $k$-th layer ($k>1$) is the set of all nodes 
+$u \in N$ such that there is an edge path of length $k-1$ (but no longer path) between some input unit and $u$.
+There may be shortcut connections between distant layers.
+In sequence-processing, fully connected 
+ RNNs, all units have connections to all non-input units.
+
+% $U_k \in N$ such that there is an edge path of size $k-1$: $((U_1, U_2),(U_2, U_3), \ldots,(U_{k-1}, U_k))$, where $U_1$ is some input node, $U_i \in N$, $(U_i, U_{i+1}) \in H$, and no longer edge path connects any input unit to $U_k$.
+
+
+The NN's behavior or program is determined by a set of real-valued, possibly modifiable,
+parameters or weights 
+$w_i$ $(i=1,\ldots,n)$.
+We now focus on a single finite {\em episode} or {\em epoch} of information processing 
+and activation spreading, without learning through weight changes.
+The following slightly unconventional 
+notation is designed to compactly describe what is happening
+ {\em during the runtime} of the system. 
+
+
+During an episode, 
+there is a {\em partially causal sequence}  
+$x_t (t=1,\ldots,T)$ of real values that I call events.
+Each $x_t$ is either an input set by the environment, 
+or the activation of a unit 
+that may directly depend on other $x_k (k<t)$ through a current 
+NN topology-dependent 
+set $in_t$ of indices $k$ representing incoming causal connections or links.
+Let the function $v$ encode topology information and map such event index pairs $(k,t)$ to weight indices.
+For example, in the non-input case we may have 
+$x_t=f_t(net_t)$ 
+with real-valued 
+$net_t=\sum_{k \in in_t} x_k w_{v(k,t)}$ (additive case)
+or $net_t=\prod_{k \in in_t} x_k w_{v(k,t)}$ (multiplicative case),
+where $f_t$ is a typically nonlinear real-valued {\em activation function}
+such as $tanh$.
+In many recent competition-winning NNs 
+(Sec.~\ref{2011}, \ref{2012}, \ref{2013})
+there also are  events of the type $x_t=max_{k \in in_t}(x_k)$;
+some network types may also use complex polynomial activation functions (Sec.~\ref{1965}).
+$x_t$ may directly affect certain  $x_k (k>t)$ through outgoing connections or links 
+represented through a current 
+set $out_t$ of indices $k$ with $t \in in_k$.
+Some of the non-input events are called {\em output events}.
+
+Note that many of the $x_t$ may refer to different, time-varying activations of the {\em same} unit
+in sequence-processing RNNs~\citep[e.g.,][{\em ``unfolding in time"}]{Williams:89},
+or also in FNNs sequentially exposed to time-varying input patterns of a large training set 
+encoded as input events.
+During an episode, the same weight may get reused over and over again
+in topology-dependent ways, e.g., in RNNs, or in convolutional NNs
+(Sec.~\ref{1979},~\ref{1989}).
+I call this weight sharing {\em across space and/or time}.
+Weight sharing may greatly reduce the NN's descriptive complexity, which is the number of bits of information 
+required to describe the NN (Sec.~\ref{mdl}). 
+
+
+In {\em Supervised Learning} (SL), 
+certain NN output events $x_t$  may be associated with teacher-given, real-valued labels or targets $d_t$ 
+yielding errors $e_t$, e.g., $e_t=1/2(x_t-d_t)^2$.
+A typical goal of supervised NN training is to find weights that 
+yield episodes with small total error $E$, 
+the sum of all such $e_t$. 
+The hope is that the NN will generalize well in later episodes,
+causing only small errors on previously unseen sequences of input events. 
+Many alternative error functions for SL and UL are possible.
+
+SL assumes that input events are independent of earlier output events (which may affect
+the environment  through actions causing subsequent perceptions).
+This assumption does not hold 
+in the broader fields of {\em Sequential Decision Making} and  {\em Reinforcement Learning} (RL)~\citep{Kaelbling:96,Sutton:98,Hutter:05book+,wiering2012} (Sec.~\ref{deeprl}).
+In RL, some of the input events may encode real-valued reward signals given by the environment, 
+and a typical goal is to find weights that yield episodes with a high sum of reward signals,
+through sequences of appropriate output actions.
+
+Sec.~\ref{1970} will use the notation above to compactly 
+describe a central algorithm of DL, namely,
+backpropagation (BP) for supervised weight-sharing FNNs and RNNs.
+(FNNs may be viewed as RNNs with certain fixed zero weights.)
+Sec.~\ref{deeprl} will address the more general RL case.
+
+
+
+
+\section{Depth of Credit Assignment Paths (CAPs) and of Problems}
+\label{caps}
+
+To measure whether credit assignment in a given 
+NN application is of the {\em deep} or {\em shallow} type,
+I introduce the concept of {\em Credit Assignment Paths} or CAPs,
+which are chains of possibly causal links between the events of Sec.~\ref{notation},
+e.g., from input through hidden to output layers in FNNs, or through 
+transformations over time in RNNs. 
+
+Let us first focus on SL.
+Consider two events 
+$x_p$ and $x_q$ $(1 \leq p < q \leq T)$.
+Depending on the application, they may have a
+{\em Potential Direct Causal Connection} (PDCC) expressed by the Boolean
+predicate $pdcc(p,q)$, which
+is true if and only if $p \in in_q$.
+Then the 2-element list $(p,q)$ is defined to be a CAP (a minimal one) from $p$ to $q$.
+A learning algorithm may be allowed to change  $w_{v(p,q)}$ to improve performance
+in future episodes.
+
+More general, possibly indirect,
+{\em Potential Causal Connections} (PCC) are expressed by the 
+recursively defined Boolean
+predicate $pcc(p,q)$, which in the SL case 
+is true only if $pdcc(p,q)$, or if
+$pcc(p,k)$ for some $k$ and $pdcc(k,q)$.
+In the latter case,
+appending $q$ to any CAP from $p$ to $k$ yields a CAP from $p$ to $q$
+ (this is a recursive definition, too).
+The set of such CAPs may be large but is finite. 
+Note that the {\em same} weight may affect {\em many} different PDCCs
+between successive events listed by a given CAP, 
+e.g., in the case of RNNs, or weight-sharing FNNs.
+
+Suppose a CAP has the form $(\ldots,k,t,\ldots,q)$, where
+$k$ and $t$ (possibly $t=q$) are the first successive elements 
+with {\em modifiable} $w_{v(k,t)}$. Then the 
+length of the suffix list $(t,\ldots, q)$ is called the CAP's {\em depth}
+(which is 0 if there are no modifiable links at all).
+This depth limits how far backwards credit assignment 
+can move down the causal chain 
+to find a modifiable 
+weight.\footnote{An alternative would be to count only {\em modifiable} links when measuring depth. In many 
+typical NN applications this would not make a difference, but in some it would, e.g., Sec.~\ref{worrl}.}
+
+Suppose an episode and its event sequence $x_1,\ldots,x_T$ satisfy a computable criterion 
+used to decide whether a given problem has been solved 
+(e.g., total error $E$ below some threshold). 
+Then the set of used weights is called a {\em solution} to the problem, 
+and the depth of the deepest CAP within the sequence is called the {\em solution depth}. 
+There may be other solutions (yielding different event sequences) with different depths.
+Given some fixed NN topology,
+the  smallest depth of any solution is called the {\em problem depth}.
+
+
+
+Sometimes we also speak of the {\em depth of an architecture}:
+SL FNNs with fixed topology imply a problem-independent maximal problem depth bounded by
+ the number of non-input layers.
+Certain SL RNNs
+with fixed weights for all 
+connections except those to output units~\citep{Jaeger2001a,maass2002,Jaeger:04,schrauwen2007} 
+%jaeger:techreport2002
+have
+a maximal problem depth of 1,
+because only the final links in the corresponding CAPs are modifiable. 
+In general, however, RNNs 
+may learn to solve problems of potentially unlimited depth.
+
+Note that the definitions above are 
+solely based on the depths of causal chains, and
+agnostic to the temporal distance between events.
+For example, {\em shallow} FNNs perceiving large ``time windows" of input events may 
+correctly classify {\em long} input sequences through appropriate output events, and thus 
+solve {\em shallow}
+problems involving {\em long} time lags between relevant events.
+
+At which problem depth does {\em Shallow Learning} end, and {\em Deep Learning} begin?
+Discussions with DL
+experts have not yet yielded a conclusive response to this question. Instead of committing myself to a precise 
+answer, let me just define for the purposes of this overview:
+problems of depth $>10$ require 
+{\em Very Deep Learning}.
+
+The {\em difficulty} of a problem may have little to do with its depth. 
+Some NNs can quickly learn to solve certain deep problems,
+e.g., through random weight guessing (Sec.~\ref{1991a})
+or other types of direct search (Sec.~\ref{evorl}) or indirect search (Sec.~\ref{comrl}) in weight space,
+or through training an NN first on shallow problems whose solutions may then generalize to deep problems,
+or through collapsing sequences of (non)linear operations into a single (non)linear 
+operation~\citep[but see an analysis of non-trivial aspects of deep linear networks,][Section B]{baldihornik95}.
+In general, however, finding an NN that precisely models a given training set is an 
+NP-complete problem~\citep{judd1990,blum1992},
+also in the case of deep NNs~\citep{sima1994,souto1999,windisch2005};
+compare a survey of negative results~\citep[Section 1]{sima2002}.
+
+
+Above we have focused on SL.
+In the more general case of RL in unknown environments, 
+$pcc(p,q)$ is also true if $x_p$ is an output event and $x_q$ 
+any later input event---any action may affect the environment and thus any later perception.
+(In the real world, the environment may even influence {\em non-input} events 
+computed on a physical hardware entangled with the entire universe, 
+but this is ignored here.) 
+It is possible to model and replace
+such unmodifiable {\em environmental} PCCs
+through a part of the NN that has already learned to predict (through some of its units) 
+ input events (including reward signals) from
+former input events and actions (Sec.~\ref{worrl}). Its weights are frozen,
+but can help to assign credit to other, still modifiable weights used to compute actions (Sec.~\ref{worrl}).
+This approach may lead to very deep CAPs though. 
+
+
+Some DL research is about automatically rephrasing problems such that their
+ depth is reduced (Sec.~\ref{themes}).
+In particular,
+sometimes UL is used to make SL problems less deep, e.g., Sec.~\ref{1991b}.
+Often {\em Dynamic Programming} (Sec.~\ref{dp}) is used to facilitate certain traditional
+RL problems, e.g., Sec.~\ref{trarl}.
+Sec.~\ref{super} focuses on CAPs for
+SL, Sec.~\ref{deeprl} on the more complex case of RL. 
+
+
+%\newpage
+\section{Recurring Themes of Deep Learning}
+\label{themes}
+
+\subsection{Dynamic Programming for Supervised/Reinforcement Learning (SL/RL)}
+\label{dp}
+
+\begin{sloppypar}
+One recurring theme of DL is
+{\em Dynamic Programming} (DP)~\citep{Bellman:1957},
+which  can help to facilitate credit assignment
+under certain assumptions. For example, 
+in SL NNs, backpropagation itself can be viewed as a DP-derived method (Sec.~\ref{1970}).
+In traditional RL based on strong Markovian assumptions,
+DP-derived methods can help to greatly reduce problem depth (Sec.~\ref{trarl}). 
+DP algorithms are also essential for systems that combine concepts of NNs and
+graphical models, such as {\em Hidden Markov
+Models} (HMMs)~\citep{stratonovich1960,baum1966}
+and {\em Expectation Maximization} (EM)~\citep{dempster77,friedman2001}, e.g., \citep{bottou91,bengio91,bourlard+morgan:1994,baldichauvin96,jordan2001,bishop:2006,hastie2009,domingos2011,dahl2012,speech2012,diwu2014}.
+
+
+
+\subsection{Unsupervised Learning (UL) Facilitating SL and RL}
+\label{ul}
+
+Another recurring theme is how 
+UL 
+can facilitate both SL (Sec.~\ref{super}) and RL (Sec.~\ref{deeprl}).
+UL (Sec.~\ref{ulnn}) is normally used to 
+encode raw incoming data such as video or speech streams
+in a form that is more convenient for subsequent goal-directed learning.
+In particular, codes that describe the original data in a less redundant or more compact way
+can be fed into SL (Sec.~\ref{1991b},~\ref{2006})
+or RL machines (Sec.~\ref{unsrl}), whose
+search spaces may thus become smaller 
+(and whose CAPs shallower)
+than those necessary for dealing with the raw data.
+UL is closely 
+connected to the topics of 
+{\em regularization} 
+and compression (Sec.~\ref{mdl},~\ref{mdlnn}).
+
+\subsection{Learning Hierarchical Representations Through Deep SL, UL, RL}
+\label{hie}
+
+Many methods of 
+{\em  Good Old-Fashioned Artificial Intelligence} (GOFAI)~\citep{Nilsson:80} 
+as well as more recent approaches to AI~\citep{russell1995} and {\em Machine Learning}~\citep{Mitchell:97} 
+learn hierarchies of more and more abstract data representations.
+For example, certain methods of syntactic pattern recognition~\citep{Fu:77} such as
+{\em grammar induction} discover hierarchies of  
+formal rules to model observations.
+The partially (un)supervised
+{\em Automated Mathematician / EURISKO}~\citep{Lenat:83,Lenat:84} continually learns   
+concepts by combining previously learnt concepts.
+Such hierarchical representation learning~\citep{Ring:94,bengio2013tpami,lideng2014} is also a recurring theme of
+DL NNs for SL (Sec.~\ref{super}), 
+UL-aided SL (Sec.~\ref{1987},~\ref{1991b},~\ref{2006}), 
+and hierarchical RL (Sec.~\ref{subrl}).
+Often, abstract hierarchical representations are natural by-products of
+data compression (Sec.~\ref{mdl}), e.g., Sec.~\ref{1991b}. 
+
+
+\subsection{Occam's Razor: Compression and Minimum Description Length (MDL)}
+\label{mdl}
+
+Occam's razor favors simple solutions over complex ones.
+Given some programming language,
+the principle of {\em Minimum Description Length} (MDL) can be used 
+to measure the complexity of a solution candidate by
+the length of the shortest program that 
+computes it~\citep[e.g.,][]{Solomonoff:64,Kolmogorov:65,Chaitin:66,Wallace:68,Levin:73a,Solomonoff:78,Rissanen:86,Blumer:87,LiVitanyi:97,gruenwald2005}.
+Some methods explicitly take into account program runtime~\citep{Allender:92,Watanabe:92,Schmidhuber:97nn+,Schmidhuber:02colt}; 
+many consider only programs with constant runtime, written
+in non-universal programming languages~\citep[e.g.,][]{Rissanen:86,Hinton:93}.
+In the NN case, 
+the MDL principle suggests that low NN weight complexity
+corresponds to high NN probability 
+in the  Bayesian view~\citep[e.g.,][]{MacKay:92b,Buntine:91,neal1995,freitas2003},
+and to high generalization performance~\citep[e.g.,][]{BaumHaussler:89}, 
+without overfitting the training data.
+Many methods have been proposed for {\em regularizing} NNs, that is, 
+searching for solution-computing but simple, low-complexity SL NNs (Sec.~\ref{mdlnn}) 
+and RL NNs (Sec.~\ref{comrl}).
+This is closely 
+related to certain UL methods (Sec.~\ref{ul},~\ref{ulnn}).
+
+
+
+\subsection{Fast Graphics Processing Units (GPUs) for DL in NNs}
+\label{gpu}
+
+While the previous millennium saw several attempts at creating fast NN-specific hardware~\citep[e.g.,][]{jackel-90,faggin92,ramacher93,widrow94,heemskerk1995,cbm97,urlbe1999},
+and at exploiting standard hardware~\citep[e.g.,][]{anguita1994,muller1995,anguita1996},
+the new millennium brought a DL breakthrough in form of cheap, multi-processor
+graphics cards or GPUs. GPUs are widely used for video games, a huge and competitive market
+that has driven down hardware prices.
+GPUs excel at the fast matrix and vector multiplications required not only for 
+convincing virtual realities but also for NN training, 
+where they can speed up learning by a factor of  50 and more.
+Some of the GPU-based FNN implementations (Sec.~\ref{2007}--\ref{2011}) have greatly contributed to recent successes in contests for pattern recognition (Sec.~\ref{2011}--\ref{2013}),
+image segmentation (Sec.~\ref{2012}),
+and object detection (Sec.~\ref{2012}--\ref{2013}).
+ 
+
+
+%\newpage
+\section{Supervised NNs, Some Helped by Unsupervised NNs}
+\label{super}
+
+%The present section represents the bulk of this paper. 
+The main focus of current practical applications is on {\em Supervised Learning} (SL),
+which has dominated recent pattern recognition contests 
+(Sec.~\ref{2009}--\ref{dominant}).
+Several methods, however, use additional 
+{\em Unsupervised Learning} (UL) to facilitate SL (Sec.~\ref{1987},~\ref{1991b},~\ref{2006}).
+It does make sense to treat SL and UL in the same section:
+often gradient-based methods, such as BP (Sec.~\ref{bpsec}),
+are used to optimize objective functions of both UL and SL, 
+and the boundary 
+between SL and UL may blur, for example,
+when it comes to time series prediction and sequence
+classification, e.g., Sec.~\ref{1991b},~\ref{1994}.
+
+A historical timeline format will help to arrange 
+subsections on
+important inspirations and technical contributions
+(although such a subsection may span a time interval of many years).
+Sec.~\ref{1940} briefly mentions early, shallow NN models since the 1940s (and 1800s),
+Sec.~\ref{1962} additional early neurobiological inspiration relevant for modern Deep Learning (DL).
+Sec.~\ref{1965} is about GMDH networks  (since 1965), 
+to my knowledge the first (feedforward) DL systems.
+Sec.~\ref{1979} is about the relatively deep {\em Neocognitron} NN (1979)
+which is very similar to certain modern deep FNN architectures, as it
+combines convolutional NNs (CNNs), weight pattern replication, and subsampling mechanisms.
+Sec.~\ref{1970} uses the notation of Sec.~\ref{notation} to compactly 
+describe a central algorithm of DL, namely,
+{\em backpropagation} (BP) for 
+supervised weight-sharing FNNs and RNNs. It also summarizes
+ the history of BP 1960-1981 and beyond.
+Sec.~\ref{1990} describes problems encountered in the late 1980s with BP for deep NNs,
+and mentions several ideas from the previous millennium  to overcome them.
+Sec.~\ref{1987} discusses a first hierarchical stack (1987) of coupled UL-based Autoencoders (AEs)---this concept
+resurfaced in the
+new millennium (Sec.~\ref{2006}). 
+Sec.~\ref{1989} is about applying BP to CNNs (1989), which is important for today's DL applications.
+Sec.~\ref{1991a} explains BP's {\em Fundamental DL Problem} (of vanishing/exploding gradients)
+discovered in 1991.
+Sec.~\ref{1991b} explains how a deep RNN stack of 1991 (the {\em History Compressor}) pre-trained by UL helped to solve previously unlearnable DL benchmarks 
+requiring {\em Credit Assignment Paths} (CAPs, Sec.~\ref{caps}) of depth 1000 and more.
+Sec.~\ref{1999} discusses a particular {\em winner-take-all} (WTA) method called {\em Max-Pooling} (MP, 1992)  widely used in today's deep FNNs.
+Sec.~\ref{1994} mentions a first important contest won by SL NNs in 1994.
+Sec.~\ref{1997} describes a purely supervised DL RNN ({\em Long Short-Term Memory}, LSTM, 1995) for problems of depth 1000 and more.
+Sec.~\ref{2003} mentions an early contest of 2003 
+won by an ensemble of shallow FNNs, as well as
+good pattern recognition results with CNNs and deep FNNs and LSTM RNNs (2003). 
+Sec.~\ref{2006} is mostly about {\em Deep Belief Networks} (DBNs, 2006) and related stacks of {\em  Autoencoders} (AEs, Sec.~\ref{1987}), both pre-trained by UL to facilitate subsequent BP-based SL (compare Sec.~\ref{timelags},~\ref{1991b}). 
+Sec.~\ref{2007} mentions the first SL-based  GPU-CNNs (2006),  BP-trained MPCNNs (2007),
+and LSTM stacks (2007).
+Sec.~\ref{2009}--\ref{2013} focus on official competitions with secret test sets 
+won by (mostly purely supervised) deep NNs since 2009,
+in sequence recognition, image classification, image segmentation, and object detection.
+Many RNN results depended on LSTM (Sec.~\ref{1997});
+many FNN results depended on GPU-based FNN code developed since 2004 (Sec.~\ref{2007},~\ref{2009},~\ref{2010},~\ref{2011}),
+in particular, GPU-MPCNNs  (Sec.~\ref{2011}). 
+Sec.~\ref{tricks} mentions
+recent tricks for improving DL in NNs, many of them closely
+related to earlier tricks from the previous millennium (e.g., Sec.~\ref{betterbp},~\ref{mdlnn}).
+Sec.~\ref{bnn} discusses how artificial NNs can  help to understand biological NNs;
+Sec.~\ref{spiking} addresses the possibility of DL in NNs with spiking neurons.
+ 
+
+
+
+
+
+\subsection{Early NNs Since the 1940s (and the 1800s)}
+\label{1940}
+
+Early NN architectures~\citep{mcculloch:43} did not learn.
+The first ideas about UL were published a few years later~\citep{Hebb:49}.
+The following decades brought simple NNs trained by SL~\citep[e.g.,][]{rosenblatt1958,Rosenblatt:62,adaline62,Narendra:74}
+and UL~\citep[e.g.,][]{Grossberg69a,kohonen1972,malsburg1973,WillshawMalsburg:76},
+as well as closely related associative memories~\citep[e.g.,][]{Palm:80,Hopfield:82}.
+
+In a sense NNs have been around even longer, since
+early supervised NNs  were essentially variants of 
+linear regression methods going back at least to the early 1800s~\citep[e.g.,][]{legendre1805,gauss1809,gauss1821}; Gauss also refers to his work of 1795.
+Early NNs had a maximal CAP depth of 1 (Sec.~\ref{caps}).
+
+
+%NN research started in the 1940s~\citep[e.g.,][]{mcculloch:43,Hebb:49}; compare also later work on learning NNs~\citep{rosenblatt1958,Rosenblatt:62,adaline62,Grossberg69a,kohonen1972,malsburg1973,Narendra:74,WillshawMalsburg:76,Palm:80,Hopfield:82}. 
+
+\subsection{Around 1960: Visual Cortex Provides Inspiration for DL (Sec.~\ref{1979},~\ref{1999})}
+\label{1962}
+
+Simple cells and complex cells were found in the cat's 
+visual cortex~\citep[e.g.,][]{Hubel:62,wiesel:1959}.
+These cells fire in response to certain properties of visual sensory inputs, 
+such as the orientation of edges. Complex cells exhibit more spatial invariance than simple cells.
+This  inspired later deep NN architectures 
+(Sec.~\ref{1979},~\ref{1999}) used in certain modern award-winning Deep Learners (Sec.~\ref{2011}--\ref{2013}).
+
+
+
+\subsection{1965: Deep Networks Based on the Group Method of Data Handling}
+\label{1965}
+
+Networks trained by the {\em Group Method of Data Handling} (GMDH)~\citep{ivakhnenko1965,ivakhnenko1967,ivakhnenko1968,ivakhnenko1971} 
+were perhaps the first DL systems of
+the {\em Feedforward Multilayer Perceptron} type,
+although there was earlier work on NNs with a single hidden layer~\citep[e.g.,][]{joseph1961,viglione1970}.
+The units of GMDH nets may have polynomial activation functions implementing 
+{\em Kol\-mo\-go\-rov-Gabor polynomials} (more general than other widely used NN activation functions, Sec.~\ref{notation}).
+Given a training set, layers are incrementally grown and trained by regression analysis ~\citep[e.g.,][]{legendre1805,gauss1809,gauss1821} (Sec.~\ref{1940}), 
+then pruned with the help of a
+separate {\em validation set} (using today's terminology), where
+{\em Decision Regularisation} is used to weed out 
+superfluous units (compare Sec.~\ref{mdlnn}). The numbers of layers and units per layer can be learned in
+problem-dependent fashion.
+To my knowledge, this was the first example of open-ended, hierarchical 
+representation learning  in NNs (Sec.~\ref{hie}).
+A paper of 1971 already described a deep GMDH network with 8 layers
+\citep{ivakhnenko1971}.
+There have been numerous applications of GMDH-style nets, e.g.~\citep{ikeda1976,farlow1984,madala1994,ivakhnenko1995,kondo1998,kordik2003,witczak2006,kondo2008}. 
+
+
+\subsection{1979:  Convolution $+$ Weight Replication $+$ Subsampling (Neocognitron)}
+\label{1979}
+
+Apart from deep GMDH networks (Sec.~\ref{1965}),
+the {\em Neocognitron}~\citep{Fukushima:1979neocognitron,fukushima:1980,Fukushima:2013}
+was perhaps the first artificial NN that deserved the attribute {\em deep}, and the first 
+to incorporate the  neurophysiological insights of Sec.~\ref{1962}. 
+It introduced {\em convolutional NNs} (today often called CNNs or convnets), where the
+(typically rectangular) receptive field of a {\em convolutional unit} with given weight vector (a {\em filter})
+is shifted step by step across a 2-dimensional array of input values, such as the pixels of an image (usually there are several such filters). 
+The resulting 2D array of subsequent activation events of this unit can then provide inputs to higher-level units, and so on.
+Due to massive {\em weight replication} (Sec.~\ref{notation}),  
+relatively few parameters (Sec.~\ref{mdl}) 
+may be necessary to describe the behavior of such a {\em convolutional layer}.
+
+{\em Subsampling} or {\em downsampling} layers consist of units whose fixed-weight connections originate from physical neighbours in the convolutional layers below. 
+Subsampling units become active if at least one of their inputs is active;
+their responses are insensitive to certain small image shifts (compare Sec.~\ref{1962}).
+
+
+%{\em Competition layers} have WTA subsets whose maximally active units are the only ones to adopt non-zero activation values. They essentially ``downsample" the  competition layer's input. This helps to  create units whose responses are insensitive to small image shifts (compare Sec.~\ref{1962}).
+
+The Neocognitron is
+very similar to the architecture of modern, contest-winning, purely {\em  supervised}, 
+feedforward, gradient-based Deep Learners with alternating convolutional and downsampling layers
+(e.g., Sec.~\ref{2011}--\ref{2013}).
+Fukushima, however, did not set the weights by supervised
+backpropagation (Sec.~\ref{1970},~\ref{1989}),
+but by local, WTA-based
+{\em un}supervised learning rules~\citep[e.g.,][]{Fukushima:2013b}, or by pre-wiring. 
+In that sense he did not care for the  
+DL problem (Sec.~\ref{1991a}), 
+although his architecture was comparatively deep indeed. For downsampling purposes
+he used {\em  Spatial Averaging}~\citep{fukushima:1980,Fukushima:2011} instead of {\em Max-Pooling} (MP, Sec.~\ref{1999}),
+currently a particularly convenient and popular WTA mechanism. 
+Today's DL combinations of CNNs and MP and BP also profit a lot from
+later work (e.g., Sec.~\ref{1989},~\ref{2007},~\ref{2007},~\ref{2011}).
+
+
+\subsection{1960-1981 and Beyond: Development of Backpropagation (BP) for NNs}
+%\subsection{1970 $\pm$ a Decade or so: Backpropagation (BP)}
+\label{1970}
+The minimisation of  
+errors through {\em gradient descent}~\citep{hadamard1908memoire} in
+the parameter space of complex, 
+nonlinear, differentiable~\citep{leibniz1684}, multi-stage, NN-related systems has been discussed 
+at least since the early 1960s~\citep[e.g.,][]{Kelley:1960,bryson:1961,BRYSON-DENHAM-61A,PONTRYAGIN61A,dreyfus:1962,Wilkinson:1965,Amari:1967:TAP,bryson1969applied,director:1969},
+initially within the framework of Euler-LaGrange equations in the {\em Calculus of Variations}~\citep[e.g.,][]{Euler:1744}.
+
+{\em Steepest descent} in the weight space of 
+such systems can be performed~\citep{bryson:1961,Kelley:1960,bryson1969applied} 
+by iterating the chain rule~\citep{leibniz:1676,de1716analyse} 
+\`{a} la {\em Dynamic Programming} (DP)~\citep{Bellman:1957}.
+A simplified derivation of this backpropagation method uses the chain rule only~\citep{dreyfus:1962}.
+
+The systems of the 1960s were already efficient in the DP sense.
+%their derivative calculation was not more expensive than  the forward computation of the system's evolution (Sec.~\ref{notation}).
+However, they backpropagated derivative information through
+standard Jacobian matrix calculations from one ``layer" to the previous one,
+without explicitly addressing either direct links across several layers or potential additional efficiency gains due to network sparsity 
+(but perhaps such enhancements seemed obvious to the authors).
+Given all the prior work on learning in multilayer NN-like systems (see also Sec.~\ref{1965}
+on deep nonlinear nets since 1965),
+it seems surprising in hindsight that a book~\citep{MinskyPapert:69} 
+on the limitations of simple linear 
+perceptrons with a single layer (Sec.~\ref{1940})
+discouraged some researchers from further studying NNs.
+
+
+Explicit, efficient error backpropagation (BP) in arbitrary, discrete, possibly sparsely connected, 
+NN-like networks apparently was first described 
+ in a 1970 master's thesis~\citep{Linnainmaa:1970,Linnainmaa:1976}, albeit without reference to NNs.
+BP is also known as the reverse mode of automatic differentiation~\citep{Griewank:2012}, 
+where the costs of forward activation spreading essentially equal the costs of backward 
+derivative calculation. 
+See early FORTRAN code~\citep{Linnainmaa:1970} and closely related work~\citep{ostrovskii:1971}.
+
+Efficient BP was soon explicitly used to minimize cost functions by
+adapting control parameters (weights)~\citep{dreyfus:1973}.
+Compare some preliminary, NN-specific discussion~\citep[section 5.5.1]{Werbos:74}, 
+a method for multilayer threshold NNs~\citep{bobrowski78},
+and a computer program for automatically deriving and implementing BP 
+for given differentiable systems~\citep{SPEELPENNING80A}.
+
+
+To my knowledge, the first NN-specific application of
+efficient BP as above was described in 1981~\citep{Werbos:81sensitivity,werbos2006backwards}.
+Related work was published several  years later~\citep{Parker:85,LeCun:85,lecun-88}.
+A paper of 1986 significantly contributed to the popularisation of BP for NNs~\citep{Rumelhart:86}, experimentally demonstrating the emergence of useful 
+internal representations in hidden layers. 
+See generalisations for sequence-processing 
+recurrent NNs~\citep[e.g.,][]{Williams:89,RobinsonFallside:87tr,Werbos:88gasmarket,WilliamsZipser:88,WilliamsZipser:89nc,WilliamsZipser:89cs,Rohwer:89,Pearlmutter:89,Gherrity:89,WilliamsPeng:90,Schmidhuber:92ncn3,Pearlmutter:95,baldi95,kremer2001,atiya2000}, also for equilibrium RNNs~\citep{Almeida:87,Pineda:87} with stationary inputs.
+%See also {\em natural gradients}~\citep{amari1998natural}. 
+
+%\newpage
+\subsubsection{BP for Weight-Sharing Feedforward NNs (FNNs) and Recurrent NNs (RNNs)}
+\label{bpsec}
+
+Using the notation of Sec.~\ref{notation} for weight-sharing FNNs or RNNs, 
+after an episode of activation spreading through differentiable $f_t$, 
+a single iteration of gradient descent through BP computes
+changes of all $w_i$ in proportion to 
+$
+\frac{\partial E}{\partial w_i}=
+\sum_t
+\frac{\partial E}{\partial net_t}
+\frac{\partial net_t}{\partial w_i}
+$ 
+as in Algorithm \ref{bp} (for the additive case),
+where each weight $w_i$ is associated with a real-valued variable $\triangle_i$ initialized by 0.
+
+\begin{algorithm}{\bf Alg. \ref{bp}: One iteration  of BP for weight-sharing FNNs or RNNs} 
+\label{bp}
+\begin{algorithmic}
+\FOR {$t=T,\ldots,1$}  
+\STATE to compute $\frac{\partial E}{\partial net_t}$, inititalize real-valued error signal variable $\delta_t$ by 0;
+\STATE if $x_t$ is an input event then continue with next iteration;
+\STATE if there is an error $e_t$ then $\delta_t := x_t-d_t$;
+\STATE add to $\delta_t$ the value $\sum_{k \in out_t}  w_{v(t,k)} \delta_k$;
+{\em (this is the elegant and efficient recursive chain rule
+application collecting impacts of $net_t$ on future events)} 
+\STATE multiply  $\delta_t$ by $f'_t(net_t)$;
+\STATE for all $k \in in_t$ add to  $\triangle_{w_{v(k,t)}}$ the value $x_k \delta_t$
+\ENDFOR
+\STATE change each $w_i$ in proportion to $\triangle_i$ and a small real-valued learning rate
+\end{algorithmic}
+\end{algorithm}
+
+%\noindent To finish one iteration of steepest descent, change all $w_i$ in proportion to $\triangle_i$ and a small learning rate.
+The computational costs of the backward (BP) pass are essentially those of the forward pass
+(Sec.~\ref{notation}).
+Forward and backward passes are re-iterated until sufficient performance is reached.
+
+As of 2014, this simple BP method is still the central learning algorithm for FNNs and RNNs.
+Notably,
+most contest-winning NNs up to 2014 (Sec.~\ref{1994},~\ref{2003},~\ref{2009},~\ref{2011},~\ref{2012},~\ref{2013})
+did {\em not} augment supervised BP by 
+some sort of {\em un}supervised learning as discussed in Sec.~\ref{1987},~\ref{1991b},~\ref{2006}.
+
+%\newpage
+\subsection{Late 1980s-2000 and Beyond: Numerous Improvements of NNs}
+\label{1990}
+
+
+By the late 1980s it seemed clear that BP by itself (Sec.~\ref{1970}) was no panacea.
+Most FNN applications focused on FNNs with few hidden layers.
+Additional hidden layers often did not seem to offer empirical benefits.
+Many practitioners found solace in a theorem~\citep{Kolmogorov:57,hecht1989,hornik1989}
+stating that an NN with a single layer of enough hidden units 
+can approximate any multivariate continous function
+with arbitrary accuracy.
+
+
+
+Likewise, most RNN applications 
+did not require backpropagating errors far. 
+Many researchers helped their RNNs by first 
+training them on shallow problems (Sec.~\ref{caps})
+whose solutions then generalized to deeper problems.  
+In fact, some popular RNN algorithms restricted credit 
+assignment to a single step backwards~\citep{elman1990,Jordan:86,jordan1997},
+also in more recent studies~\citep{Jaeger2001a,maass2002,Jaeger:04}. 
+
+Generally speaking, although BP allows for deep problems in principle,
+it seemed to work only for {\em shallow} problems.  
+The late 1980s and early 1990s saw a few ideas 
+with a potential to overcome this problem,
+which was fully understood only in 1991 (Sec.~\ref{1991a}).
+
+
+
+
+\subsubsection{Ideas for Dealing with Long Time Lags and Deep CAPs}
+\label{timelags}
+
+To deal with long time lags between relevant events, 
+several sequence processing methods were proposed, 
+including 
+{\em Focused BP} based on decay 
+factors for activations of units in RNNs~\citep{Mozer:89focus,Mozer:92nips},
+{\em  Time-Delay Neural Networks} (TDNNs) \citep{Lang:90} and their 
+adaptive extension~\citep{Bodenhausen:91},
+{\em Nonlinear AutoRegressive with eXogenous inputs} (NARX) RNNs~\citep{Lin:96},
+certain hierarchical RNNs~\citep{hihi:95} (compare Sec.~\ref{1991b}, 1991),
+RL economies in RNNs with WTA units and local learning rules~\citep{Schmidhuber:89cs},
+and other methods~\citep[e.g.,][]{Ring:93,Ring:94,Plate:93,Vries:91,Sun:93,Bengio:94}.
+However, these algorithms either worked for shallow CAPs only,
+could not generalize to unseen CAP depths,
+had problems with greatly varying time lags between relevant events,
+needed external fine tuning of delay constants,
+or suffered from other problems.
+In fact, it turned out that certain simple but deep benchmark problems 
+used to evaluate such methods 
+are more quickly solved by {\em randomly guessing} RNN weights until a solution is found~\citep{Hochreiter:96sintra}.
+%~\citep{Schmidhuber:96guess,Schmidhuber:01guess,guess96and01}.
+
+While the RNN methods above were designed for DL of temporal sequences,
+the {\em Neural Heat Exchanger} \citep{heat90-96} consists of two parallel {\em deep FNNs} with opposite flow directions. Input patterns enter the first FNN and are propagated ``up''. Desired outputs (targets) enter the ``opposite'' FNN and are propagated ``down''. Using a local learning rule, each layer in each net tries to be similar (in information content) to the preceding layer and to the adjacent  layer of the other net. The input entering the first net slowly ``heats up'' to become the target. The target entering the opposite net slowly ``cools down'' to become the input. The {\em Helmholtz Machine}~\citep{Dayan:95,Dayan:96} may be viewed as an unsupervised (Sec.~\ref{ulnn})
+variant thereof (Peter Dayan, personal communication, 1994). 
+
+
+
+A hybrid approach~\citep{shavlik1989,towell1994} initializes a potentially deep FNN through 
+a domain theory in propositional logic,
+which may be acquired through explanation-based learning~\citep{mitchell1986,dejong1986,minton1989}.
+The NN is then fine-tuned through BP (Sec.~\ref{1970}).
+The NN's depth reflects the longest chain of reasoning in the original set of logical rules.
+An extension of this approach~\citep{maclin1993,shavlik1994} initializes an RNN by 
+domain knowledge expressed as a Finite State Automaton (FSA).
+BP-based fine-tuning has become important for later DL systems 
+pre-trained by UL, e.g., Sec.~\ref{1991b},~\ref{2006}.
+
+%Extension for rule-based and for reinforcement learning~\citep{maclin1996}
+
+
+\subsubsection{Better BP Through Advanced Gradient Descent (Compare Sec.~\ref{tricks})}
+\label{betterbp}
+
+Numerous improvements of steepest descent through BP (Sec.~\ref{1970}) have been proposed.
+Least-squares methods (Gauss-Newton, Levenberg-Marquardt)~\citep{gauss1809,newton1687,levenberg1944,marquardt1963,schaback1992}
+and quasi-Newton methods (Broyden-Fletcher-Goldfarb-Shanno, 
+BFGS)~\citep{broyden1965,fletcher1963,goldfarb1970,shanno1970}
+are computationally too expensive for large NNs.
+Partial BFGS~\citep{Battiti:92,Saito:1997} and
+conjugate gradient~\citep{HestenesStiefel:1952,Moller:93} 
+as well as other methods~\citep{Solla:88,Schmidhuber:89-1,Cauwenberghs:93}
+provide sometimes useful fast alternatives.
+BP can be treated 
+as a linear least-squares problem~\citep{Biegler:93}, where
+second-order gradient information is passed back to preceding layers.
+
+To speed up BP, {\em momentum} was introduced~\citep{Rumelhart:86},
+ad-hoc constants were added to the slope of the linearized activation
+function~\citep{Fahlman:88}, or the
+nonlinearity of the slope was exaggerated~\citep{westsaad:96}.
+
+Only the signs of the error derivatives are taken into account by the successful 
+and widely used BP variant {\em R-prop}~\citep{rprop93}
+and the robust variation {\em iRprop+}~\citep{igel:01},
+which was also successfully applied to RNNs.
+
+The local gradient can be normalized based 
+on the NN architecture~\citep{Schraudolph:96}, 
+through a diagonalized Hessian approach~\citep{Becker:89},
+or related efficient methods~\citep{schraudolph02}.
+
+
+Some algorithms for controlling BP step size
+adapt a global learning rate~\citep{Lapedes:86a,Vogl:88,Battiti:89,lecun-simard-pearlmutter-93,Yu:1995},
+while others compute individual learning rates for each
+weight~\citep{Jacobs:88,SilvaAlmeida:1990}.
+In online learning, where BP is applied after each pattern presentation,
+the vario-$\eta$ algorithm~\citep{DBLP:conf/nips/NeuneierZ96} sets each weight's learning rate inversely proportional to the empirical standard deviation of its
+local gradient, thus normalizing the stochastic weight fluctuations.
+Compare a local online step size adaptation method for nonlinear NNs~\citep{Almeida:97}.
+
+Many additional tricks for improving NNs have been described~\citep[e.g.,][]{orr1998neural,tricksofthetrade:2012}.
+Compare Sec.~\ref{mdlnn} and recent developments mentioned in Sec.~\ref{tricks}. 
+
+\subsubsection{Searching For Simple, Low-Complexity, Problem-Solving NNs (Sec.~\ref{tricks})}
+\label{mdlnn}
+
+
+Many researchers used BP-like methods to search for
+``simple," low-complexity NNs (Sec.~\ref{mdl})
+with high generalization capability. Most approaches 
+address the {\em bias/variance dilemma}~\citep{Geman:92}
+through strong prior 
+assumptions. For example, 
+{\em weight decay}~\citep{Hanson:89,Weigend:91,Krogh:92} 
+encourages near-zero weights, by penalizing large weights. In a Bayesian
+framework~\citep{bayes1763}, weight decay can be derived~\citep{Hinton:93} 
+from Gaussian or Laplacian weight priors~\citep{gauss1809,laplace1774}; 
+see also~\citep{Murray:93}. 
+An extension of this approach
+postulates that 
+a distribution of networks
+with many similar weights 
+generated by Gaussian mixtures is ``better'' {\em a priori}~\citep{Nowlan:92}.
+
+Often weight priors  are implicit in
+additional penalty terms~\citep{MacKay:92b} or
+ in methods based on {\em validation sets}
+~\citep{Mosteller:68,Stone:74,Eubank:88,Hastie:90,Craven:79,Golub:79},
+Akaike's information criterion and
+ {\em final prediction error}~\citep{Akaike:70,akaike1973,akaike1974}, or
+{\em generalized prediction error}~\citep{Moody:94a,Moody:92}.
+See also~\citep{Holden:94,Wang:94,Amari:93,Wang:94,Vapnik:92a,Vapnik:92,Wolpert:94b}.
+Similar priors (or biases towards simplicity) are implicit in  constructive and pruning algorithms,
+e.g., layer-by-layer 
+ {\em sequential network construction}~\citep[e.g.,][]{ivakhnenko1968,ivakhnenko1971,Ash:89,Moody:89,gallant1988,honavar1988,Ring:91,Fahlman:91,weng1992,honavar1993,burgess1994,fritzke94,parekh2000,utgoff2002} (see also Sec.~\ref{1965},~\ref{1999}),
+{\em input pruning}~\citep{Moody:92,Refenes:94},
+{\em unit pruning}~\citep[e.g.,][]{ivakhnenko1968,ivakhnenko1971,White:89,Mozer:89a,Levin:94},
+{\em weight pruning}, e.g., {\em optimal brain damage}~\citep{LeCun:90a},
+and {\em optimal brain surgeon}~\citep{Hassibi:93}. 
+
+A very general but not always practical
+approach for discovering low-complexity SL NNs or RL NNs searches among weight matrix-computing programs written in a universal programming language, with a bias
+towards fast and short programs~\citep{Schmidhuber:97nn+} (Sec.~\ref{comrl}).
+
+{\em Flat Minimum Search} (FMS)~\citep{Hochreiter:97nc1,Hochreiter:99nc} searches 
+for a ``flat'' minimum of the error function: 
+a large connected region in weight space where error is low and remains 
+approximately constant, that is, few bits of information are required to describe 
+low-precision weights with high variance. Compare {\em perturbation tolerance conditions}~\citep{Minai:94,Murray:93,hanson1990,Neti:92,Matsuoka:92,Bishop:93,Kerlirzin:93,Carter:90}.
+An MDL-based,  Bayesian 
+argument suggests that flat minima correspond to 
+``simple'' NNs and low 
+expected overfitting. 
+Compare Sec.~\ref{ulnn} and more recent developments mentioned in Sec.~\ref{tricks}.
+
+
+
+
+
+\subsubsection{Potential Benefits of UL for SL (Compare Sec.~\ref{1987},~\ref{1991b},~\ref{2006})}
+\label{ulnn}
+
+% Schmidhuber:94zif 
+ 
+The notation of Sec.~\ref{notation} introduced teacher-given labels $d_t$. 
+Many papers of the previous millennium, however, were about 
+ {\em unsupervised learning (UL) without a teacher} 
+\citep[e.g.,][]{Hebb:49,malsburg1973,kohonen1972,Kohonen:82,Kohonen:88,WillshawMalsburg:76,Grossberg:76a,Grossberg:76b,Watanabe:85,PearlmutterHinton:86,Barrow:87,Field:87,Oja:89,Barlow:89,Baldi:89,Sanger:89,ritter1989,RubnerSchulten:90,Foldiak:90,Ritter:90,kosko1990,Mozer:91nips,Palm:92,Atick:92,Miller:94,Saund:94,Foldiak:95,DecoParra:97}; 
+%RubnerTavan:89,
+see also post-2000 work~\citep[e.g.,][]{carreira2001,WisSej2002,Franzius2007a,koch2008}. 
+
+Many UL methods are designed to 
+maximize entropy-related, 
+information-theoretic~\citep{boltzmann1909,Shannon:48,kullback1951} objectives
+\citep[e.g.,][]{Linsker:88,Barlow:89,MacKay:90,Plumbley:91,chunker91and92,Schmidhuber:92ncfactorial,Schraudolph:93,Redlich:93a,Zemel:93,Zemel:94nips,Field:94,hinton:95,Dayan:95a,Amari:96,DecoParra:97}.
+
+Many do this to uncover and disentangle hidden underlying sources of signals 
+\citep[e.g.,][]{Jutten:91,Schuster:92,andrade1993,Molgedey:94,Comon:94,Cardoso:94,Bell:95,karhunen1995,belouchrani1997,hyvarinen2001,szabo2006,shan2007,shan2014}.
+
+
+Many UL methods automatically and robustly generate distributed, sparse 
+representations of input 
+patterns~\citep{Foldiak:90,Hinton:97,Lewicki:98b,Hyvarinen:99,Hochreiter:99nc,falconbridge2006}
+through well-known feature 
+detectors~\citep[e.g.,][]{Olshausen:96,Schmidhuber:96ncedges},
+such as {\em off-center-on-surround}-like structures, 
+as well as orientation sensitive edge detectors
+and Gabor filters~\citep{gabor1946}.
+They extract simple features related to those
+observed in
+early visual pre-processing stages of 
+biological systems~\citep[e.g.,][]{valois1982,jones1987}. 
+
+UL can also serve to extract invariant features from different 
+data items~\citep[e.g.,][]{Becker:91}
+through {\em coupled NNs} observing two different inputs~\citep{siamese92and93},
+also called {\em Siamese NNs}~\citep[e.g.,][]{bromley-93,hadsell-chopra-lecun-06,taylor2011,chen2011ieeetnn}.  
+
+UL can help to encode
+ input data in a form  advantageous for further processing. 
+In the context of DL, 
+one important goal of UL is redundancy reduction.
+Ideally, given an ensemble of input  patterns, redundancy reduction
+through a deep NN 
+will create a {\em factorial code}
+(a code with statistically independent components) 
+of the ensemble~\citep{Barlow:89,Barlow:89review},
+%Barlow:89review
+to disentangle the unknown factors of variation~\citep[compare][]{bengio2013tpami}.
+Such codes may be sparse
+and can be advantageous for 
+(1) data compression, 
+(2) speeding up subsequent BP \citep{Becker:91},
+(3) trivialising  the task of subsequent naive yet optimal Bayes classifiers  
+\citep{Schmidhuber:96ncedges}.
+
+
+
+Most early UL FNNs had a single layer. 
+Methods for deeper UL FNNs include 
+hierarchical (Sec.~\ref{hie}) 
+self-organizing Kohonen maps~\citep[e.g.,][]{koikkalainen1990,lampinen1992,versino1996,dittenbach2000,rauber2002},
+hierarchical {\em Gaussian potential function} networks~\citep{lee1991},
+layer-wise UL of feature hierarchies fed into SL 
+classifiers~\citep{Behnke:IJCNN1999,Behnke:IJCNN2003}, 
+the {\em Self-Organising Tree Algorithm} (SOTA)~\citep{herrero2001},
+and nonlinear {\em Autoencoders} (AEs) 
+with more than 3 (e.g., 5) layers
+\citep{Kramer:91,Oja:91,DeMers:93}.
+Such AE NNs~\citep{Rumelhart:86} can be trained to map input patterns to themselves,
+for example, by  
+compactly encoding them through activations of units of a narrow bottleneck hidden layer.
+Certain nonlinear AEs suffer from certain limitations~\citep{baldijmlr12}.
+
+
+
+{\sc Lococode}~\citep{Hochreiter:99nc} uses 
+FMS (Sec.~\ref{mdlnn}) to
+find low-complexity AEs with low-precision weights describable by 
+few bits of information, often producing sparse or factorial codes.
+{\em Predictability Minimization} (PM)
+\citep{Schmidhuber:92ncfactorial} searches for factorial codes 
+through nonlinear feature detectors that fight nonlinear predictors,
+trying to become both as informative and as unpredictable as possible. 
+PM-based UL was applied not only to FNNs but also to RNNs~\citep[e.g.,][]{schmidhuber1993,Steffi:93cmss}. 
+%,Steffi:93
+Compare Sec.~\ref{1991b} on UL-based RNN stacks (1991),
+as well as later UL RNNs~\citep[e.g.,][]{Klapper:01,steil2007}.
+
+\subsection{1987: UL Through Autoencoder (AE) Hierarchies (Compare Sec.~\ref{2006})}
+\label{1987}
+
+Perhaps the first work to study
+ potential benefits of UL-based pre-training was published in 1987.
+It proposed unsupervised AE hierarchies~\citep{ballard1987modular}, 
+closely related to certain 
+post-2000 feedforward Deep Learners based on UL (Sec.~\ref{2006}).
+The lowest-level AE NN with a single hidden layer is trained to map input patterns to themselves. Its hidden layer codes are then fed into a higher-level AE of the same type, and so on. The hope is that the codes in the hidden AE layers have properties that facilitate subsequent learning. 
+In one experiment, a particular AE-specific learning algorithm (different from traditional  BP of Sec.~\ref{bp}) was used to
+learn a mapping in an AE stack pre-trained by this type of UL~\citep{ballard1987modular}. This was faster than 
+learning an equivalent mapping by BP through a single deeper AE without pre-training. 
+On the other hand, the task did not really require a deep AE, that is, the benefits of UL were not that obvious from this experiment.
+Compare an early survey~\citep{hinton1989connectionist} and the somewhat 
+related {\em Recursive Auto-Associative Memory} (RAAM)~\citep{pollack1988implications,Pollack:90,Melnik2000},
+originally used to encode sequential linguistic structures of arbitrary size 
+through a fixed number of hidden units.
+More recently, RAAMs were also used as unsupervised pre-processors
+to facilitate deep credit assignment for RL \citep{Gisslen2011agi} (Sec.~\ref{unsrl}).
+
+In principle, many UL methods (Sec.~\ref{ulnn}) could be stacked like the  
+AEs above,
+the  history-compressing RNNs of Sec.~\ref{1991b},
+the {\em Restricted Boltzmann Machines} (RBMs) of Sec.~\ref{2006},
+or hierarchical Kohonen nets (Sec.~\ref{ulnn}),
+to facilitate subsequent SL.
+Compare {\em Stacked Generalization}~\citep{wolpert:92stacked,ting1997},
+and FNNs that profit from pre-training by {\em competitive} UL~\citep[e.g.,][]{RumelhartZipser:86}
+prior to BP-based fine-tuning~\citep{maclin1995}.
+See also more recent methods using UL to improve subsequent SL~\citep[e.g.,][]{Behnke:IJCNN1999,Behnke:IJCNN2003,wiskott2013}.
+
+
+\subsection{1989: BP for Convolutional NNs (CNNs, Sec.~\ref{1979})}
+\label{1989}
+In 1989, backpropagation (Sec.~\ref{1970}) was applied~\citep{LeCun:89,LeCun:90,LeCun:98} 
+to Neocognitron-like, weight-sharing,
+convolutional 
+neural layers (Sec.~\ref{1979}) with adaptive connections.
+This combination, augmented by {\em Max-Pooling} (MP, Sec.~\ref{1999},~\ref{2007}),
+and sped up on graphics cards (Sec.~\ref{2011}),  
+has become an 
+essential ingredient of many modern, competition-winning, 
+feedforward, visual Deep Learners (Sec.~\ref{2011}--\ref{dominant}).
+This work also introduced
+the MNIST data set of handwritten digits~\citep{LeCun:89}, which over time has become 
+perhaps the most famous benchmark of Machine Learning. 
+CNNs helped to 
+achieve good performance on MNIST~\citep{LeCun:90} (CAP depth 5)
+and on  fingerprint recognition~\citep{baldi93finger};
+similar CNNs were used commercially in the 1990s.
+
+
+
+
+\subsection{1991: Fundamental Deep Learning Problem of Gradient Descent}
+\label{1991a}
+ 
+A diploma thesis~\citep{Hochreiter:91} represented a milestone of explicit
+DL research. As mentioned in Sec.~\ref{1990}, by the late 1980s, 
+experiments had indicated that traditional 
+deep feedforward or recurrent networks are hard to
+train by backpropagation (BP) (Sec.~\ref{1970}). Hochreiter's work
+formally identified a major reason: Typical deep NNs suffer from the now famous problem of vanishing or exploding gradients. With standard activation functions (Sec.~\ref{intro}), cumulative 
+ backpropagated error signals (Sec.~\ref{bpsec})  either shrink rapidly, or grow out of bounds. In fact, they decay exponentially in the number of layers or CAP depth (Sec.~\ref{caps}), 
+or they explode. 
+This is also known as the {\em long time lag problem}.
+Much subsequent DL research of the 1990s and 2000s was motivated by this insight. 
+Later work~\citep{Bengio:94} also studied
+basins of attraction and their stability under noise 
+from a dynamical systems point of view: either the 
+dynamics are not robust to noise, or the gradients vanish. See also~\citep{Hochreiter:01book,Tino03NC}.
+Over the years, several ways of partially overcoming the {\em Fundamental Deep Learning Problem} were explored:
+
+\begin{itemize}
+\item[I]
+A Very Deep Learner of 1991 (the {\em History Compressor}, Sec.~\ref{1991b}) alleviates the problem through unsupervised pre-training for a hierarchy of RNNs. This greatly facilitates subsequent supervised credit assignment through BP (Sec.~\ref{1970}).
+In the FNN case, similar effects can be achieved through conceptually related AE stacks (Sec.~\ref{1987},~\ref{2006}) and {\em Deep Belief Networks} (DBNs, Sec.~\ref{2006}).
+
+\item[II]
+LSTM-like networks (Sec.~\ref{1997},~\ref{2007},~\ref{2009},~\ref{2012}--\ref{dominant}) alleviate
+ the problem through a special architecture unaffected by it.
+
+\item[III]
+Today's
+GPU-based computers have a million times the computational power of desktop machines  of the early 1990s. 
+This
+allows for propagating errors a few layers further down within reasonable time, 
+even in traditional NNs (Sec.~\ref{2010}). That is basically what is winning many of the image 
+recognition competitions now (Sec.~\ref{2011},~\ref{2012},~\ref{2013}). (Although this does not really overcome the problem in a fundamental way.) 
+
+\item[IV] 
+Hessian-free optimization (Sec.~\ref{betterbp})
+can alleviate the problem for FNNs~\citep{Moller:93,Pearlmutter:93,schraudolph02,icml2010_094} (Sec.~\ref{betterbp})
+and RNNs~\citep{Martens:2011hessfree} (Sec.~\ref{2011rnn}).
+
+\item[V] The space of NN weight matrices can also be searched without relying on error gradients,
+thus avoiding the {\em Fundamental Deep Learning Problem} altogether.
+Random weight guessing sometimes works better
+than more sophisticated methods~\citep{Hochreiter:96sintra}.
+Certain more complex problems are better solved by using 
+{\em Universal Search}~\citep{Levin:73} for weight matrix-computing programs written in
+a universal programming language~\citep{Schmidhuber:97nn+}.
+Some are better solved by using linear methods 
+to obtain optimal weights for connections to output events (Sec.~\ref{notation}),
+and  {\em evolving} weights of connections to other events---this is called {\em Evolino}~\citep{Schmidhuber:07nc}.
+Compare also related RNNs pre-trained by certain UL rules~\citep{steil2007},
+also in the case of {\em spiking  neurons}~\citep{yin2012,maass2013} (Sec.~\ref{spiking}).
+Direct search methods are relevant not only for SL but also for more general RL,
+and are discussed in more detail in Sec.~\ref{evorl}.
+
+
+
+\end{itemize}
+
+
+\subsection{1991: UL-Based History Compression Through a Deep Stack of RNNs}
+\label{1991b}
+
+A working {\em Very Deep Learner} (Sec.~\ref{caps}) of 1991~\citep{chunker91and92,mydeep2013}  could perform credit assignment across hundreds of nonlinear operators or neural layers, by using {\em unsupervised pre-training} for a hierarchy of RNNs.  
+
+
+The basic idea is still relevant today. Each RNN is trained for a while in unsupervised fashion to predict its next input~\citep[e.g.,][]{connor1994,dorffner1996}. From then on, only unexpected inputs (errors) convey new information and get fed to the next higher RNN which thus ticks on a slower, self-organising time scale. It can easily be shown that no information gets lost. It just gets compressed (much of machine learning is 
+essentially about compression, e.g., Sec.~\ref{mdl},~\ref{mdlnn},~\ref{comrl}). For each individual 
+input sequence, we get a series of less and less redundant encodings in deeper and deeper levels of this 
+{\em History Compressor} or {\em Neural Sequence Chunker}, which can compress data in both space (like feedforward NNs) and time. 
+This is another good example of hierarchical representation learning (Sec.~\ref{hie}).
+There also is a continuous 
+variant of the history compressor~\citep{SchmidhuberMozerPrelinger:93}.
+
+The RNN stack is essentially a deep generative model of the data, 
+which can be reconstructed from its compressed form.
+Adding another RNN to the stack improves a bound on the data's description length---equivalent to the negative logarithm of its probability~\citep{Huffman:52,Shannon:48}---as long as there is remaining local learnable predictability in the data 
+representation on the corresponding level of the hierarchy.
+Compare a similar observation for feedforward {\em Deep Belief Networks} (DBNs, 2006, Sec.~\ref{2006}). 
+
+The system was able to learn many previously unlearnable DL tasks.
+One ancient illustrative DL experiment~\citep{schmidhuber1993} required 
+CAPs (Sec.~\ref{caps}) of depth 1200. 
+The top level code of the initially unsupervised RNN stack, however, got so compact that (previously infeasible) sequence classification through additional BP-based SL became possible.
+Essentially the system used UL to greatly reduce problem depth. 
+Compare earlier BP-based fine-tuning of NNs initialized
+by rules of propositional logic~\citep{shavlik1989} (Sec.~\ref{timelags}).
+
+There is a way of compressing higher levels down into lower levels, thus 
+fully or partially collapsing the RNN stack. The trick is to retrain a lower-level RNN to continually imitate (predict) the hidden units of an already trained, slower, higher-level RNN (the {\em``conscious" chunker}), through additional predictive output neurons~\citep{chunker91and92}. This helps the lower RNN (the {\em automatizer}) to develop appropriate, rarely changing memories that may bridge very long time lags. Again, this procedure can greatly reduce the required depth of the BP process. 
+
+The 1991 system was a working Deep Learner in the 
+modern post-2000 sense, and also a first  {\em Neural Hierarchical Temporal Memory} (HTM).
+It is conceptually similar to earlier AE hierarchies (1987, Sec.~\ref{1987}) and
+ later {\em Deep Belief Networks}  (2006, Sec.~\ref{2006}), but more general in the sense that it uses sequence-processing RNNs instead of FNNs with unchanging inputs. 
+More recently, well-known entrepreneurs~\citep{hawkins2006,kurzweil2012} also got interested in 
+HTMs; compare also hierarchical HMMs~\citep[e.g.,][]{tishby1998},
+as well as later UL-based recurrent 
+systems~\citep{Klapper:01,steil2007,maass2013,young2014}.
+Clockwork RNNs~\citep{icml2014} also consist 
+of interacting RNN modules with different clock rates,
+but do not use UL to set those rates. 
+Stacks of RNNs were used in later work on SL with great success, 
+e.g., Sec.~\ref{1997},~\ref{2007},~\ref{2009},~\ref{2013}.
+
+
+
+
+
+\subsection{1992: Max-Pooling (MP): Towards MPCNNs (Compare Sec.~\ref{2007},~\ref{2011})}
+\label{1999}
+%in an earlier version of this paper, this section came later and was called "1999", because I mistakenly thought MP stems from HMAX (1999) instead of the Cresceptron (1992).
+
+The {\em Neocognitron} (Sec.~\ref{1979}) inspired the
+{\em Cresceptron}~\citep{weng1992}, which adapts its topology during training (Sec.~\ref{mdlnn});
+compare the incrementally growing and shrinking 
+ GMDH networks (1965, Sec.~\ref{1965}).
+
+Instead of using alternative local subsampling or WTA 
+methods~\citep[e.g.,][]{fukushima:1980,Schmidhuber:89cs,Maass2000,Fukushima:2013},
+the Cresceptron uses {\em Max-Pooling} (MP) layers. Here 
+a 2-dimensional layer or array of unit activations is partitioned into 
+smaller rectangular arrays. Each is replaced in a downsampling layer by the activation of its maximally active unit.
+A later, more complex version of the Cresceptron~\citep{weng1997} also included {\em ``blurring"} layers
+to improve object location tolerance. 
+
+
+The neurophysiologically plausible topology of the feedforward HMAX model~\citep{riesenhuber:1999} 
+is very similar to the one of the 1992 Cresceptron (and thus to the 1979 Neocognitron).
+HMAX does not learn though. Its units have hand-crafted weights; 
+biologically plausible learning rules were later proposed for
+similar models~\citep[e.g.,][]{serre2002,teichmann2012}.
+
+
+When CNNs or convnets (Sec.~\ref{1979},~\ref{1989}) 
+are combined with MP, they become Cresceptron-like or HMAX-like {\em MPCNNs} with
+alternating convolutional and max-pooling layers. 
+Unlike Cresceptron and HMAX, however, MPCNNs are trained by 
+BP (Sec.~\ref{1970},~\ref{2007}) \citep{ranzato-cvpr-07}.
+Advantages of doing this
+were pointed out subsequently~\citep{scherer:2010}.
+BP-trained MPCNNs 
+have become
+central to many modern, competition-winning, feedforward, visual Deep Learners (Sec.~\ref{2009},~\ref{2011}--\ref{dominant}). 
+
+
+
+\subsection{1994: Early Contest-Winning NNs}
+%\subsection{1994: Contest-Winning Not So Deep NNs}
+\label{1994}
+
+Back in the 1990s, certain NNs already won certain 
+controlled pattern recognition contests 
+with secret test sets. Notably, 
+an NN with internal delay lines 
+ won the Santa Fe time-series competition on chaotic intensity 
+pulsations of an NH3 laser~\citep{wan1994,weigend1993}.
+No very deep CAPs (Sec.~\ref{caps}) were needed though. 
+
+
+\subsection{1995: Supervised Recurrent Very Deep Learner (LSTM RNN)}
+\label{1997}
+
+Supervised {\em Long Short-Term Memory} (LSTM) RNN~\citep{lstm97and95,Gers:2000nc,Perez:02} 
+could eventually perform similar feats as  the deep RNN hierarchy of 1991
+(Sec.~\ref{1991b}),
+overcoming the {\em Fundamental Deep Learning Problem} (Sec.~\ref{1991a}) without any unsupervised pre-training.
+LSTM could also learn DL tasks {\em without} local sequence predictability (and thus 
+{\em un}learnable by the partially 
+unsupervised 1991 {\em History Compressor}, Sec.~\ref{1991b}), dealing with  
+very deep problems (Sec.~\ref{caps})~\citep[e.g.,][]{Gers:02jmlr}.
+
+The basic LSTM idea is very simple. Some of the units are called {\em Constant Error Carousels} (CECs).
+Each CEC uses as an activation function $f$, the identity function, and 
+has a connection to itself with fixed weight of 1.0. Due to $f$'s constant derivative of 1.0,  
+errors backpropagated through a CEC cannot vanish or explode (Sec.~\ref{1991a})
+but stay as they are (unless they ``flow out" 
+of the CEC to other, typically {\em adaptive} parts of the NN). 
+CECs are connected to several {\em nonlinear adaptive} units (some with multiplicative
+activation functions) 
+needed for learning nonlinear behavior. Weight changes of these units often 
+profit from error signals propagated far back in time
+through CECs. 
+CECs are the main reason why LSTM nets can learn to discover the importance of (and memorize) events that happened thousands of discrete time steps ago, while previous RNNs already failed in case of minimal time lags of  10 steps.
+
+
+
+Many different LSTM variants and topologies are allowed. 
+It is possible to evolve good problem-specific topologies~\citep{DBLP:conf/icann/BayerWTS09}.
+Some LSTM variants also use {\em modifiable} self-connections of CECs~\citep{Gers:01ieeetnn}.
+
+
+
+To a certain extent, LSTM is biologically plausible~\citep{oreilly:2003}.
+LSTM learned to solve many previously unlearnable DL tasks involving:
+Recognition of the temporal order of widely separated events in noisy input streams; 
+Robust storage of high-precision real numbers across extended time intervals;
+Arithmetic operations on continuous input streams;
+Extraction of information conveyed by the temporal distance between events;
+Recognition of temporally extended patterns in noisy input sequences~\citep{lstm97and95,Gers:2000nc};
+Stable generation of precisely timed rhythms, as well as 
+smooth and non-smooth periodic trajectories~\citep{Gers:2000b}.
+LSTM clearly outperformed
+previous RNNs on tasks that
+require learning the rules of regular languages describable
+by deterministic {\em Finite State Automata} (FSAs)~\citep{Watrous:92nips,casey96dynamics,siegelmann93foundations,Blair+Pollack:1997nc,kalinke98computation,zeng94discrete,Manolios:94,Omlin:96,Omlin:04}, both in terms of reliability and speed.
+
+LSTM also worked on tasks involving
+context free languages (CFLs) that cannot be represented by HMMs or similar FSAs
+discussed in the RNN literature~\citep{Sun93:abRNN,wiles95learning,andrews1995,steijvers96recurrent,tonkes97learning,Rodriguez:1999CS,Rodriguez+Wiles:1998:nips10}.
+CFL recognition~\citep{lee-learning:96} requires the functional equivalent of a runtime stack.
+Some previous RNNs failed to learn small
+CFL training sets~\citep{Rodriguez+Wiles:1998:nips10}.
+Those that did not~\citep{Rodriguez:1999CS,boden00context-free}
+failed to extract the
+general rules, and did not generalize
+well on substantially larger test sets.
+Similar for context-sensitive languages (CSLs)~\citep[e.g.,][]{ChalupBlairNN2003}.
+LSTM generalized  well though,
+requiring only the 30 shortest exemplars
+($n \leq 10$) of the CSL $a^nb^nc^n$ to
+correctly predict the possible continuations of sequence prefixes
+for $n$ up to 1000 and more.
+A combination of a decoupled extended Kalman filter~\citep{kalman1960,williams1992kalman,Puskorius:94,feldkamp1998kalman,haykin2001,feldkamp2003}
+and an LSTM RNN~\citep{Perez:02}
+learned to deal correctly with values of $n$ up to 10 million and more.
+That is, after training the network was able to
+read sequences of 30,000,000 symbols and more,
+one symbol at a time, and
+finally detect the subtle differences between
+{\em legal} strings such as
+$a^{10,000,000}b^{10,000,000}c^{10,000,000}$
+and
+very similar but {\em illegal} strings such as
+$a^{10,000,000}b^{9,999,999}c^{10,000,000}$.
+Compare also more recent RNN algorithms able to deal with long
+time lags~\citep{DBLP:conf/icann/SchaferUZ06,Martens:2011hessfree,DBLP:series/lncs/ZimmermannTG12,icml2014}.
+
+
+
+Bi-directional RNNs (BRNNs)~\citep{schuster97bidirectional,schuster99thesis} are designed for input sequences whose
+starts and ends are known in advance, such as spoken sentences to be labeled by their phonemes; compare~\citep{fukada99boundary}. 
+To take both past and future context of each sequence element into account,
+one RNN processes the sequence from start to end, 
+the other backwards from end to start. 
+At each time step their combined outputs predict the corresponding label (if there is any).
+BRNNs were successfully applied to secondary protein structure 
+prediction~\citep{baldi99exploiting}.
+DAG-RNNs~\citep{baldi2003jmlr,wu2008go} generalize BRNNs to multiple dimensions.
+ They
+learned to predict properties of small organic molecules~\citep{lusci2013}
+as well as
+protein contact maps~\citep{tegge2009},
+also in conjunction with a growing deep FNN~\citep{baldi2012contact} (Sec.~\ref{2012}).
+BRNNs and DAG-RNNs unfold their full potential when
+combined with the LSTM concept~\citep{graves05nn,graves:2009nips,Graves:09tpami}.
+
+
+Particularly successful in recent competitions are stacks (Sec.~\ref{1991b}) of LSTM RNNs~\citep{Santi:07ijcai,graves:2009nips} trained by {\em Connectionist Temporal Classification} (CTC)~\citep{Graves:06icml},
+a gradient-based method for finding RNN weights that
+maximize the probability of teacher-given label sequences, 
+given (typically much longer and more high-dimensional) 
+streams of real-valued input vectors.
+CTC-LSTM performs simultaneous segmentation (alignment) and recognition
+(Sec.~\ref{2013}).
+
+
+In the early 2000s,  
+speech recognition was dominated by
+HMMs combined with FNNs \citep[e.g.,][]{bourlard+morgan:1994}.
+Nevertheless, when trained from scratch on utterances from the
+TIDIGITS speech database, in 2003 
+LSTM already obtained results comparable to those of 
+HMM-based systems~\citep{graves+eck+beringer+schmidhuber:2003,beringer:05icann,Graves:06icml}.
+In 2007, LSTM outperformed HMMs in keyword spotting tasks~\citep{DBLP:conf/icann/FernandezGS07};
+compare recent improvements~\citep{indermuhle2011keyword,woellmer2013}.
+By 2013, LSTM also achieved best known results  on the famous 
+TIMIT phoneme recognition benchmark~\citep{graves:2013icassp} (Sec.~\ref{2013}). 
+Recently, LSTM RNN / HMM hybrids obtained best known performance on medium-vocabulary~\citep{geiger2014} and
+large-vocabulary speech recognition~\citep{sak2014large}.
+
+LSTM is also applicable to
+robot localization~\citep{foerster-esann07},
+robot control~\citep{mayer2008}, 
+online driver distraction detection~\citep{woellmer2011},
+and many other tasks. For example, 
+it  helped to  improve the state of the art in diverse applications such as 
+protein analysis~\citep{hochreiter:snowbird},
+handwriting recognition~\citep{graves:08nips,Graves:09tpami,graves:2009nips,bluche13},
+voice activity detection~\citep{eyben2013},
+optical character recognition~\citep{breuel2013high},
+language identification~\citep{gonzalez2014},
+prosody contour prediction~\citep{fernandez2014},
+audio onset detection~\citep{marchi2014},
+text-to-speech synthesis~\citep{fan2014},
+social signal classification~\citep{brueckner2014},
+machine translation~\citep{sutskever2014},
+ and others.
+
+RNNs can also be used for 
+metalearning~\citep{schmidhuber87,scholarpedia2010,prokhorov2002meta},
+because they can in principle learn to run their own weight change algorithm~\citep{Schmidhuber:93selfrefann}. 
+%~\citep{Schmidhuber:93selfrefieee,Schmidhuber:93selfreficann,Schmidhuber:93selfrefann,Schmidhuber:93ratioicann,Schmidhuber:96meta}. 
+A successful metalearner~\citep{Hochreiter:01meta}
+used an LSTM RNN to quickly {\em learn a  learning algorithm} for quadratic functions
+(compare Sec.~\ref{unirl}). 
+
+
+Recently, LSTM RNNs won several international pattern recognition competitions 
+and set numerous benchmark records 
+on large and complex data sets, e.g., 
+Sec.~\ref{2009},~\ref{2012},~\ref{2013}.
+Gradient-based LSTM is no panacea though---other methods sometimes outperformed  
+it at least on certain tasks~\citep{Jaeger:04,Schmidhuber:07nc,Martens:2011hessfree,pascanu2013,icml2014}; compare Sec.~\ref{2011rnn}.
+
+
+
+
+
+\subsection{2003: More Contest-Winning/Record-Setting NNs; Successful Deep NNs}
+\label{2003}
+
+In the decade around 2000, many practical and commercial
+pattern recognition applications were dominated by non-neural
+machine learning methods
+such as {\em Support Vector Machines} (SVMs)~\citep{Vapnik:95,advkernel}.
+Nevertheless, at least in certain domains, NNs 
+outperformed other techniques.
+
+
+A  {\em Bayes NN}~\citep{neal2006b} based on an ensemble~\citep{breiman:1996,Schapire:90,wolpert:92stacked,hashem:1992,Ueda2000,dietterich2000} of NNs won 
+the  {\em NIPS 2003 Feature Selection Challenge}
+with secret test set~\citep{neal2006}.
+The NN was not very deep though---it had two hidden layers
+and thus rather shallow CAPs (Sec.~\ref{caps}) of depth 3.
+
+Important for many present competition-winning pattern recognisers  (Sec.~\ref{2011},~\ref{2012},~\ref{2013})
+were developments in the CNN department.
+A BP-trained~\citep{LeCun:89} CNN (Sec.~\ref{1979}, Sec.~\ref{1989}) 
+set a new MNIST record of 0.4\%~\citep{simard:2003},
+using training pattern
+deformations~\citep{Baird90} but no unsupervised pre-training (Sec.~\ref{1987},~\ref{1991b},~\ref{2006}).
+A standard BP net achieved 0.7\%~\citep{simard:2003}.
+Again, the corresponding CAP depth was low. 
+Compare further improvements in Sec.~\ref{2007},~\ref{2010},~\ref{2011}.
+
+
+
+Good image interpretation results~\citep{Behnke:LNCS} were achieved with rather deep NNs trained by the 
+BP variant {\em R-prop}~\citep{rprop93} (Sec.~\ref{betterbp});
+here feedback through recurrent connections helped to improve image interpretation. 
+FNNs with CAP depth up to 6 were used to successfully classify high-dimensional data~\citep{vieira2003}. 
+
+Deep LSTM RNNs started to obtain certain first speech recognition results comparable to those of 
+HMM-based systems~\citep{graves+eck+beringer+schmidhuber:2003}; compare Sec.~\ref{1997},~\ref{2007},~\ref{2012},~\ref{2013}. 
+
+
+
+
+\subsection{2006/7: UL For Deep Belief Networks  / AE Stacks Fine-Tuned by BP}
+\label{2006}
+
+While learning networks with numerous non-linear layers
+date back at least to 1965 (Sec.~\ref{1965}),
+and explicit DL research results have been published at least since 1991 (Sec.~\ref{1991a},~\ref{1991b}), 
+the expression {\em Deep Learning}  was actually 
+coined around 2006, 
+when   unsupervised pre-training of deep FNNs helped 
+to accelerate subsequent SL through BP~\citep{HinSal06,hinton:06afast}.
+Compare earlier terminology on {\em loading deep networks}~\citep{sima1994,windisch2005} 
+and {\em learning deep memories}~\citep{Gomez:05gecco}. 
+Compare also BP-based (Sec.~\ref{1970}) fine-tuning (Sec.~\ref{timelags}) of (not so deep) FNNs 
+pre-trained by competitive UL~\citep{maclin1995}.
+
+The {\em Deep Belief Network} (DBN) is a  
+stack of {\em Restricted Boltzmann Machines} (RBMs)~\citep{smolensky86}, 
+which in turn are {\em Boltzmann Machines} (BMs)~\citep{HintonSejnowski:86} 
+with a single layer of feature-detecting units;
+compare also {\em Higher-Order BMs}~\citep{memisevic2010}.
+Each RBM perceives pattern representations from the level below and learns to encode
+them in unsupervised fashion.
+At least in theory under certain assumptions, 
+adding more layers improves a bound on the data's negative log probability~\citep{hinton:06afast} 
+(equivalent to the data's 
+description length---compare the corresponding observation for RNN stacks, Sec.~\ref{1991b}).  
+There are extensions for {\em Temporal RBMs}~\citep{sutskever2008}.
+
+%kernel-based analysis of (noise in) DBNs~\citep{montavon2013}.
+
+Without any training pattern deformations (Sec.~\ref{2003}),
+a DBN fine-tuned by BP
+achieved 1.2\% error rate~\citep{HinSal06} on the MNIST handwritten digits
+(Sec.~\ref{1989},~\ref{2003}).
+This result 
+helped to arouse interest in DBNs. 
+DBNs  also achieved good results on phoneme recognition,
+with an error rate of 26.7\% on the
+TIMIT core test set~\citep{mohamed2010};
+%mohamed2009,
+compare further improvements through FNNs~\citep{speech2012,lideng2014}
+and LSTM RNNs (Sec.~\ref{2013}).  
+
+A DBN-based technique called
+{\em Semantic Hashing}~\citep{salakhutdinov2009}
+maps semantically similar documents (of variable size) to nearby addresses in 
+a space of document representations. It
+outperformed previous searchers for similar documents, 
+such as {\em Locality Sensitive Hashing}~\citep{buhler2001,datar2004}.
+See the RBM/DBN tutorial~\citep{fischer:13}.
+
+
+Autoencoder (AE) stacks~\citep{ballard1987modular} (Sec.~\ref{1987}) 
+became a popular alternative way of pre-training deep FNNs in 
+unsupervised fashion, before fine-tuning (Sec.~\ref{timelags}) them through BP (Sec.~\ref{1970})~\citep{bengio2006,vincent:2008,erhan:10whydoes}. 
+Sparse coding (Sec.~\ref{ulnn}) was formulated as 
+a combination of convex optimization 
+problems~\citep{sparse2007ng}.
+Recent surveys of stacked RBM and AE methods focus
+on post-2006 developments~\citep{bengio09,itamar2010}.
+Unsupervised DBNs and AE stacks are conceptually similar to, but in a certain sense less general than, the
+unsupervised RNN stack-based {\em History Compressor}
+ of 1991 (Sec.~\ref{1991b}), which can process and re-encode
+not only stationary input patterns, but 
+entire pattern sequences. 
+
+
+
+\subsection{2006/7: Improved CNNs / GPU-CNNs / BP for MPCNNs / LSTM Stacks}
+\label{2007}
+
+
+Also in 2006, a BP-trained~\citep{LeCun:89} CNN (Sec.~\ref{1979}, Sec.~\ref{1989}) 
+set a new MNIST record of 0.39\%~\citep{ranzato-06},
+using training pattern
+deformations (Sec.~\ref{2003}) but no unsupervised pre-training.
+Compare further improvements in Sec.~\ref{2010},~\ref{2011}.
+Similar CNNs were used for off-road obstacle avoidance~\citep{LeCun:06}.
+A combination of CNNs and TDNNs later learned to map fixed-size representations of
+variable-size sentences to features
+relevant for language processing, 
+using a combination of SL and UL~\citep{weston2008}.
+
+
+2006 also saw an early GPU-based CNN implementation~\citep{chellapilla:2006b} up to 4 times faster
+than CPU-CNNs;
+compare also earlier GPU implementations of standard FNNs with a reported speed-up factor of 20~\citep{gpu2004}.
+GPUs or graphics cards  have become more and more important for DL in 
+subsequent years (Sec.~\ref{2010}--\ref{2013}).
+
+In 2007, BP (Sec.~\ref{1970}) was applied for the first time~\citep{ranzato-cvpr-07}  to 
+Neocognitron-inspired (Sec.~\ref{1979}),
+Cresceptron-like (or HMAX-like) MPCNNs (Sec.~\ref{1999})
+with alternating convolutional and max-pooling layers.
+BP-trained MPCNNs  have become an 
+essential ingredient of many modern, competition-winning, feedforward, visual Deep Learners (Sec.~\ref{2009},~\ref{2011}--\ref{dominant}). 
+
+Also in 2007, 
+hierarchical stacks of LSTM RNNs were introduced~\citep{Santi:07ijcai}. They can be 
+trained by hierarchical {\em Connectionist Temporal Classification} (CTC)~\citep{Graves:06icml}. 
+For tasks of sequence labelling, 
+every LSTM RNN level (Sec.~\ref{1997}) predicts a sequence of labels fed to the next level. 
+Error signals at every level are back-propagated through all the
+lower levels. On spoken digit recognition, LSTM stacks
+outperformed HMMs, despite making fewer assumptions about the domain.
+LSTM stacks do not necessarily require unsupervised pre-training
+like the earlier UL-based RNN stacks~\citep{chunker91and92} of Sec.~\ref{1991b}.
+
+
+
+\subsection{2009: First Official Competitions Won by RNNs, and with MPCNNs}
+\label{2009}
+
+Stacks  of LSTM RNNs trained by CTC (Sec.~\ref{1997},~\ref{2007})
+ became
+the first   RNNs  to win
+official international pattern recognition contests (with secret test sets known
+only to the organisers). More precisely,
+three connected handwriting competitions at ICDAR 2009 in three different languages 
+(French, Arab, Farsi) were won by deep
+LSTM RNNs without any {\em a priori} linguistic knowledge,
+performing simultaneous segmentation and recognition.
+Compare
+\citep{graves05nn,Graves:09tpami,schmidhuber2011agi,graves:2013icassp,graves2014} (Sec.~\ref{2013}).
+
+
+To detect human actions in surveillance videos,
+a 3-dimensional CNN~\citep[e.g.,][]{seung2009,prokhorov2010}, combined with SVMs, was part of a larger 
+system~\citep{trecvid2009}
+using a {\em bag of features} approach \citep{nowak2006}
+to extract regions of interest.
+The system won three 2009 TRECVID competitions.
+These were possibly the first official international contests won with the help of (MP)CNNs (Sec.~\ref{2007}).
+An improved version of the method was published later~\citep{ji2013}.
+
+2009 also saw a GPU-DBN 
+implementation~\citep{raina2009large} orders of magnitudes faster than previous CPU-DBNs
+(see Sec.~\ref{2006}); see also~\citep{coates:2013icml}.
+The {\em Convolutional DBN}~\citep{lee:2009} (with a probabilistic 
+variant of MP, Sec.~\ref{1999})
+combines ideas from CNNs and DBNs,
+and was successfully applied to audio classification~\citep{lee2009audio}.
+%A similar system pre-trained by UL, then fine-tuned by BP,  was later used to classify music from audio data~\citep{dieleman2011}. 
+
+
+
+
+
+\subsection{2010: Plain Backprop ($+$ Distortions) on GPU Breaks MNIST Record}
+\label{2010}
+
+ In 2010, a new MNIST (Sec.~\ref{1989}) record of 0.35\% error rate was set 
+by good old BP (Sec.~\ref{1970}) in deep but otherwise
+standard NNs~\citep{ciresan:2010}, 
+using neither unsupervised pre-training 
+(e.g., Sec.~\ref{1987},~\ref{1991b},~\ref{2006}) nor convolution 
+(e.g., Sec.~\ref{1979},~\ref{1989},~\ref{2003},~\ref{2007}).
+However,  training pattern
+deformations (e.g., Sec.~\ref{2003}) were important to generate a big training set
+and avoid overfitting.
+This success was made possible mainly through a  GPU implementation of BP that was up to 50 times faster than standard
+CPU versions. 
+A good value of 0.95\% was obtained
+without distortions except for small saccadic eye movement-like translations---compare
+Sec.~\ref{2006}.
+
+Since BP was 3-5 decades old by then (Sec.~\ref{1970}),
+and pattern deformations 2 decades~\citep{Baird90} (Sec.~\ref{2003}),
+these results seemed to suggest that
+advances in exploiting modern
+computing hardware were more important than advances in algorithms. 
+
+%(A year later, first human-competitive performance on MNIST was achieved by deep  GPU-MPCNNs (Sec.~\ref{2011})~\citep{ciresan2012cvpr}.)
+
+\subsection{2011: MPCNNs on GPU Achieve Superhuman Vision Performance}
+\label{2011}
+
+In 2011, a flexible {\em GPU-implementation}~\citep{ciresan:2011ijcai}
+ of {\em Max-Pooling (MP) CNNs or Convnets}  was  described (a GPU-MPCNN),
+building on earlier MP work~\citep{weng1992} (Sec.~\ref{1999}) CNNs ~\citep{Fukushima:1979neocognitron,LeCun:89} (Sec.~\ref{1979},~\ref{1989},~\ref{2007}), 
+and on early GPU-based CNNs {\em without} MP~\citep{chellapilla:2006b} (Sec.~\ref{2007});
+compare  early GPU-NNs~\citep{gpu2004} and GPU-DBNs~\citep{raina2009large} (Sec.~\ref{2009}).
+MPCNNs have alternating convolutional layers (Sec.~\ref{1979}) and max-pooling layers (MP, Sec.~\ref{1999}) topped by 
+standard fully connected layers. All weights are trained by BP (Sec.~\ref{1970},~\ref{1989},~\ref{2007})~\citep{ranzato-cvpr-07,scherer:2010}.
+GPU-MPCNNs have become essential for many contest-winning
+FNNs (Sec.~\ref{2012}, Sec.~\ref{2013}).
+
+
+
+{\em Multi-Column} GPU-MPCNNs ~\citep{ciresan:2011ijcnn} 
+are committees~\citep{breiman:1996,Schapire:90,wolpert:92stacked,hashem:1992,Ueda2000,dietterich2000} of GPU-MPCNNs  with simple democratic output averaging. 
+Several MPCNNs see the same input; 
+their output vectors are used to assign probabilities to the various possible classes. 
+The class with the on average highest probability is chosen as the system's classification of the present input. 
+Compare earlier, more sophisticated ensemble methods~\citep{Schapire:90},
+the contest-winning ensemble Bayes-NN~\citep{neal2006b}
+of Sec.~\ref{2003},
+and recent related work~\citep{shao2014}.
+
+
+An ensemble of GPU-MPCNNs was the first system to achieve
+superhuman visual pattern recognition~\citep{ciresan:2011ijcnn,ciresan:2012NN} in a controlled competition, namely,
+the IJCNN 2011 traffic sign recognition contest in San Jose (CA)~\citep{stallkamp:11,stallkamp:12}.
+This is of interest for fully autonomous, self-driving cars in traffic~\citep[e.g.,][]{Dickmanns:94}.
+The GPU-MPCNN ensemble obtained 0.56\% error rate and was twice better
+ than human test subjects, 
+three times better than the closest artificial NN competitor~\citep{sermanet-ijcnn-11}, and
+six times better than the best non-neural method.
+
+A few months earlier, the qualifying round was won in a 1st stage online competition, albeit by a much smaller margin: 1.02\%~\citep{ciresan:2011ijcnn} vs 1.03\% for second place~\citep{sermanet-ijcnn-11}. After the deadline, the organisers revealed that human performance on the test set was 1.19\%. That is, the best methods already seemed human-competitive. However, during the qualifying it was possible to incrementally gain information about the test set by probing it through repeated submissions. This is illustrated by better and better results obtained by various teams over time~\citep{stallkamp:12}
+(the organisers eventually imposed a limit of 10 resubmissions). 
+In the final competition this was not possible.
+
+This illustrates a general problem with benchmarks whose test sets are public, or at least can be probed
+to some extent: competing teams tend to overfit on the test set even when it 
+cannot be directly used for training, only for evaluation.
+
+In 1997 many thought it a big deal that human chess world champion Kasparov was beaten by an IBM computer. But back then computers could not at all compete with little kids in visual pattern recognition, which seems much harder than chess from a computational perspective. 
+Of course, the traffic sign domain is highly restricted,
+and kids are still much better general pattern recognisers.
+Nevertheless, by 2011, deep NNs could
+ already learn to rival them in important limited visual domains.
+
+An ensemble of GPU-MPCNNs was also the first method to achieve
+human-competitive performance (around 0.2\%) on MNIST~\citep{ciresan2012cvpr}. 
+This represented a dramatic improvement, since
+by then the MNIST record had hovered around 0.4\% for almost a decade 
+(Sec.~\ref{2003},~\ref{2007},~\ref{2010}). 
+
+Given all the prior work on (MP)CNNs (Sec.~\ref{1979},~\ref{1989},~\ref{1999},~\ref{2007}) and GPU-CNNs (Sec.~\ref{2007}), 
+GPU-MPCNNs are not a breakthrough in the scientific sense. 
+But they are a commercially relevant breakthrough in efficient coding that has made a
+difference in several contests since 2011. 
+Today, most {\em feedforward} competition-winning deep NNs are (ensembles of) 
+GPU-MPCNNs (Sec.~\ref{2012}--\ref{dominant}).
+
+\subsection{2011: Hessian-Free Optimization for RNNs}
+\label{2011rnn}
+
+Also in 2011 it was shown~\citep{Martens:2011hessfree} that 
+Hessian-free optimization~\citep[e.g.,][]{Moller:93,Pearlmutter:93,schraudolph02} (Sec.~\ref{betterbp})
+can alleviate the 
+{\em Fundamental Deep Learning Problem} (Sec.~\ref{1991a})
+in RNNs, outperforming standard gradient-based 
+LSTM RNNs (Sec.~\ref{1997}) on several tasks.
+Compare other  RNN algorithms~\citep{Jaeger:04,Schmidhuber:07nc,pascanu2013,icml2014}
+that also at least sometimes yield better results than steepest descent for LSTM RNNs.
+
+
+
+
+\subsection{2012: First Contests Won on ImageNet, Object Detection, Segmentation}
+\label{2012}
+
+In 2012, an ensemble of GPU-MPCNNs (Sec.~\ref{2011}) 
+achieved best results on the {\em ImageNet} classification benchmark~\citep{Krizhevsky:2012},
+which is popular in the computer vision community.
+Here relatively large image sizes of  256x256 pixels were necessary, 
+as opposed to only 48x48 pixels for the 2011 traffic sign competition (Sec.~\ref{2011}).
+See further improvements in Sec.~\ref{2013}.
+
+Also in 2012, the biggest NN so far ($10^9$ free parameters) was trained
+in unsupervised mode (Sec.~\ref{1987}, \ref{2006}) on unlabeled data~\citep{ng2012}, then applied to ImageNet. The codes across its top layer 
+were used to train a simple supervised classifier,
+which achieved best results so far on 20,000 classes.
+Instead of relying on efficient GPU programming, this was done by brute force on 
+1,000 standard machines with 16,000 cores.
+
+
+So by 2011/2012, excellent results had been achieved by Deep Learners 
+in image {\em recognition and classification} (Sec.~\ref{2011},~\ref{2012}).
+The computer vision community, however, is especially interested in
+ {\em object  detection} in large images,
+for applications such as image-based search engines,
+or for biomedical diagnosis where the goal may be to 
+automatically detect tumors etc in images of human tissue.
+Object detection presents additional challenges. 
+One natural approach is to train a deep NN classifier on patches of big images,
+then use it as a feature detector to be shifted 
+across unknown visual scenes, using various rotations and zoom factors.
+Image parts that yield highly active output units are likely
+to contain objects similar to those the NN was trained on.
+
+2012 finally saw the first DL system 
+(an ensemble of GPU-MPCNNs, Sec.~\ref{2011}) to win a
+contest on visual {\em object detection}~\citep{miccai2013} in large images of
+several million pixels
+%the {\em ICPR 2012 Contest on Mitosis Detection in Breast Cancer Histological Images}
+\citep{icpr12,icpr12report}. 
+Such biomedical applications may turn out to be among 
+the most important applications of DL.
+ The world spends over 10\% of GDP on healthcare ($>6$ trillion USD per year), much of it on medical diagnosis through expensive experts. Partial automation of this could not only save lots of money, but also make expert diagnostics accessible to many who currently cannot afford it.
+It is gratifying to observe that today deep NNs may actually help to improve healthcare and 
+perhaps save human lives. 
+
+
+2012 also saw the 
+first pure {\em image segmentation} contest won by DL~\citep{ciresan2012nips}, 
+again through an GPU-MPCNN ensemble 
+%namely, the {\em ISBI 2012 Challenge on Segmenting Neuronal Structures}
+\citep{isbi12}.\footnote{It should be mentioned, however, that LSTM RNNs already performed simultaneous segmentation and recognition when they became the first recurrent Deep Learners to win official international pattern recognition contests---see Sec.~\ref{2009}.}
+%The ISBI 2012 Challenge was the 8th international pattern recognition contest won by our team since 2009~\citep{interview2012}.
+EM stacks are relevant for the recently approved huge brain projects in Europe and the US~\citep[e.g.,][]{markram2012}. Given electron microscopy images of stacks of thin slices of animal brains, the goal is to build a detailed 3D model of the brain's neurons and dendrites. But human experts need many hours and days and weeks to annotate the images: Which parts depict neuronal membranes? Which parts are irrelevant background? This needs to be automated~\citep[e.g.,][]{turaga2010}. Deep Multi-Column GPU-MPCNNs learned to solve this task through experience with many training images, and won the contest on all three evaluation metrics by a large margin, with superhuman performance in terms of pixel error. 
+%(Ranks 2-6: for researchers at ETHZ, MIT, CMU, Harvard.)
+
+Both object detection~\citep{miccai2013}  and image segmentation~\citep{ciresan2012nips}  
+profit from fast MPCNN-based image scans that avoid redundant computations.
+Recent MPCNN scanners  
+speed up naive implementations  by up to 
+three orders of magnitude~\citep{masci:2013icip,Giusti:2013a};
+compare earlier efficient methods for CNNs {\em without} MP~\citep{vaillant-monrocq-lecun-94}.
+
+Also in 2012,
+a system consisting of  growing deep FNNs and 
+2D-BRNNs~\citep{baldi2012contact} won the CASP 2012 contest
+on protein contact map prediction.
+On the IAM-OnDoDB benchmark,
+LSTM RNNs (Sec.~\ref{1997}) outperformed all other methods (HMMs, SVMs) on 
+online mode detection~\citep{otte2012local,indermuhle2012mode}
+and keyword spotting~\citep{indermuhle2011keyword}.
+On the long time lag problem of language modelling, LSTM RNNs 
+outperformed all statistical approaches on the IAM-DB benchmark~\citep{frinken2012long};
+improved results were later obtained through a combination of NNs and HMMs~\citep{zamora2014}.
+Compare earlier RNNs for object 
+recognition through iterative image interpretation~\citep{Behnke:IJCNN1998,Behnke:ICANN2002,Behnke:LNCS};
+see also more recent publications~\citep{wyatte2012b,oreilly2013} extending
+work on biologically plausible learning rules for RNNs~\citep{oreilly1996}.
+
+
+
+\subsection{2013-: More Contests and Benchmark Records}
+\label{2013}
+
+A stack~\citep{Santi:07ijcai,graves:2009nips} (Sec.~\ref{1991b}) of bi-directional LSTM 
+RNNs~\citep{graves05nn}  
+trained by CTC (Sec.~\ref{1997},~\ref{2009}) 
+broke a famous TIMIT speech (phoneme) recognition record, achieving 17.7\% test set error rate~\citep{graves:2013icassp}, despite thousands of man years previously spent on {\em Hidden Markov Model} (HMMs)-based speech recognition research. 
+Compare earlier DBN results (Sec.~\ref{2006}).
+
+CTC-LSTM also 
+helped to score first at NIST's OpenHaRT2013 evaluation~\citep{bluche13}.
+For {\em optical character recognition} (OCR), LSTM RNNs outperformed commercial 
+recognizers of historical data~\citep{breuel2013high}.
+LSTM-based systems  also set benchmark records in
+{\em language identification}~\citep{gonzalez2014},
+medium-vocabulary {\em speech recognition}~\citep{geiger2014},
+{\em prosody contour prediction}~\citep{fernandez2014},
+{\em audio onset detection}~\citep{marchi2014},
+{\em text-to-speech synthesis}~\citep{fan2014}, and
+{\em social signal classification}~\citep{brueckner2014}.
+
+An LSTM RNN was used to estimate the state posteriors of an HMM; this system
+ beat the previous state of the art in {\em large vocabulary speech recognition}~\citep{sak2014,sak2014large}. 
+Another LSTM RNN with hundreds of millions of connections was used to rerank hypotheses of a statistical machine translation system; this system
+beat the previous state of the art in {\em English to French translation}~\citep{sutskever2014}.
+
+A new record on the {\em ICDAR Chinese handwriting recognition 
+benchmark} (over 3700 classes) was set on a desktop machine
+by an ensemble of GPU-MPCNNs (Sec.~\ref{2011}) with almost human performance~\citep{chinese2013};
+compare~\citep{icdar2013}.
+
+The {\em MICCAI 2013 Grand Challenge on Mitosis Detection}~\citep{miccai13}
+also was won by an object-detecting  GPU-MPCNN ensemble~\citep{miccai2013}.
+Its data set was even larger and more challenging than the one of ICPR 2012 (Sec.~\ref{2012}): a real-world dataset including many ambiguous cases and frequently encountered problems such as imperfect slide staining. 
+
+Three 2D-CNNs (with {\em mean-pooling} instead of MP, Sec.~\ref{1999}) observing three orthogonal projections of 3D images
+outperformed traditional full 3D methods on the task of segmenting tibial
+cartilage in low field knee MRI scans~\citep{prasoon:13}.
+ 
+
+
+Deep GPU-MPCNNs (Sec.~\ref{2011}) also helped to achieve new best results
+on important benchmarks of the computer vision community:
+ImageNet classification~\citep{zeiler2013,szegedy2014} 
+%ILSVRCarxiv14
+and---in 
+conjunction with traditional 
+approaches---PASCAL object detection~\citep{malik2013}.
+They also learned to predict bounding box coordinates  of
+ objects in the Imagenet 2013 database,
+and obtained state-of-the-art results on tasks of localization and 
+detection~\citep{sermanet2013}.
+GPU-MPCNNs also helped to recognise
+multi-digit numbers  in Google Street View images~\citep{goodfellow2014multi},
+where part of the NN was trained to {\em count} visible digits;
+compare earlier work on detecting ``numerosity" through DBNs~\citep{stoianov2012}.
+This system also excelled at recognising distorted synthetic text in {\em reCAPTCHA} puzzles.
+Other successful CNN applications include 
+scene parsing~\citep{Farabet2013}, object detection~\citep{Szegedy2013},
+shadow detection~\citep{khan2014},
+video classification~\citep{karpathy2014},
+and Alzheimer’s disease neuroimaging~\citep{shuiwang2014}.
+
+
+
+
+Additional contests are mentioned in the web pages of
+the Swiss AI Lab IDSIA,
+the University of Toronto,
+NY University,
+and the University of Montreal.
+%(Unlike in most academic contests, winners of contests listed at the commercial web site {\em kaggle.com} have to hand their code over to companies.)
+
+%kaggle: George Dahl won the competition to predict the activity of potential drugs. Vlad Mnih won the competition to predict job salaries from job advertisements.
+
+\subsection{Currently Successful Techniques: LSTM RNNs and GPU-MPCNNs}
+\label{dominant}
+
+Most competition-winning or benchmark record-setting Deep Learners actually use one of two {\em supervised} techniques: (a) recurrent LSTM (1997)  trained by CTC (2006) (Sec.~\ref{1997},~\ref{2009},~\ref{2012},~\ref{2013}), or (b) 
+ feedforward GPU-MPCNNs (2011, Sec.~\ref{2011},~\ref{2012},~\ref{2013})
+based on CNNs (1979, Sec.~\ref{1979}) with MP (1992, Sec.~\ref{1999}) 
+trained through BP (1989--2007, Sec.~\ref{1989},~\ref{2007}).
+
+Exceptions include two 2011 contests~\citep{goodfellow2011,transfer2011,goodfellow:2012icml} specialised on {\em Transfer 
+Learning} from one dataset to another~\citep[e.g.,][]{caruana1997,Schmidhuber:04oops,transfer2010}.
+However, deep GPU-MPCNNs do allow for {\em pure SL-based transfer}~\citep{Ciresan:2012a}, 
+where pre-training
+on one training set greatly improves performance on quite different sets,
+also in more recent studies~\citep{oquab2013,donahue2013}. 
+In fact, deep MPCNNs pre-trained by SL  can extract useful 
+features from quite diverse off-training-set images, yielding better results than traditional, 
+widely used features 
+such as SIFT~\citep{Lowe:1999,Lowe:04} on many vision tasks~\citep{razavian2014}.
+To deal with changing datasets, 
+slowly learning deep NNs were also combined with  
+rapidly adapting {\em ``surface"} NNs~\citep{kak2010}.
+
+
+Remarkably, 
+in the 1990s a trend went from partially unsupervised RNN stacks (Sec.~\ref{1991b}) to {\em purely} supervised LSTM RNNs (Sec.~\ref{1997}), just like in the 2000s a trend went from partially unsupervised FNN stacks (Sec.~\ref{2006}) to {\em purely} supervised MPCNNs 
+(Sec.~\ref{2007}--\ref{2013}).
+Nevertheless, in many applications it can still be advantageous to combine the best of both worlds---{\em supervised} learning and {\em unsupervised} pre-training (Sec.~\ref{1991b},~\ref{2006}).
+
+
+
+\subsection{Recent Tricks for Improving SL Deep NNs (Compare Sec.~\ref{betterbp},~\ref{mdlnn})}
+\label{tricks}
+
+DBN training (Sec.~\ref{2006}) can be improved through gradient enhancements and
+automatic  learning rate adjustments during stochastic gradient descent~\citep{cho2013,cho2014}, and through 
+Tikhonov-type~\citep{tikhonov1977} regularization of RBMs~\citep{cho2012}.
+Contractive AEs~\citep{vincent2011} 
+discourage hidden unit perturbations in response to input perturbations, 
+similar to how FMS (Sec.~\ref{mdlnn}) for {\sc Lococode} AEs (Sec.~\ref{ulnn}) 
+discourages output perturbations in response to weight perturbations.
+
+Hierarchical CNNs in a {\em Neural Abstraction Pyramid}~\citep[e.g.,][]{Behnke:LNCS,Behnke:NCA}
+were trained to 
+ reconstruct images corrupted by structured noise~\citep{Behnke:IJCIA2001},
+thus enforcing increasingly abstract image representations in 
+deeper and deeper layers.
+{\em Denoising AEs} later used a similar procedure~\citep{vincent:2008}.
+
+
+{\em Dropout}~\citep{Hinton2012,frey2013}  removes units from NNs during training to improve generalisation. Some view it as an ensemble method that trains multiple data models simultaneously~\citep{baldidropout2014}. 
+%baldi2013
+Under certain circumstances, 
+it could also be viewed as a form of training set augmentation: 
+effectively, more and more informative complex features are removed from the training data. 
+Compare dropout for RNNs~\citep{Pham2013,pachitariu2013regularization,pascanu2013construct}. 
+A deterministic approximation coined {\em fast dropout}~\citep{wang2013fast} can lead to faster learning and evaluation and was adapted for RNNs~\citep{bayer2013fast}.
+Dropout is closely related to older, biologically plausible techniques 
+for adding noise to neurons 
+or synapses during training~\citep[e.g.,][]{hanson1990,Murray:93,Schuster:92,Nadal:94,giles95,an96},
+which in turn are closely related to finding perturbation-resistant low-complexity NNs,
+e.g., through FMS (Sec.~\ref{mdlnn}).
+MDL-based stochastic variational methods~\citep{Graves2011} 
+are also related to FMS.
+They are useful for RNNs, where classic regularizers such as  weight decay
+(Sec.~\ref{mdlnn}) represent a 
+bias towards limited memory capacity~\citep[e.g.,][]{pascanu2013}. 
+Compare recent work on variational recurrent AEs~\citep{bayer2014variational}.
+
+The activation function $f$ of {\em Rectified Linear Units} (ReLUs)  is
+$f(x) =  x$ for $x > 0, f(x)=0$ otherwise---compare the old concept of half-wave rectified units~\citep{malik1990}.
+ReLU NNs are useful for RBMs~\citep{Nair2010,Maas2013}, outperformed sigmoidal activation
+functions in deep NNs~\citep{Glorot2011a}, and helped to obtain  best results on several benchmark 
+problems across multiple domains~\citep[e.g.,][]{Krizhevsky:2012,Dahl2013}.
+
+
+
+NNs with competing linear units tend to outperform those with non-competing nonlinear
+units, and avoid catastrophic forgetting through BP 
+when training sets change over time~\citep{srivastava2013compete}. In this context,
+choosing a learning algorithm may be more important than choosing activation functions~\citep{Goodfellow2014}.
+{\em Maxout} NNs~\citep{goodfellow2013maxout} combine
+competitive interactions and 
+dropout (see above) to achieve excellent results on certain
+benchmarks.
+Compare early RNNs with competing units for SL and RL~\citep{Schmidhuber:89cs}.
+To address overfitting, instead of depending on  pre-wired regularizers and hyper-parameters~\citep{Hertz:91,bishop:2006},
+self-delimiting RNNs (SLIM NNs) with competing units~\citep{Schmidhuber:12slimnn}
+can in principle learn to select their own runtime and their own numbers of effective free parameters,
+thus learning their own computable regularisers (Sec.~\ref{mdl},~\ref{mdlnn}), 
+ becoming fast and  {\em slim} when necessary.
+One may  penalize the task-specific  total length of connections~\citep[e.g.,][]{maass2002wire,Schmidhuber:12slimnn,Schmidhuber:13powerplay,clune2013modular} 
+and communication costs of 
+SLIM NNs implemented on the 3-dimensional brain-like multi-processor 
+hardware to be expected in the future.
+
+
+{\em RmsProp}~\citep{Tieleman2012,Schaul2012} can speed up first order gradient descent methods (Sec.~\ref{1970},~\ref{betterbp}); 
+compare vario-$\eta$~\citep{DBLP:conf/nips/NeuneierZ96},
+{\em Adagrad}~\citep{Duchi2011} and {\em Adadelta}~\citep{zeiler2012}.
+DL in NNs can also be improved
+%through shortcut connections between distant layers, and 
+by transforming hidden unit activations such that they have zero output and slope on average~\citep{raiko2012}.
+Many additional, older tricks (Sec.~\ref{betterbp},~\ref{mdlnn}) should also be applicable to today's deep NNs;
+compare~\citep{orr1998neural,tricksofthetrade:2012}.
+
+
+
+
+\subsection{Consequences for Neuroscience}
+\label{bnn}
+It is ironic that artificial NNs (ANNs) can help to better understand biological NNs (BNNs)---see the ISBI 2012 results 
+%{\em ISBI 2012 Challenge on Segmenting Neuronal Structures} 
+mentioned in Sec.~\ref{2012}~\citep{isbi12,ciresan2012nips}.
+
+The feature detectors learned by single-layer visual ANNs 
+are similar to those found in early visual processing stages of BNNs
+(e.g., Sec.~\ref{ulnn}).
+Likewise, the feature detectors learned in {\em deep} layers of visual ANNs should be highly predictive of what neuroscientists will find in {\em deep} layers of BNNs. While the visual cortex of BNNs may use quite different learning algorithms, its objective function to be minimised may be quite similar to the one of visual ANNs. 
+In fact, results obtained 
+with relatively deep artificial DBNs~\citep{lee2007sparse} and CNNs~\citep{Yamins2013}
+seem compatible with insights about
+the visual pathway in the primate cerebral cortex,
+which has been studied for many decades~\citep[e.g.,][]{hubel1968,perrett1982,desimone1984,felleman1991,perrett1992,Tanaka:94,logothetis1995,Bichot:05,poggio2005,lennie2005,connor2007,kriegeskorte2008,dicarlo2012}; compare a 
+computer vision-oriented survey~\citep{kruger2013}.
+%tarr1998
+
+
+
+\subsection{DL with Spiking Neurons?}
+\label{spiking}
+Many recent DL results profit from GPU-based traditional deep NNs, e.g., Sec.~\ref{2007}--\ref{2011}. Current GPUs, however, are little ovens, much hungrier for energy than biological brains, whose neurons efficiently communicate by brief spikes~\citep{hodgkin1952,fitzhugh1961,nagumo1962}, 
+and often remain quiet. Many computational models of such 
+{\em spiking neurons} have been proposed and analyzed~\citep[e.g.,][]{gerstner1992,zipser1993,stemmler1996,tsodyks1996,maex1996,maass1996,maass1997,kistler1997,amit1997,tsodyks1998,kempter1999,song2000,stoop2000,brunel2000,bohte2002,gerstnerbook,izhikevich2003,seung2003,deco2005,brette2007,brea2013,nessler2013,kasabov2014,maass2014,rezende2014}.
+%out: gabbiani1998,galarreta1999,
+
+Future energy-efficient hardware for DL in NNs may implement aspects of such models~\citep[e.g.,][]{liu2001,roggen2003,glackin2005,schemmel2006,fieres2008,khan2008,serrano2009,jin2010,indiveri2011,neil2014,merolla2014}. 
+A simulated, event-driven, spiking variant~\citep{nefti2014} of an RBM (Sec.~\ref{2006})
+was trained by a variant of the
+{\em Contrastive Divergence} algorithm~\citep{hinton:2002}.
+Spiking nets were evolved to achieve reasonable performance on small face recognition data sets~\citep{wysoski2010} and to control simple robots~\citep{floreano2001,hagras2004}.
+A spiking DBN with about 250,000 neurons~\citep[as part of a larger NN;][]{eliasmith2012,eliasmith2013} 
+achieved 6\% error rate on MNIST;
+compare similar results with a spiking DBN variant of depth 3 using a neuromorphic event-based sensor~\citep{oconnor2013}. 
+In practical applications, however,
+current artificial networks of
+spiking neurons cannot yet compete with the best traditional deep NNs
+(e.g., compare MNIST results of Sec.~\ref{2011}). 
+%(roughly 0.2\% error rate on MNIST; Sec.~\ref{2011}).
+
+\newpage
+\section{DL in FNNs and RNNs for Reinforcement Learning (RL)}
+\label{deeprl}
+
+So far we have focused on 
+Deep Learning (DL) in supervised or unsupervised NNs.
+Such NNs learn to perceive / encode / predict / classify 
+patterns or pattern sequences, 
+but they do not learn to act in the more general
+sense of {\em Reinforcement Learning} (RL) in unknown environments \citep[see surveys, e.g.,][]{Kaelbling:96,Sutton:98,wiering2012}.
+Here we add a discussion of DL FNNs and RNNs for RL. 
+It will be shorter than the discussion of FNNs and RNNs for SL and UL (Sec.~\ref{super}),
+reflecting the current size of the various fields.
+
+Without a teacher, solely from occasional  real-valued
+pain and pleasure signals,  RL agents must discover how to interact with a
+dynamic, initially unknown environment to maximize their expected cumulative reward
+signals (Sec.~\ref{notation}).
+There may be arbitrary, a priori unknown delays between actions and perceivable consequences.
+The problem is as hard as any problem of computer science,
+since any task with a computable description can be formulated in the RL framework \citep[e.g.,][]{Hutter:05book+}.
+For example, an answer to the famous question of 
+whether $P=NP$~\citep{Levin:73,Cook:71}
+would also set limits for what is achievable by general RL.
+Compare more specific limitations, e.g.,~\citep{blondel2000,madani2003,vlassis2012}.
+The following subsections mostly focus on certain obvious intersections 
+between DL and RL---they cannot serve as a general RL survey.  
+
+\subsection{RL Through NN World Models Yields RNNs With Deep CAPs}
+\label{worrl}
+
+In the special case of an RL FNN controller 
+$C$ interacting with a 
+{\em deterministic, predictable} environment, 
+a separate FNN called $M$ 
+can learn to become $C$'s {\em world model} through {\em system identification},
+predicting $C$'s inputs from previous actions and inputs~\citep[e.g.,][]{Werbos:81sensitivity,Werbos:87,Munro:87,Jordan:88,Werbos:89identification,Werbos:89neurocontrol,RobinsonFallside:89,JordanRumelhart:90,Schmidhuber:90sandiego,narendra1990,Werbos:92sticky,kawato1993,cochocki1993,levin1995,miller1995,ljung1998,prokhorov2001,ge2010}.
+Assume $M$ has learned to produce accurate predictions.
+We can use $M$ to substitute the environment.
+Then $M$ and $C$ form an RNN where $M$'s outputs become inputs of $C$, 
+whose outputs (actions) in turn become inputs of $M$.
+Now BP  for RNNs (Sec.~\ref{bp}) can be used 
+to achieve {\em desired input events}  such as high real-valued reward signals:
+While $M$'s weights remain fixed,
+gradient information for $C$'s weights is propagated
+back through $M$ down into $C$ and
+back through $M$ etc. 
+To a certain extent, the approach is also applicable in probabilistic or uncertain environments, as long as the inner products of $M$'s $C$-based gradient estimates and $M$'s ``true" gradients tend to be positive. 
+
+In general, this approach
+ implies deep CAPs for $C$, unlike in DP-based traditional  RL (Sec.~\ref{trarl}).
+Decades ago, the method was used to
+ learn to back up a model truck~\citep{NguyenWidrow:89}.
+An RL active vision system used it to learn sequential shifts (saccades) of a fovea, to
+detect targets in visual scenes~\citep{SchmidhuberHuber:91},
+thus learning to control selective attention.
+Compare RL-based attention learning without NNs~\citep{Whitehead:92}.
+
+
+To allow for memories of previous events in
+{\em partially observable worlds}
+ (Sec.~\ref{pomrl}),
+the most general variant of this technique uses 
+RNNs instead of FNNs to implement both $M$ and $C$ ~\citep{Schmidhuber:90sandiego,Schmidhuber:91nips,feldkamp1998}.
+This may cause deep CAPs not only for $C$ but also for $M$.
+
+$M$ can also be used to optimize expected reward by {\em planning} future action sequences~\citep{Schmidhuber:90sandiego}.
+In fact, the winners of the 2004 RoboCup World Championship in the fast league~\citep{egorova03}
+trained NNs to predict the effects of steering signals on fast
+robots with 4 motors for 4 different wheels. During play, such NN models were used 
+to achieve desirable subgoals, 
+by optimizing action sequences through quickly planning ahead. The approach also
+was used to create {\em self-healing} robots able to compensate for faulty motors whose effects do not longer 
+match the predictions of the NN models~\citep{gloye05,schmidhuber2007pro}. 
+
+Typically $M$ is not given in advance. Then 
+an essential question is: which experiments should $C$ conduct to quickly improve $M$?
+The {\em Formal Theory of Fun and Creativity}~\citep[e.g.,][]{Schmidhuber:06cs,Schmidhuber:13powerplay}
+ formalizes driving forces and value functions behind such curious and exploratory behavior: 
+A measure of the {\em learning progress} of $M$ becomes the intrinsic reward of $C$~\citep{Schmidhuber:91singaporecur}; compare~\citep{Singh:05nips,Oudeyer:12intrinsic}.
+This motivates $C$ to create action sequences (experiments) such that $M$ makes quick progress.
+
+
+
+\subsection{Deep FNNs for Traditional RL and Markov Decision Processes (MDPs)}
+\label{trarl}
+
+The classical
+approach to RL~\citep{Samuel:59,Bertsekas:96} makes the simplifying 
+assumption of {\em Markov Decision Processes} (MDPs): 
+the current input of the RL agent
+conveys all information necessary to compute an optimal next 
+output event or decision. 
+This allows for greatly reducing CAP depth in RL NNs (Sec.~\ref{caps},~\ref{worrl}) 
+by using the {\em Dynamic Programming} (DP) trick~\citep{Bellman:1957}.
+The latter is often explained in a probabilistic framework~\citep[e.g.,][]{Sutton:98}, 
+but its basic idea can already be conveyed in a deterministic setting.
+For simplicity, 
+using the notation of Sec.~\ref{notation},
+let input events $x_t$ encode the entire current state of
+the environment, including a real-valued reward $r_t$
+(no need to introduce additional vector-valued notation, 
+since real values can encode arbitrary vectors of real values).
+The original RL goal (find weights that maximize the sum of all rewards of an episode) 
+is replaced by an equivalent set of alternative goals set by a
+real-valued value function $V$ defined on input events.
+Consider any two subsequent input events $x_t,x_k$.
+Recursively define $V(x_t)=r_t+V(x_k)$, where $V(x_k)=r_k$ if $x_k$ is the {\em last} input event.
+Now search for weights that maximize the $V$ 
+of all input events, 
+by causing appropriate output events or actions. 
+
+Due to the Markov assumption,
+an FNN suffices to implement the policy that maps input to output events.
+Relevant CAPs are not deeper than this FNN. 
+$V$ itself is often modeled by a {\em separate FNN} (also yielding typically short CAPs) 
+learning to approximate $V(x_t)$ 
+only from {\em local} information $r_t, V(x_k)$.
+
+Many variants of traditional RL exist~\citep[e.g.,][]{BartoSuttonAnderson:83,Watkins:89,WatkinsDayan:92,Moore:93,Schwartz:93,Rummery:94,Singh:94R,Baird:95,Kaelbling:95,Peng:96,Mahadevan:96,Tsitsiklis:96,96-BradtkeLstd,Santamaria:97,prwu97,Sutton:98,Wiering:98,baird:nips12,meuleau:icuai99,Doya:00,Bertsekas:01,brafman02,Abounadi:02,03-LspiLagoudakis,09-Gtd,10-GqLambda,hasselt2012}.
+%Baird:94,
+Most are formulated in a probabilistic framework,
+and evaluate pairs of input and output (action) events (instead of input events only).
+To facilitate certain mathematical derivations,
+some discount delayed rewards,
+but such distortions of the original RL problem are problematic.
+
+Perhaps the most well-known RL NN is the  world-class RL backgammon player~\citep{Tesauro:94},
+which achieved the level of human world champions by playing against itself.
+Its nonlinear, rather shallow FNN maps a large but finite
+number of discrete board states to values.   
+More recently, a rather deep GPU-CNN  was used in
+a traditional RL framework  to play several Atari 2600 computer games directly from 
+84x84 pixel 60 Hz video input~\citep{atari2013},
+using experience replay~\citep{Lin:93},
+extending previous work on {\em Neural Fitted Q-Learning} (NFQ)~\citep{nfq}.
+Even better results are achieved by using (slow) Monte Carlo tree planning to
+train comparatively fast deep NNs~\citep{atarimcts2014}.
+Compare RBM-based RL~\citep{sallans2004} with high-dimensional inputs~\citep{elfwing2010},
+earlier RL Atari players~\citep{gruettner2010multi},
+and an earlier, raw video-based RL NN for computer games~\citep{koutnik:gecco13} trained by {\em Indirect Policy Search}
+(Sec.~\ref{comrl}). 
+
+
+\subsection{Deep RL RNNs for Partially Observable MDPs (POMDPs)}
+\label{pomrl}
+
+The {\em Markov assumption} 
+(Sec.~\ref{trarl}) is often unrealistic. We cannot directly perceive 
+what is behind our back, let alone the current state of the entire universe. 
+However, memories of previous events
+can help to deal with  
+{\em partially observable Markov decision problems} (POMDPs)~\citep[e.g.,][]{Schmidhuber:90sandiego,Schmidhuber:91nips,Ring:91,Ring:93,Ring:94,Williams:92,Lin:93,Teller:94,Kaelbling:95,Littman:95,Boutilier:96,Jaakkola:95,McCallum:96,kimura1997,Wiering:96levin,Wiering:97ab,otsuka2010}.
+%Littman:96,
+A naive way of implementing memories without leaving the MDP framework 
+(Sec.~\ref{trarl}) would be to simply consider a 
+possibly huge state space, namely, 
+the set of all possible observation histories and their prefixes. 
+A more realistic way is to use function approximators such as RNNs that produce 
+compact state features as a function of the entire history seen so far.
+Generally speaking, POMDP RL often uses DL RNNs to learn 
+which events to memorize and which to ignore.
+Three basic alternatives are: 
+\begin{enumerate}
+\item
+Use an RNN as a value function mapping arbitrary event histories to values~\citep[e.g.,][]{Schmidhuber:90cmss,Schmidhuber:91nips,Lin:93,Bakker:01nips}. 
+%~\citep{Schmidhuber:90cmss,Schmidhuber:90washington,Schmidhuber:91nips,Lin:93,Bakker:01nips}.
+For example, deep LSTM RNNs were used in this way for RL robots~\citep{Bakker:03robot}.
+\item
+Use an RNN controller in conjunction with a second RNN as predictive world model,
+to obtain a combined RNN with deep CAPs---see Sec.~\ref{worrl}.
+\item
+Use an RNN for RL by {\em Direct Search} (Sec.~\ref{evorl}) or {\em Indirect Search} (Sec.~\ref{comrl}) in weight space.
+\end{enumerate}
+In general, however, POMDPs may imply greatly increased CAP depth.
+
+
+
+\subsection{RL Facilitated by Deep UL in FNNs and RNNs}
+\label{unsrl}
+
+RL machines 
+may profit from UL for input preprocessing~\citep[e.g.,][]{Jodogne07}.
+In particular, an UL NN  can 
+learn to compactly encode environmental inputs such as images or videos,
+e.g., Sec.~\ref{1987},~\ref{1991b},~\ref{2006}.
+The compact codes (instead of the high-dimensional 
+raw data) can be fed into an RL machine,
+whose job thus may become much easier~\citep{Legenstein2010,cuccu2011},
+just like SL may profit from UL, e.g., Sec.~\ref{1987},~\ref{1991b},~\ref{2006}.
+For example, NFQ~\citep{nfq} was applied to real-world control tasks~\citep{lange,rieijcnn12} 
+where purely visual inputs were compactly encoded by deep
+autoencoders (Sec.~\ref{1987},~\ref{2006}). 
+RL combined with 
+UL based on {\em Slow Feature Analysis}~\citep{WisSej2002,DBLP:journals/neco/KompellaLS12} enabled
+a real humanoid robot to learn skills from raw high-dimensional video streams~\citep{luciwkomp13}.
+%\citep{kompella12icdl,luciwkomp13}.
+To deal with POMDPs (Sec.~\ref{pomrl}) involving high-dimensional inputs, 
+RBM-based RL was used~\citep{otsuka2010phd},
+%otsuka2008
+and a RAAM~\citep{pollack1988implications} (Sec.~\ref{1987})
+was employed as a deep unsupervised sequence encoder  
+ for RL~\citep{Gisslen2011agi}.
+Certain types of RL and UL also were combined in biologically plausible RNNs with spiking 
+neurons (Sec.~\ref{spiking})~\citep[e.g.,][]{yin2012,maass2013,rezende2014}.
+
+
+
+\subsection{Deep Hierarchical RL (HRL) and Subgoal Learning with FNNs and RNNs}
+\label{subrl}
+ 
+Multiple learnable 
+levels of abstraction~\citep{Fu:77,Lenat:84,Ring:94,bengio2013tpami,lideng2014} seem as important for RL as for SL. 
+Work on NN-based {\em Hierarchical RL} (HRL) has been
+published since the early 1990s. 
+In particular,
+gradient-based {\em subgoal discovery} with FNNs or RNNs decomposes RL tasks into subtasks
+for RL submodules~\citep{Schmidhuber:91icannsubgoals,SchmidhuberWahnsiedler:92sab}.
+Numerous alternative HRL techniques have been proposed~\citep[e.g.,][]{Ring:91,Ring:94,Jameson:91,TenenbergKarlssonWhitehead,Weiss:94a,partigame,Precup:MTimeNIPS98,Dietterich:MAXQ,menache2002,DoyaSamejimaKatagiriKawato,ghavamzadehICML03,barto2003hrl,SamejimaDoyaKawato,Bakker:04ias,stoneML05,simsek2008skill}.
+While HRL frameworks such as {\em Feudal RL}~\citep{Dayan:93} 
+and {\em options}~\citep{sutton1999between,Barto:04,Singh:05nips} 
+do not directly address the problem of automatic subgoal discovery,
+{\em HQ-Learning}~\citep{Wiering:97ab}  automatically decomposes POMDPs (Sec.~\ref{pomrl})
+into sequences of simpler subtasks that can be solved by memoryless policies
+learnable by reactive sub-agents.    
+%The HASSLE algorithm~\citep{Bakker:04ias}  outperformed earlier methods in experiments.
+Recent HRL organizes potentially deep NN-based RL sub-modules into
+self-organizing, 2-dimensional motor control maps~\citep{ring:icdl2011}
+inspired by neurophysiological findings~\citep{Graziano:book}.
+
+
+
+\subsection{Deep RL by Direct NN Search / Policy Gradients / Evolution}
+\label{evorl}
+
+Not quite as universal as the methods of Sec.~\ref{unirl},
+yet both practical and more general than most traditional RL algorithms (Sec.~\ref{trarl}), are 
+methods for {\em Direct Policy Search} (DS).
+Without a need for value functions or Markovian assumptions (Sec.~\ref{trarl},~\ref{pomrl}), 
+the weights of an FNN or RNN are directly evaluated on the given RL problem.
+The results of successive trials inform further search for better weights.
+Unlike with RL supported by BP (Sec.~\ref{1970},~\ref{pomrl},~\ref{worrl}),
+CAP depth (Sec.~\ref{caps},~\ref{1991a}) is not a crucial issue.
+DS may solve the credit assignment problem without 
+backtracking through deep causal chains of 
+modifiable parameters---it neither cares for their existence,
+nor tries to exploit them.
+%~\citep{Schmidhuber:01direct}. 
+
+
+An important class of DS methods for NNs are 
+{\em Policy Gradient}
+methods~\citep{Williams:86,Williams:88,Williams:92,Sutton:99,baxter2001,aberdeenthesis,ghavamzadehICML03,stoneICRA04,wierstraCEC08,rueckstiess2008b,peters2008neuralnetworks,peters2008neurocomputing,sehnke2009parameter,gruettner2010multi,wierstra2010,peters2010,grondman2012,heess2012}.
+%sehnke2010policy,baxter99direct,wierstraICANN07,
+Gradients of the total reward with respect to policies (NN weights) are 
+estimated (and then exploited) through repeated NN evaluations.
+
+RL NNs can also be evolved through
+{\em Evolutionary Algorithms} (EAs)~\citep{Rechenberg:71,Schwefel:74,Holland:75,Fogel:66,goldberg:gabook89}
+ in a series of trials.
+Here several policies are represented by a population
+of NNs improved through mutations and/or
+repeated recombinations of the population's fittest individuals~\citep[e.g.,][]{montana1989,fogel1990,maniezzo1994,happel1994,nolfi1994}.
+Compare {\em Genetic Programming} (GP)~\citep{Cramer:85}~\citep[see also][]{smith80} which
+can be used to evolve computer programs of variable size~\citep{gp87,Koza:92},
+and {\em Cartesian GP}~\citep{miller2000,miller2009} 
+%miller2009 also with Simon Harding
+for evolving graph-like programs,
+including NNs~\citep{khan2010} and their topology~\citep{turner2013}.
+Related methods include 
+{\em probability distribution-based EAs}~\citep{Baluja:94,saravanan:ieeeexpert95,Salustowicz:97ecj,Larraanaga2001}, 
+{\em Covariance Matrix Estimation Evolution Strategies} (CMA-ES)~\citep{hansenCMA,hansen2003,igel:cec03,heidrich-meisner:09},
+and {\em NeuroEvolution of Augmenting Topologies} (NEAT)~\citep{stanley:ec02}.
+Hybrid methods combine traditional NN-based RL (Sec.~\ref{trarl}) and EAs~\citep[e.g.,][]{whiteson2006}.
+
+
+Since RNNs are general computers, 
+RNN evolution is like GP in the sense that it can evolve general programs.
+Unlike sequential programs learned by traditional GP, however, RNNs can mix sequential and parallel information processing in a natural and efficient way, as already 
+mentioned in Sec.~\ref{intro}. Many RNN evolvers have been proposed \citep[e.g.,][]{miller:icga89,wieland1991,cliff1993,yao:review93,nolfi:alife4,Sims:1994:EVC,yamauchi94sequential,miglino95evolving,moriarty:phd,pasemann99,juang2004,whiteson2012}.
+One particularly effective  family of methods {\em coevolves} neurons, combining them into networks, and
+selecting those neurons for reproduction that participated in the best-performing
+networks~\citep{moriarty:ml96,gomez:phd,Gomez:03}. This
+can help to solve deep POMDPs~\citep{Gomez:05gecco}.
+{\em Co-Synaptic Neuro-Evolution} (CoSyNE) does something similar on the level of synapses or weights~\citep{Gomez:08jmlr};
+benefits of this were shown on difficult nonlinear POMDP benchmarks.
+% removed {gomez:ab97,gomez:ijcai99,Gomez:06ecml}. In an extensive comparison of RL methods~\citep{Gomez:08jmlr}, {\em Co-Synaptic Neuro-Evolution} (CoSyNE) achieved the best known results on a set of difficult nonlinear POMDP benchmarks, including very deep ones. 
+
+{\em Natural Evolution Strategies} (NES)~\citep{wierstraCEC08,glasmachers:2010b,Sun2009a,sun:gecco13} link policy
+gradient methods and evolutionary approaches through the concept of {\em Natural Gradients}~\citep{amari1998natural}.
+RNN evolution may also help to improve SL for deep RNNs 
+through {\em Evolino}~\citep{Schmidhuber:07nc} (Sec.~\ref{1991a}).
+%~\citep{Schmidhuber:05ijcai,Schmidhuber:07nc}
+
+
+\subsection{Deep RL by Indirect Policy Search / Compressed NN Search}
+\label{comrl}
+
+Some DS methods (Sec.~\ref{evorl}) can evolve NNs  
+with hundreds or thousands of weights, but not millions. 
+How to search for large and deep NNs? 
+Most SL and RL methods mentioned so far somehow search the space of weights $w_i$. 
+Some profit from a reduction of the search space through shared $w_i$ 
+that get reused over and over again, e.g., in CNNs (Sec.~\ref{1979},~\ref{1989},~\ref{2007},~\ref{2012}),
+or in RNNs for SL (Sec.~\ref{1970},~\ref{1997},~\ref{2009}) and RL (Sec.~\ref{worrl},~\ref{pomrl},~\ref{evorl}).
+
+It may be possible, however, to exploit {\em additional} regularities/compressibilities 
+in the space of solutions, through {\em indirect search in weight space}.
+Instead of evolving large NNs directly (Sec.~\ref{evorl}), one can sometimes greatly reduce
+the search space by evolving 
+{\em compact encodings} of NNs, e.g.,  through  {\em Lindenmeyer Systems}~\citep{lindenmayer68,lindenmayer94}, {\em graph rewriting}~\citep{kitano90}, {\em Cellular Encoding}~\citep{gruau:tr96-048}, {\em HyperNEAT}~\citep{stanley07,stanley09,clune2011,vandenberg2013} (extending
+NEAT; Sec.~\ref{evorl}), and extensions thereof~\citep[e.g.,][]{risi2012}. 
+This helps to avoid overfitting (compare Sec.~\ref{mdlnn},~\ref{tricks}) and is 
+closely related to the topics of regularisation 
+and MDL (Sec.~\ref{mdl}).
+
+A general approach~\citep{Schmidhuber:97nn+} for both SL and RL seeks to compactly encode weights of large NNs~\citep{Schmidhuber:97nn+} through programs written in a {\em universal programming language}~\citep{Goedel:31,Church:36,Turing:36,Post:36}. Often it is much more efficient to systematically search the space of such programs with a bias towards short and fast 
+programs~\citep{Levin:73,Schmidhuber:97nn+,Schmidhuber:04oops}, 
+%Schmidhuber:97bias,
+instead of directly 
+searching the huge space of possible NN weight matrices.
+A previous 
+universal language for encoding NNs  was assembler-like~\citep{Schmidhuber:97nn+}. More recent work uses more practical languages based on coefficients of popular transforms (Fourier, wavelet, etc). 
+In particular, 
+ RNN weight matrices may be compressed like images, by encoding them through the coefficients of a 
+{\em discrete cosine transform} (DCT)~\citep{koutnik:gecco10,koutnik:gecco13}.
+%\citep{koutnik:agi10,koutnik:gecco10,koutnik:gecco13,DBLP:conf/ppsn/SrivastavaSG12}.
+%Compact DCT-based descriptions can be  evolved through Natural Evolution Strategies (NES)~\citep{glasmachers:2010b,Sun2009a,sun:gecco13} or Co-Synaptic Neuro-Evolution (CoSyNE) ~\citep{Gomez:08jmlr} 
+Compact DCT-based descriptions can be evolved through NES or CoSyNE
+(Sec.~\ref{evorl}).
+An RNN with over a million weights learned (without a teacher) to drive a simulated car 
+in the TORCS driving game~\citep{wcci:torcs:09,torcs-manual:2011},
+based on a high-dimensional video-like visual input stream~\citep{koutnik:gecco13}.
+The RNN learned both control and visual processing from scratch, without being
+aided by UL. (Of course, UL might help to generate more compact image codes
+(Sec.~\ref{unsrl},~\ref{ul})
+ to be fed into a smaller RNN, 
+to reduce the overall computational effort.) 
+
+\subsection{Universal RL}
+\label{unirl}
+
+%Is it possible to learn better and better learning algorithms? In 1987, a first hierarchical approach~\citep[p. 7-13]{schmidhuber87} towards self-referential self-improvement was to apply Genetic Programming (GP)~\citep{Cramer:85,smith80,gp87,Koza:92} to itself, to evolve even better GP methods~\citep{schmidhuber87}---a form of meta-GP. Meta-GP recursively builds a stack of GP modules, each using GP to learn a better GP learning algorithm for the lower level. The recursion terminates based on the fitness of the programs in the lowest (domain) level. 
+
+{\em General purpose learning algorithms}
+may improve themselves in open-ended fashion
+and environment-specific 
+ways in a lifelong learning 
+context~\citep{schmidhuber87,Schmidhuber:97bias,Schmidhuber:97ssa,scholarpedia2010}. 
+%out Schmidhuber:94self,Schmidhuber:96meta,
+The most general type of RL is constrained only by the
+fundamental limitations of computability identified by 
+the founders of theoretical computer science 
+\citep{Goedel:31,Church:36,Turing:36,Post:36}.
+Remarkably, there exist blueprints of
+ {\em universal problem solvers} or {\em universal RL machines}
+for unlimited problem depth 
+that are  
+time-optimal in various theoretical senses~\citep{Hutter:05book+,Hutter:01fast+,Schmidhuber:02colt,Schmidhuber:05gmai}. 
+In particular, the {\em G\"{o}del Machine} can be implemented 
+on general computers such as RNNs and may improve 
+any part of its software (including the learning algorithm itself)  
+in a way that is provably time-optimal in a certain sense~\citep{Schmidhuber:05gmai}. It can be initialized by an 
+{\em asymptotically optimal}
+meta-method~\citep{Hutter:01fast+} (also applicable to RNNs)
+which will solve any well-defined problem as quickly as the unknown fastest way of solving it, save for an additive constant overhead that becomes negligible as problem size grows. Note that most problems are large; only few are small. AI and DL researchers are still in business because many are interested in problems so small that it is worth trying to reduce the overhead through less general methods, including heuristics. Here I won't further discuss universal RL methods, which go beyond what is usually called DL. 
+
+%\newpage
+\section{Conclusion and Outlook}
+\label{outlook}
+
+{\em Deep Learning} (DL) in 
+{\em Neural Networks} (NNs)
+is relevant for
+{\em Supervised Learning} (SL) (Sec.~\ref{super}),
+{\em Unsupervised Learning} (UL) (Sec.~\ref{super}), and
+{\em Reinforcement Learning} (RL) (Sec.~\ref{deeprl}).
+By alleviating problems with deep {\em Credit Assignment Paths} (CAPs, Sec.~\ref{caps},~\ref{1991a}),
+UL (Sec.~\ref{ulnn}) can not only facilitate 
+SL of sequences  
+(Sec.~\ref{1991b}) and 
+stationary patterns
+(Sec.~\ref{1987},~\ref{2006}), but also 
+RL (Sec.~\ref{unsrl},~\ref{ul}). 
+{\em Dynamic Programming} (DP, Sec.~\ref{dp}) is important for both 
+deep SL (Sec.~\ref{1970})
+and traditional RL with deep NNs (Sec.~\ref{trarl}).
+A search for solution-computing, 
+perturbation-resistant (Sec.~\ref{mdlnn},~\ref{2006},~\ref{tricks}),
+low-complexity  NNs 
+describable by few bits of information (Sec.~\ref{mdl}) can 
+reduce overfitting and 
+improve
+deep SL \& UL (Sec.~\ref{mdlnn},~\ref{ulnn}) as well as RL (Sec.~\ref{comrl}),
+also in the case of partially observable environments (Sec.~\ref{pomrl}). 
+Deep SL, UL, RL often create hierarchies of more and more abstract  
+representations of stationary data (Sec.~\ref{1965},~\ref{1987},~\ref{2006}),
+sequential data (Sec.~\ref{1991b}), or RL policies (Sec.~\ref{subrl}). 
+While UL can facilitate SL, pure SL for feedforward NNs (FNNs) (Sec.~\ref{1970},~\ref{1989},~\ref{2007},~\ref{2010})
+and recurrent NNs (RNNs) (Sec.~\ref{1970},~\ref{1997})
+did not only win early contests (Sec.~\ref{1994},~\ref{2003}) but also
+most of the recent ones   
+(Sec.~\ref{2009}--\ref{2013}).
+Especially DL in FNNs profited from 
+GPU implementations (Sec.~\ref{2007}--\ref{2011}).
+In particular, 
+GPU-based (Sec.~\ref{2011}) Max-Pooling (Sec.~\ref{1999}) Convolutional NNs (Sec.~\ref{1979},~\ref{1989},~\ref{2007})
+won competitions not only in pattern recognition (Sec.~\ref{2011}--\ref{2013}) 
+but also
+image segmentation (Sec.~\ref{2012})
+and object detection (Sec.~\ref{2012}, \ref{2013}).
+
+Unlike these systems, humans {\em learn to actively perceive} patterns by sequentially directing attention to relevant parts of the available data. Near future deep NNs will do so, too, extending previous work since 1990 on NNs that learn selective attention through RL of (a) {\em motor actions} such as saccade control (Sec.~\ref{worrl}) and (b)  {\em internal actions} controlling spotlights of attention within RNNs, thus closing the general sensorimotor loop through both external and internal feedback (e.g., Sec.~\ref{notation},~\ref{2012},~\ref{evorl},~\ref{comrl}).
+
+Many future deep NNs will also take into account that it costs energy
+to activate neurons, and to send signals between them. Brains seem to
+minimize such computational costs during problem solving in at least
+two ways: (1) At a given time, only a small fraction of all neurons is
+active because local competition through winner-take-all mechanisms
+shuts down many neighbouring neurons, and only winners can activate
+other neurons through outgoing connections (compare SLIM NNs;
+Sec.~\ref{tricks}). (2) Numerous neurons are sparsely connected in a
+compact 3D volume by many short-range and few long-range connections
+(much like microchips in traditional supercomputers). Often
+neighbouring neurons are allocated to solve a single task, thus
+reducing communication costs.  Physics seems to dictate that any
+efficient computational hardware will in the future also have to be
+brain-like in keeping with these two constraints. The most successful
+current deep RNNs, however, are not. Unlike certain spiking NNs
+(Sec.~\ref{spiking}), they usually activate all units at least slightly,
+and tend to be strongly connected, ignoring natural constraints of 3D
+hardware. It should be possible to improve them by adopting (1) and
+(2), and by minimizing non-differentiable energy and communication
+costs through direct search in program (weight) space (e.g.,
+Sec.~\ref{evorl},~\ref{comrl}).  These more brain-like RNNs will
+allocate neighboring RNN parts to related behaviors, and distant RNN
+parts to less related ones, thus self-modularizing in a way more
+general than that of traditional self-organizing maps in FNNs
+(Sec.~\ref{ulnn}). They will also implement Occam's razor
+(Sec.~\ref{mdl},~\ref{mdlnn}) as a by-product of energy minimization,
+by finding simple (highly generalizing) problem solutions that require
+few active neurons and few, mostly short connections.
+
+The more distant future may belong to general purpose learning
+algorithms that improve themselves in provably optimal ways
+(Sec.~\ref{unirl}), but these are not yet practical or commercially
+relevant.
+ 
+
+
+
+\section{Acknowledgments}
+\label{ack}
+
+
+Since 16 April 2014, drafts of this paper have undergone massive open online peer review through public mailing lists including 
+{\em connectionists\-@cs.cmu.edu, ml-news\-@googlegroups.com, comp-neuro\-@neuro\-inf.org, genetic\_pro\-gramming\-@yahoo\-groups.com, rl-list\-@googlegroups.com, image\-world\-@diku.dk, Google+ machine learning forum.} 
+Thanks to numerous NN / DL experts for valuable comments. Thanks to SNF, DFG, and the European Commission for partially funding my DL research group in the past quarter-century.
+The contents of this paper may be used for educational and non-commercial purposes, including articles for Wikipedia and similar sites.
+
+\end{sloppypar}
+
+%\newpage
+\bibliography{deep}
+\bibliographystyle{apalike}
+%\bibliographystyle{plain}
+%\bibliographystyle{abbrv}
+%\bibliography{bib,bib_extra}
+%\bibliographystyle{alpha}
+%\bibliographystyle{apalike}
+%\printauthorindex
+\end{document}
+
+
+
+%This paper~\citep{schmidhuber2014deep} profited from valuable comments by (in alphabetical order) Aaron Sloman, Andrew Ng, Bas Steunebrink, Bill Howell, Bonny Banerjee, Chris Eliasmith, Christian Igel, Christian Osendorfer, Christos Dimitrakakis, Dan Ciresan, Danil Prokhorov, Davide Anguita, Dean Wyatte, Emre Neftci, Faustino Gomez, Fred Hamker, Friedrich Sommer, Gary Cottrell, Geoffrey Hinton, Hado van Hasselt, Hans-Georg Zimmermann, Hasim Sak, Hung Ngo, Ian Goodfellow, Itamar Arel, Ivilin Stoianov, Jan Koutnik, Jerry Feldman, Jiri Sima, Jonathan Masci, Jude Shavlik, Juha Karhunen, Julian Miller, Justin Bayer, Juyang Weng, Ke Chen, Kenneth Stanley, Kunihiko Fukushima, Kyunghyun Cho, Leonid Perlovsky, Makoto Otsuka, Marcus Liwicki, Martin Riedmiller, Michael Pfeiffer, Morgan Nelson, Nikola Kasabov, Laurenz Wiskott, Ling Shao, Omid David, Paco Zamora-Martinez, Peter Dayan, Peter Ross, Petr Baudis, Pierre Baldi, Pierre Sermanet, Radford Neal, Randal O'Reilly, Rich Sutton, Sebastian Risi, Sepp Hochreiter, Shimon Whiteson, Shuiwang Ji, Sohrob Kazerounian, Stephen J. Hanson, Stuart Dreyfus, Subhash Kak, Tapani Raiko, Thomas Unterthiner, Tomaso Poggio, Tsvi Achler, Vasant Honavar, Varun Kompella, Wolfgang Maass, Wulfram Gerstner, Yann LeCun, Yaochu Jin, Yoshua Bengio, Zhaohui Wu, Zy Hu, and others. It also profited from earlier comments on a more focused paper~\citep{mydeep2013} by some of the above-mentioned researchers, and others including Alex Graves, Andreas Griewank, Marc'Aurelio Ranzato, Mike Mozer, Paul Werbos, Peter Norvig, Seppo Linnainmaa, Shun-ichi Amari, Sven Behnke, Yu-Chi Ho. 
+
+
+
+
+
+
+
