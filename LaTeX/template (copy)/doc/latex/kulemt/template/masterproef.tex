@@ -1,0 +1,125 @@
+\documentclass[master=elt,masteroption=eg,english]{kulemt}
+\setup{title={The best master thesis ever},
+  author={Een Auteur\and Tweede Auteur},
+  promotor={Prof.\,dr.\,ir.\ Weet Beter},
+  assessor={Ir.\,W. Eetveel\and W. Eetrest},
+  assistant={Ir.\ A.~Assistent \and D.~Vriend}}
+% De volgende \setup mag verwijderd worden als geen fiche gewenst is.
+\setup{filingcard,
+  translatedtitle={Beste masterproef ooit al geschreven},
+  udc=621.3,
+  shortabstract={Hier komt een heel bondig abstract van hooguit 500
+    woorden. \LaTeX\ commando's mogen hier gebruikt worden. Blanco lijnen
+    (of het commando \texttt{\string\pa r}) zijn wel niet toegelaten!
+    \endgraf \lipsum[2]}}
+% Verwijder de "%" op de volgende lijn als je de kaft wil afdrukken
+%\setup{coverpageonly}
+% Verwijder de "%" op de volgende lijn als je enkel de eerste pagina's wil
+% afdrukken en de rest bv. via Word aanmaken.
+%\setup{frontpagesonly}
+
+% Kies de fonts voor de gewone tekst, bv. Latin Modern
+\setup{font=lm}
+
+% Hier kun je dan nog andere pakketten laden of eigen definities voorzien
+
+% Tenslotte wordt hyperref gebruikt voor pdf bestanden.
+% Dit mag verwijderd worden voor de af te drukken versie.
+\usepackage[pdfusetitle,colorlinks,plainpages=false]{hyperref}
+
+%%%%%%%
+% Om wat tekst te genereren wordt hier het lipsum pakket gebruikt.
+% Bij een echte masterproef heb je dit natuurlijk nooit nodig!
+\IfFileExists{lipsum.sty}%
+ {\usepackage{lipsum}\setlipsumdefault{11-13}}%
+ {\newcommand{\lipsum}[1][11-13]{\par Hier komt wat tekst: lipsum ##1.\par}}
+%%%%%%%
+
+%\includeonly{chap-n}
+\begin{document}
+
+\begin{preface}
+  I would like to thank everybody who kept me busy the last year,
+  especially my promotor and my assistants. I would also like to thank the
+  jury for reading the text. My sincere gratitude also goes to my wive and
+  the rest of my family.
+\end{preface}
+
+\tableofcontents*
+
+\begin{abstract}
+  The \texttt{abstract} environment contains a more extensive overview of
+  the work. But it should be limited to one page.
+
+  \lipsum[1]
+\end{abstract}
+
+\begin{abstract*}
+  In dit \texttt{abstract} environment wordt een al dan niet uitgebreide
+  Nederlandse samenvatting van het werk gegeven.
+  Wanneer de tekst voor een Nederlandstalige master in het Engels wordt
+  geschreven, wordt hier normaal een uitgebreide samenvatting verwacht,
+  bijvoorbeeld een tiental bladzijden. 
+
+  \lipsum[1]
+\end{abstract*}
+
+% Een lijst van figuren en tabellen is optioneel
+%\listoffigures
+%\listoftables
+% Bij een beperkt aantal figuren en tabellen gebruik je liever het volgende:
+\listoffiguresandtables
+% De lijst van symbolen is eveneens optioneel.
+% Deze lijst moet wel manueel aangemaakt worden, bv. als volgt:
+\chapter{List of Abbreviations and Symbols}
+\section*{Abbreviations}
+\begin{flushleft}
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabularx}{\textwidth}{@{}p{12mm}X@{}}
+    LoG   & Laplacian-of-Gaussian \\
+    MSE   & Mean Square error \\
+    PSNR  & Peak Signal-to-Noise ratio \\
+  \end{tabularx}
+\end{flushleft}
+\section*{Symbols}
+\begin{flushleft}
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabularx}{\textwidth}{@{}p{12mm}X@{}}
+    42    & ``The Answer to the Ultimate Question of Life, the Universe,
+            and Everything'' according to \cite{h2g2} \\
+    $c$   & Speed of light \\
+    $E$   & Energy \\
+    $m$   & Mass \\
+    $\pi$ & The number pi \\
+  \end{tabularx}
+\end{flushleft}
+
+% Nu begint de eigenlijke tekst
+\mainmatter
+
+\include{intro}
+\include{chap-1}
+\include{chap-2}
+% ... en zo verder tot
+\include{chap-n}
+\include{conclusion}
+
+% Indien er bijlagen zijn:
+\appendixpage*          % indien gewenst
+\appendix
+\include{app-A}
+% ... en zo verder tot
+\include{app-n}
+
+\backmatter
+% Na de bijlagen plaatst men nog de bibliografie.
+% Je kan de  standaard "abbrv" bibliografiestijl vervangen door een andere.
+\bibliographystyle{abbrv}
+\bibliography{references}
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
