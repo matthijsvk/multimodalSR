@@ -1,0 +1,165 @@
+\chapter{The Next Chapter}
+\label{cha:2}
+\lipsum[77]
+
+\section{The First Topic of this Chapter}
+\lipsum[78]
+
+\subsection{An item}
+A master thesis is never an isolated work. This means that your text must
+contain references. On-line documents\cite{wiki} as well as
+books\cite{pratchett06:_good_omens} can be referenced.
+
+\section{Figures}
+Figures are used to add illustrations to the text. The \fref{fig:logo} shows
+the KU~Leuven logo as an illustration.
+\begin{figure}
+  \centering
+  \includegraphics{logokul}
+  \caption{The KU~Leuven logo.}
+  \label{fig:logo}
+\end{figure}
+
+\section{Tables}
+Tables are used to present data neatly arranged. A table is normally
+not a spreadsheet! Compare \tref{tab:wrong} en \tref{tab:ok}: which table do
+you prefer?
+
+\begin{table}
+  \centering
+  \begin{tabular}{||l|lr||} \hline
+    gnats     & gram      & \$13.65 \\ \cline{2-3}
+              & each      & .01 \\ \hline
+    gnu       & stuffed   & 92.50 \\ \cline{1-1} \cline{3-3}
+    emu       &           & 33.33 \\ \hline
+    armadillo & frozen    & 8.99 \\ \hline
+  \end{tabular}
+  \caption{A table with the wrong layout.}
+  \label{tab:wrong}
+\end{table}
+
+\begin{table}
+  \centering
+  \begin{tabular}{@{}llr@{}} \toprule
+    \multicolumn{2}{c}{Item} \\ \cmidrule(r){1-2}
+    Animal    & Description & Price (\$)\\ \midrule
+    Gnat      & per gram    & 13.65 \\
+              & each        & 0.01 \\
+    Gnu       & stuffed     & 92.50 \\
+    Emu       & stuffed     & 33.33 \\
+    Armadillo & frozen      & 8.99 \\ \bottomrule
+  \end{tabular}
+  \caption{A table with the correct layout.}
+  \label{tab:ok}
+\end{table}
+
+\section{Lorem Ipsum}
+This section is added to check headers and footers. So this chapter must at
+least contain three pages. To make sure that we get the required amount,
+the \textsf{lipsum} package isn't used but the text is put directly in the
+text.
+
+\subsection{Lorem ipsum dolor sit amet, consectetur adipiscing elit}
+Sed nec tortor id felis tristique sodales. Nulla nec massa eu dui fermentum
+tincidunt. Integer ullamcorper ante eget eros posuere faucibus. Nam id
+ligula ut augue pulvinar vulputate id at purus. Aenean condimentum tortor
+eu mi placerat eget eleifend massa mollis. Nam est mi, sagittis quis
+euismod eget, sagittis in nibh. Proin elit turpis, aliquam et imperdiet
+sed, volutpat eu turpis.
+
+Pellentesque vel enim tellus, vitae egestas turpis. Praesent malesuada elit
+non nisi sollicitudin non blandit lacus tincidunt. Morbi blandit urna at
+lectus ornare laoreet. Suspendisse turpis diam, lobortis dictum luctus
+quis, commodo at lorem. Integer lacinia convallis ultricies. Sed quis augue
+neque, eu malesuada arcu. Nullam vehicula, purus vitae sagittis pulvinar,
+erat eros semper massa, eu egestas nibh erat quis magna. Cras pellentesque,
+nisl eu dapibus volutpat, urna augue ornare quam, quis egestas lectus nulla
+a lectus.
+
+Vivamus dictum libero in massa cursus sed vulputate eros imperdiet. Donec
+lacinia, libero ac lobortis egestas, nibh dui ornare arcu, luctus porttitor
+velit massa sit amet quam. Maecenas scelerisque laoreet diam, vitae congue
+quam adipiscing vitae. Aliquam cursus nisl a leo convallis eleifend
+fermentum massa porta. Nunc libero quam, dapibus dapibus molestie sit amet,
+faucibus vel nunc.
+
+\subsection{Praesent auctor venenatis posuere}
+Sed tellus augue, molestie in pulvinar lacinia, dapibus non ipsum. Fusce
+vitae mi vitae enim ullamcorper hendrerit eu malesuada est. Proin iaculis
+ante sed nibh tincidunt vel interdum libero posuere. Vivamus accumsan metus
+quis felis congue suscipit dapibus enim mattis. Fusce mattis tortor eget
+ipsum interdum sagittis auctor id metus.
+
+Integer diam lacus, pharetra sit amet tempor et, tristique non lorem.
+Aenean auctor, nisi eu interdum fermentum, lectus massa adipiscing elit,
+sed facilisis orci odio a lectus. Proin mi nibh, tempus quis porta a,
+viverra quis enim. In sollicitudin egestas libero, quis viverra velit
+molestie eget. Nulla rhoncus, dolor a mollis vestibulum, lacus elit semper
+nisi, nec sollicitudin sem urna eu magna. Nunc sed est urna, euismod congue
+mi.
+
+\subsection{Cras vulputate ultricies venenatis}
+Vivamus eros urna, sodales accumsan semper vel, lobortis sit amet mauris.
+Etiam condimentum eleifend lorem, ullamcorper ornare lectus aliquet vitae.
+Praesent massa enim, interdum sit amet semper et, venenatis ut elit.
+Quisque faucibus, quam ac lacinia imperdiet, nulla neque elementum purus,
+tempus rutrum justo massa porta sapien. Vestibulum ante ipsum primis in
+faucibus orci luctus et ultrices posuere cubilia Curae; Sed ultrices
+interdum mi, et rhoncus sapien rutrum sed.
+
+Duis elit orci, molestie quis sollicitudin sed, convallis non ante.
+Maecenas tincidunt condimentum justo, et ultricies leo tristique vitae.
+Vestibulum quis quam non lectus dapibus eleifend a vitae nibh. Nam nibh
+justo, pharetra quis iaculis consequat, elementum quis justo. Etiam mollis
+lacinia lacus, nec sollicitudin urna lobortis ac. Nulla facilisi.
+
+Proin placerat risus eleifend erat ultricies placerat. Etiam rutrum magna
+nec turpis euismod consectetur. Phasellus tortor odio, lacinia imperdiet
+condimentum sed, faucibus commodo erat. Phasellus sed felis id ante
+placerat ultrices. Aenean tempor justo in tortor volutpat eu auctor dolor
+mollis. Aenean sit amet risus urna. Morbi viverra vehicula cursus.
+
+\subsection{Donec nibh ante, consectetur et posuere id, tempus nec arcu}
+Curabitur a tellus aliquet ipsum pellentesque scelerisque. Etiam congue,
+risus et volutpat rutrum, est purus dapibus leo, non cursus metus felis
+eget ligula. Vivamus facilisis tristique turpis, ut pretium lectus luctus
+eleifend. Fusce magna sapien, ullamcorper vitae fringilla id, euismod quis
+ante.
+
+Phasellus volutpat, nunc et pharetra semper, sem justo adipiscing mauris,
+id blandit magna quam et orci. Vestibulum a erat purus, ut molestie ante.
+Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere
+cubilia Curae; Proin turpis diam, consequat ut ullamcorper ut, consequat eu
+orci. Sed metus risus, fringilla nec interdum vel, interdum eu nunc.
+Suspendisse vel sapien orci.
+
+\subsection{Morbi et mauris tempus purus ornare vehicula}
+Mauris sit amet diam quam, eget luctus purus. Sed faucibus, risus semper
+eleifend iaculis, mi turpis bibendum nisl, quis cursus nibh nisl sit amet
+ipsum. Vestibulum tempor urna vitae mi auctor malesuada eget non ligula.
+Nullam convallis, diam vel ultrices auctor, eros eros egestas elit, sed
+accumsan arcu tortor eget leo. Vestibulum orci purus, porttitor in pharetra
+eget, tincidunt eget nisl. Nullam sit amet nulla dui, facilisis vestibulum
+dui.
+
+Donec faucibus facilisis mauris ac cursus. Duis rhoncus quam sed nisi
+laoreet eu scelerisque massa tincidunt. Vivamus sit amet libero nec arcu
+imperdiet tempor quis non libero. Sed consequat dignissim justo. Phasellus
+ullamcorper, velit quis posuere vulputate, felis erat tincidunt mauris, at
+vestibulum justo lectus et turpis. Maecenas lacinia convallis euismod.
+Quisque egestas fermentum sapien eu dictum. Sed nec lacus in purus dictum
+consequat quis vel nisl. Fusce non urna sem. Curabitur eu diam vitae elit
+accumsan blandit. Nullam fermentum nunc et leo dictum laoreet. Donec semper
+varius velit vel fringilla. Vivamus eu orci nunc.
+
+\section{Conclusion}
+The final section of the chapter gives an overview of the important results
+of this chapter. This implies that the introductory chapter and the
+concluding chapter don't need a conclusion.
+
+\lipsum[66]
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "thesis"
+%%% End: 
