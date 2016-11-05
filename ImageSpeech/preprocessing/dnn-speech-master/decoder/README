@@ -1,0 +1,10 @@
+1) Create 'eval' directory and run the evalModel_1.py to get the estimated label files for evaluation files
+
+2) Run the oracle_lna.py to convert the estimated lable files into .lna files
+   python oracle_lna.py our_list_phone eval/ lna_eval_estimated
+
+3) Run the oracle_lna.py to convert the actual lable files into .lna file
+   python oracle_lna.py our_list_phone data/origData/eval/ lna_eval_actual
+
+4) Run the decode.sh to get the error rates (please make sure that all files are in place)
+

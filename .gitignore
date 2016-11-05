@@ -1,1 +1,5 @@
 **/NVIDIA*/*
+Datasets/
+*_TrainedModel*
+*_TrainedModel/
+*.mp4

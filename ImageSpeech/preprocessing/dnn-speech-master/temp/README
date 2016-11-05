@@ -1,0 +1,10 @@
+The run_dnn.py script contains four steps
+1) convert the labels into binary form
+2) normalize the mfcc features based on mean-variance normalization
+3) prepare the data for training
+4) training step
+
+Steps 1 and 2 create the corresponding files in separate directories.
+
+Please modify the configurations in the script file settings according 
+to your local system
