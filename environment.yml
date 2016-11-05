@@ -1,0 +1,5 @@
+name: convnets
+channels: !!python/tuple
+- !!python/unicode 'defaults'
+prefix: /users/start2016/r0364010/software/anaconda2/envs/convnets
+
