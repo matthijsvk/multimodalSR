@@ -1,6 +1,10 @@
-from wholevideoToImages import *
+from processDatabase import *
 
 # Testing
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG) #http://stackoverflow.com/questions/6579496/using-print-statements-only-to-debug
+# levels: debug, info, warning, error and critical.
+# logging.debug('A debug message!')
+# logging.info('We processed %d records', len(processed_records))
 
 #test=readfile('lipspeaker.mlf')
 #print(len(test))
@@ -9,57 +13,7 @@ from wholevideoToImages import *
 #video0,phoneme0=processVideoFile(test[0])
 #print(video0)
 #print(phoneme0)
-processMLF('lipspeaker.mlf', '/home/matthijs/Pictures/TCD-TIMIT')
 
-
-
-def loadmat(filename):
-    '''
-    this function should be called instead of direct spio.loadmat
-    as it cures the problem of not properly recovering python dictionaries
-    from mat files. It calls the function check keys to cure all entries
-    which are still mat-objects
-    '''
-    data = spio.loadmat(filename, struct_as_record=False, squeeze_me=True)
-    return _check_keys(data)
-
-def _check_keys(dict):
-    '''
-    checks if entries in dictionary are mat-objects. If yes
-    todict is called to change them to nested dictionaries
-    '''
-    for key in dict:
-        if isinstance(dict[key], spio.matlab.mio5_params.mat_struct):
-            dict[key] = _todict(dict[key])
-    return dict
-
-def _todict(matobj):
-    '''
-    A recursive function which constructs from matobjects nested dictionaries
-    '''
-    dict = {}
-    for strg in matobj._fieldnames:
-        elem = matobj.__dict__[strg]
-        if isinstance(elem, spio.matlab.mio5_params.mat_struct):
-            dict[strg] = _todict(elem)
-        elif isinstance(elem,np.ndarray):
-            dict[strg] = _tolist(elem)
-        else:
-            dict[strg] = elem
-    return dict
-
-def _tolist(ndarray):
-    '''
-    A recursive function which constructs lists from cellarrays
-    (which are loaded as numpy ndarrays), recursing into the elements
-    if they contain matobjects.
-    '''
-    elem_list = []
-    for sub_elem in ndarray:
-        if isinstance(sub_elem, spio.matlab.mio5_params.mat_struct):
-            elem_list.append(_todict(sub_elem))
-        elif isinstance(sub_elem,np.ndarray):
-            elem_list.append(_tolist(sub_elem))
-        else:
-            elem_list.append(sub_elem)
-    return elem_list
+# get phone list from file, extract phonemes and times, get the frames corresponding to those phonemes
+# !!!! Before running this, make sure all the paths to the videos in the MLF file are correct!
+processMLF('./lipspeaker_labelfiles.mlf', '/media/matthijs/TOSHIBA EXT/TCDTIMIT/preparedDB')

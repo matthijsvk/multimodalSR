@@ -2,8 +2,12 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$" />
-    <orderEntry type="jdk" jdkName="Python 2.7.12 (~/bin/anaconda2/envs/convnets/bin/python2.7)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 2.7.12 (~/bin/anaconda/envs/convnets/bin/python2.7)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="wholevideoToImages.py" />
+    <orderEntry type="module" module-name="resnet50" />
+    <orderEntry type="module" module-name="resnet152-pre-trained-imagenet-master" />
+    <orderEntry type="module" module-name="ResNets" />
+    <orderEntry type="module" module-name="caffe-theano-conversion-master" />
   </component>
 </module>
