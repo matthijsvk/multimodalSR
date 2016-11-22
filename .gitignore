@@ -3,3 +3,5 @@ Datasets/
 *_TrainedModel*
 *_TrainedModel/
 *.mp4
+protobuf-master/
+*.caffemodel*

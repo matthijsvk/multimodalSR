@@ -3,6 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/ImageSpeech.iml" filepath="$PROJECT_DIR$/.idea/ImageSpeech.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/.idea/ResNets.iml" filepath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/.idea/ResNets.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Experiments/Caffe/caffe-theano-conversion-master/.idea/caffe-theano-conversion-master.iml" filepath="$PROJECT_DIR$/../Experiments/Caffe/caffe-theano-conversion-master/.idea/caffe-theano-conversion-master.iml" />
+      <module fileurl="file://$PROJECT_DIR$/resnet152-pre-trained-imagenet-master/.idea/resnet152-pre-trained-imagenet-master.iml" filepath="$PROJECT_DIR$/resnet152-pre-trained-imagenet-master/.idea/resnet152-pre-trained-imagenet-master.iml" />
     </modules>
   </component>
 </project>
