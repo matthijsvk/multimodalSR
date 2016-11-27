@@ -4,4 +4,6 @@ Datasets/
 *_TrainedModel/
 *.mp4
 protobuf-master/
-*.caffemodel*
+*caffemodel*
+*.zip
+
