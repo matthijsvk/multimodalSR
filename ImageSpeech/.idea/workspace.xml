@@ -2,18 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6f99c397-9dfe-48cd-8859-553dca035fa6" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/helpFunctions.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/oldFunctions.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test.py" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/myframe.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/myframe3.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/test.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/test1b.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/test2.png" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lipspeaker_test.mlf" afterPath="$PROJECT_DIR$/lipspeaker_test.mlf" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mouthDetection/dlibface.py" afterPath="$PROJECT_DIR$/mouthDetection/dlibface.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mouthDetection/dlibface_original.py" afterPath="$PROJECT_DIR$/mouthDetection/dlibface_original.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/processDatabase.py" afterPath="$PROJECT_DIR$/processDatabase.py" />
     </list>
     <ignored path="ImageSpeech.iws" />
@@ -61,15 +49,16 @@
       <file leaf-file-name="processDatabase.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/processDatabase.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="180">
-              <caret line="258" column="24" selection-start-line="258" selection-start-column="24" selection-end-line="258" selection-end-column="24" />
+            <state relative-caret-position="162">
+              <caret line="294" column="37" selection-start-line="294" selection-start-column="37" selection-end-line="294" selection-end-column="37" />
               <folding>
                 <element signature="e#215#252#0" expanded="true" />
-                <marker date="1480303066191" expanded="true" signature="5799:6117" ph="..." />
-                <marker date="1480303066191" expanded="true" signature="8551:8944" ph="..." />
-                <marker date="1480303066191" expanded="true" signature="9114:10114" ph="..." />
-                <marker date="1480303066191" expanded="true" signature="10074:10114" ph="..." />
-                <marker date="1480303066191" expanded="true" signature="11898:12979" ph="..." />
+                <marker date="1480304901290" expanded="true" signature="5825:6143" ph="..." />
+                <marker date="1480304901290" expanded="true" signature="8988:9381" ph="..." />
+                <marker date="1480304901290" expanded="true" signature="9551:10551" ph="..." />
+                <marker date="1480304901290" expanded="true" signature="9817:10499" ph="..." />
+                <marker date="1480304901290" expanded="true" signature="10511:10551" ph="..." />
+                <marker date="1480304901290" expanded="true" signature="12796:13570" ph="..." />
               </folding>
             </state>
           </provider>
@@ -80,7 +69,9 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="342">
               <caret line="19" column="0" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
-              <folding />
+              <folding>
+                <marker date="1480301738089" expanded="true" signature="413:521" ph="..." />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -573,7 +564,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-1" y="19" width="1922" height="1062" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.14893617" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32905984" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -583,7 +574,7 @@
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32905984" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2962963" sideWeight="0.75212765" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.17819148" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.405291" sideWeight="0.66595745" order="9" side_tool="false" content_ui="tabs" x="1036" y="191" width="613" height="936" />
+      <window_info id="Terminal" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.405291" sideWeight="0.66595745" order="9" side_tool="false" content_ui="tabs" x="1036" y="191" width="613" height="936" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.16346154" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -607,7 +598,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="8" />
+      <option name="time" value="9" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -844,7 +835,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="342">
           <caret line="19" column="0" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
-          <folding />
+          <folding>
+            <marker date="1480301738089" expanded="true" signature="413:521" ph="..." />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -858,15 +851,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/processDatabase.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="258" column="24" selection-start-line="258" selection-start-column="24" selection-end-line="258" selection-end-column="24" />
+        <state relative-caret-position="162">
+          <caret line="294" column="37" selection-start-line="294" selection-start-column="37" selection-end-line="294" selection-end-column="37" />
           <folding>
             <element signature="e#215#252#0" expanded="true" />
-            <marker date="1480303066191" expanded="true" signature="5799:6117" ph="..." />
-            <marker date="1480303066191" expanded="true" signature="8551:8944" ph="..." />
-            <marker date="1480303066191" expanded="true" signature="9114:10114" ph="..." />
-            <marker date="1480303066191" expanded="true" signature="10074:10114" ph="..." />
-            <marker date="1480303066191" expanded="true" signature="11898:12979" ph="..." />
+            <marker date="1480304901290" expanded="true" signature="5825:6143" ph="..." />
+            <marker date="1480304901290" expanded="true" signature="8988:9381" ph="..." />
+            <marker date="1480304901290" expanded="true" signature="9551:10551" ph="..." />
+            <marker date="1480304901290" expanded="true" signature="9817:10499" ph="..." />
+            <marker date="1480304901290" expanded="true" signature="10511:10551" ph="..." />
+            <marker date="1480304901290" expanded="true" signature="12796:13570" ph="..." />
           </folding>
         </state>
       </provider>
