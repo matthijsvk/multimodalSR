@@ -13,6 +13,7 @@ import numpy as np
 import logging, sys
 import traceback
 import time
+import concurrent.futures
 
 import dlib
 from skimage import io
@@ -184,7 +185,15 @@ def extractFaces(sourceDir, storeDir, videoName):
         
         print("Exctracting face from: ", file)
         extractFace(filePath, storePath)
-     
+        
+def extractFacesFunction(video, topDir):
+    videoPath, phonemes = processVideoFile(video)
+    videoName = os.path.splitext(os.path.basename(videoPath))[0]
+    sourceDir = fixStoreDirName(topDir, videoName, video[0])
+    storeDir = ''.join([sourceDir, os.sep, "faces"])
+    print("getting data from: \t", sourceDir)
+    print("saving faces to: \t", storeDir)
+    extractFaces(sourceDir, storeDir, videoName)
      
 def removeInvalidFrames (phonemes, videoName, storeDir, framerate):
     """
@@ -218,11 +227,17 @@ def extractAllFrames (videoPath, videoName, storeDir, framerate, targetSize='960
         # actually run the command, only show stderror on terminal, close the processes (don't wait for user input)
         FNULL = open(os.devnull, 'w')
         p = subprocess.Popen(command, stdout=FNULL, stderr=subprocess.STDOUT, close_fds=True)  # stdout=subprocess.PIPE
-        return 0
+        return 1
 
     else:
         return 0 #files already exist?
 
+def extractAllFramesMethod (video, topDir, framerate):
+    videoPath, phonemes = processVideoFile(video)
+    videoName = os.path.splitext(os.path.basename(videoPath))[0]
+    storeDir = fixStoreDirName(topDir, videoName, video[0])  # eg storeDir = '/media/matthijs/TOSHIBA EXT/TCDTIMIT/processed/lipspeakers/LipSpkr1'
+    print("saving frames to: \t", storeDir)
+    return extractAllFrames(videoPath, videoName, storeDir, framerate, '1920x1080') # 0 if not done, 1 if done
 
 def fixStoreDirName (topDirName, videoName, pathLine):
     """
@@ -255,16 +270,8 @@ batchSize = 10 # number of videos per iteration
 batchIndex = 0
 running = 1
 
-
-def extractFacesFunction(video):
-    videoPath, phonemes = processVideoFile(video)
-    videoName = os.path.splitext(os.path.basename(videoPath))[0]
-    sourceDir = fixStoreDirName(topDir, videoName, video[0])
-    storeDir = ''.join([sourceDir, os.sep, "faces"])
-    print("getting data from: \t", sourceDir)
-    print("saving faces to: \t", storeDir)
-    extractFaces(sourceDir, storeDir, videoName)
-
+# multithread the operations
+executor = concurrent.futures.ProcessPoolExecutor(10)
 
 while running:
     if batchIndex+batchSize > len(videos):
@@ -274,14 +281,19 @@ while running:
     else:
         currentVideos = videos[batchIndex:batchIndex+batchSize]
     # 1. extract the frames
-    for video in currentVideos:
-        videoPath, phonemes = processVideoFile(video)
-        videoName = os.path.splitext(os.path.basename(videoPath))[0]
-        storeDir = fixStoreDirName(topDir, videoName, video[0]) #eg storeDir = '/media/matthijs/TOSHIBA EXT/TCDTIMIT/processed/lipspeakers/LipSpkr1'
-        print("saving frames to: \t", storeDir)
-        extractAllFrames(videoPath, videoName, storeDir, framerate, '1920x1080')
-    sleepTime = 10+len(currentVideos)*2
-    print("Sleepping for ",sleepTime, " seconds to allow files to be written to disk.")
+    
+    futures = [executor.submit(extractAllFramesMethod, video, topDir, framerate) for video in currentVideos]
+    concurrent.futures.wait(futures)
+    print([future.result(20) for future in futures])
+    nbVideosExtracted = sum([future.result() for future in futures])
+    
+    # nbVideosExtracted = 0
+    # for video in currentVideos:
+    #     extractAllFramesMethod(video, topDir, framerate)
+    #     nbVideosExtracted += 1
+    
+    sleepTime = 5+nbVideosExtracted*3
+    print("Sleeping for ",sleepTime, " seconds to allow files to be written to disk.")
     time.sleep(sleepTime) # wait till files have been written
     print("\tAll frames extracted.")
     print("----------------------------------")
@@ -293,13 +305,14 @@ while running:
         storeDir = fixStoreDirName(topDir, videoName, video[0])
         print("removing frames from: \t", storeDir)
         removeInvalidFrames(phonemes, videoName, storeDir, framerate)
-    #time.sleep(len(videos))
+    time.sleep(len(currentVideos))
     print("\tAll unnecessary frames removed.")
     print("----------------------------------")
 
     # 3. extract faces, store in subdir 'faces'
-    for video in currentVideos:
-        extractFacesFunction()
+    futures = [executor.submit(extractFacesFunction, video, topDir) for video in currentVideos]
+    # for video in currentVideos:
+    #     extractFacesFunction(video)
     print("\tAll faces extracted.")
     print("----------------------------------")
     
