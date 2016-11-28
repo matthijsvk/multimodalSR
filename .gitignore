@@ -5,5 +5,4 @@ Datasets/
 *.mp4
 protobuf-master/
 *caffemodel*
-*.zip
-
+.idea/
