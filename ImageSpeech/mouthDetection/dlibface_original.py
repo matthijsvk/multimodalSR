@@ -44,14 +44,15 @@
 #       pip install scikit-image
 #   Or downloaded from http://scikit-image.org/download.html. 
 
-import sys
+import sys,os
 
 import dlib
 from skimage import io
+import cv2
 
 
 detector = dlib.get_frontal_face_detector()
-win = dlib.image_window()
+#win = dlib.image_window()
 
 for f in sys.argv[1:]:
     print("Processing file: {}".format(f))
@@ -65,10 +66,21 @@ for f in sys.argv[1:]:
         print("Detection {}: Left: {} Top: {} Right: {} Bottom: {}".format(
             i, d.left(), d.top(), d.right(), d.bottom()))
 
-    win.clear_overlay()
-    win.set_image(img)
-    win.add_overlay(dets)
-    dlib.hit_enter_to_continue()
+    #win.clear_overlay()
+    #win.set_image(img)
+    #win.add_overlay(dets)
+    #dlib.hit_enter_to_continue()
+    
+   
+    #win.set_image(crop_img)
+    #win.add_overlay(dets)
+    #dlib.hit_enter_to_continue()
+    [dir,base] = os.path.split(str(f))
+    name = base.split('.')[0]
+    print(name)
+    outputPath = ''.join(['.',dir, os.sep, name, "_face.jpg"])
+    print(outputPath)
+    cv2.imwrite(outputPath,img)
 
 
 # Finally, if you really want to you can ask the detector to tell you the score
