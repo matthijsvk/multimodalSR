@@ -1,3 +1,85 @@
+def extractFaces (sourceDir, storeFaceDir, storeMouthDir, videoName):
+    """
+     detect faces, store in 'faces' folder. Extract mouth region, store in 'mouths' folder
+    """
+    # storeDir / videoName / VideoName_frameNumber.jpg
+    from os import listdir
+    from os.path import isfile, join
+    onlyfiles = [f for f in listdir(sourceDir) if isfile(join(sourceDir, f))]
+    onlyfiles.sort(key=tryint)  # sorts list in place
+    # print("files: ", onlyfiles)
+    
+    if not os.path.exists(storeFaceDir):
+        os.makedirs(storeFaceDir)
+    if not os.path.exists(storeMouthDir):
+        os.makedirs(storeMouthDir)
+
+    # detector = dlib.get_frontal_face_detector()
+    detector = cv2.CascadeClassifier(
+            '/home/matthijs/bin/anaconda/envs/convnets/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml')
+    for file in onlyfiles:
+        filename, ext = os.path.splitext(file)
+        videoName, frame = filename.split("_")
+        filePath = ''.join([sourceDir, os.sep, file])  # the file we're processing now
+
+        # print("extracting face and mouth from ", filePath)
+        storeFacePath = ''.join([storeFaceDir, os.sep, videoName, "_face_", str(frame), ".jpg"])  # face saved here
+        if not os.path.exists(storeFacePath):  # don't store if it already exists
+            extractFace(detector, filePath, storeFacePath)
+        
+        storeMouthPath = ''.join([storeMouthDir, os.sep, videoName, "_mouth_", str(frame), ".jpg"])  # mouth saved here
+        if not os.path.exists(storeMouthPath):  # don't store if it already exists
+            extractMouth(storeFacePath, storeMouthPath)
+
+
+
+
+def extractFace (detector, filePath, outputPath):
+    img = io.imread(filePath)
+    
+    img_width = img.shape[1]
+    img_height = img.shape[0]
+    
+    # The 1 in the second argument indicates that we should upsample the image
+    # 1 time.  This will make everything bigger and allow us to detect more
+    # faces.
+    dets = detector(img, 1)
+    for i, d in enumerate(dets):
+        left = d.left()
+        right = d.right()
+        top = d.top()
+        bot = d.bottom()
+    
+    # increase size of rectangle
+    factor = 0.2;
+    add_width = 0  # int( factor/2.0 * abs(right - left))
+    add_height = int(factor / 2.0 * abs(top - bot))
+    
+    if (top > add_height):
+        top -= add_height
+    else:
+        top = 0
+    if (bot + add_height < img_height):
+        bot += add_height
+    else:
+        bot = img_height
+    
+    if (left > add_width):
+        left -= add_width
+    else:
+        left = 0
+    if (right + add_width < img_width):
+        right += add_width
+    else:
+        right = img_width
+    
+    top = int(top + abs((top - bot) / 2.0))
+    
+    crop_img = img[top + 30:bot - 50, left + 100:right - 100]  # offsets determined by testing
+    io.imsave(outputPath, crop_img)
+
+
+
 # extract the images at the times of the phonemes from the videom giving them a nice name `videoName_timestamp_phoneme`. Crop approximate mouth region
 def videoToImages (videoPath, phonemes, targetDir, targetSize='296:224', cropStartPixel='888:614'):
     print("Processing: " + videoPath)
@@ -74,4 +156,36 @@ def extractValidFrames (phonemes, videoPath, storeDir, framerate=29.97, targetSi
         i += 1
     return 0
 
+
+
+# this doesn't work because of the delay when writing to disk -> need to work with batches
+def extractMouths (phonemes, videoPath, storeDir, framerate=29.97):
+    # 1. [extracting all frames](https://ubuntuforums.org/showthread.php?t=1141293): `mkdir videoName; ffmpeg -i VideoName.mp4 frames/%d.jpg`
+    # 2. calculate needed frames from video labels
+    # 3. throw away all non-needed frames
+    # 4. compress
+    # 5. extract face
+    # 6. extract mouth
+    if not os.path.exists(videoPath):
+        print("This video does not exist:", videoPath)
+        return -1
+    
+    videoName = os.path.basename(videoPath)
+    videoName = os.path.splitext(videoName)[0]  # remove extension
+    
+    if os.path.exists(storeDir + os.sep + videoName):
+        print("video already processed. Skipping...")
+        return 0
+    
+    # 1. [extracting all frames](https://ubuntuforums.org/showthread.php?t=1141293): `mkdir videoName; ffmpeg -i VideoName.mp4 frames/%d.jpg`
+    # stored in 'storeDir/videoName/VideoName_frameNumber.jpg'
+    extractAllFrames(videoPath, storeDir, framerate, '1920x1080')
+    
+    # this takes some time, extract for another video before running the next command
+    
+    # 2. calculate needed frames from video labels
+    removeInvalidFrames(phonemes, videoName, storeDir, framerate)
+    
+    # 3. extract face from images
+    # extractFaces(storeDir, videoName)
 

@@ -14,7 +14,6 @@ import logging, sys
 import traceback
 import time
 import concurrent.futures
-
 import dlib
 from skimage import io
 import cv2
@@ -40,14 +39,13 @@ def readfile(filename):
         for line in ins:
             line = line.strip('\n') # strip newlines
             if len(line)>1: # don't save the dots lines
-                if ".rec" not in line:
+                if ".mp4" not in line:
                     array[video_index].append(line)
                 else: #create new 2nd-level list, now store there
                     array.append([line])
                     video_index += 1
 
     return array[1:]
-
 
 # outputs a list of times where the video should be converted to an image, with the corresponding phonemes spoken at those times
 # videoPhonemeList:        list of lines from read file that cover the phonemes of one video,
@@ -80,55 +78,6 @@ def processVideoFile(videoPhonemeList, timeModifier = 1):
 
     return videoPath, phonemes
 
-# store phonemes in a file with a name corresponding to the video they belong to
-def writePhonemesToFile(videoName, phonemes, targetDir):
-    phonemeFileName = videoName + "_PHN"
-
-    thefile = open(targetDir + os.sep + phonemeFileName, 'w')
-    for item in phonemes:
-          thefile.write(' '.join(map(str,item)) + "\r\n")
-    thefile.close()
-    return 0
-
-# create a new .mat file that contains only the frames we found a phoneme
-# videoPath :    self-explanatory
-# phonemes:        list of (phoneme, time) tuples
-def saveMatFile(videoPath, phonemes, targetDir, framerate=29.97):        # frameRate = 29.97 for the TCDTimit database
-    base = os.path.splitext(videoPath)[0]
-    videoName = os.path.basename(videoPath)
-    videoName = os.path.splitext(videoName)[0]  # remove extension
-    videoROIfile = base + ".mat"                # a .mat file that contains a cell, that contains a row of matrices. Each matrix represents a mouth ROI for one video frame
-    
-    videoROI = scipy.io.loadmat(videoROIfile)
-    videoROI = videoROI['ROIs'].tolist()
-    videoROI = videoROI[0][0][0].tolist()       # videoROI is now a list that contains a matrix for every video frame
-    logging.info("Total nb of frames in the video: \t\t\t %d",len(videoROI))
-
-    # gather the used frame numbers
-    validTimes, validFrames, validPhonemes = getValid(phonemes,framerate)
-    logging.info("%s", '\t | '.join([str(validTime) for validTime in validTimes]))
-    logging.info("\t %s", '\t | '.join([str(validFrame) for validFrame in validFrames]))
-    logging.info("%s", '\t | '.join([str(validPhoneme) for validPhoneme in validPhonemes]))
-    
-    # get images corresponding to the valid frames
-    validImages = [videoROI[validFrame] for validFrame in validFrames[1:-2]]      # store image  #TODO not correct frame?  #TODO ugly hack becasue not enough frames in the .mat file
-    validImages.append(videoROI[-1])
-    
-    # prepare path
-    outputPath = ''.join([targetDir, os.sep, videoName, "_validFrames.mat"])
-    # store the data; name of file, and dictionary of the variables to save
-    try:
-        scipy.io.savemat(outputPath, {'validImages': validImages, 'validFrames': validFrames,'validPhonemes': validPhonemes})
-        print("saved mat file ", videoName, "_validFrames.mat", " containing", len(validFrames), " images.")
-        return 0
-    except Exception, e:
-        print("Couldn't do it: ", e)
-        tb = traceback.format_exc()
-        logging.warning(tb)
-        #raw_input("Press Enter to continue...")
-        pass
-    return videoName #add one to error counter
-
 # get valid times, phonemes, frame numbers
 def getValid(phonemes, framerate):  # frameRate = 29.97 for the TCDTimit database
     import math
@@ -136,6 +85,16 @@ def getValid(phonemes, framerate):  # frameRate = 29.97 for the TCDTimit databas
     validFrames = [int(math.floor(validTime * framerate)) for validTime in validTimes]
     validPhonemes = [phoneme[1] for phoneme in phonemes]
     return validTimes, validFrames, validPhonemes
+
+def removeInvalidFrames (phonemes, videoName, storeDir, framerate):
+    validTimes, validFrames, validPhonemes = getValid(phonemes, framerate)
+    #print(len(validFrames)," | ", validFrames)
+    for frame in range(validFrames[0], validFrames[-1]):
+        # path: eg /media/TCD-TIMIT/lipspeakers/LipSkr1/sa1/sa1_59.jpg
+        path = ''.join([storeDir, os.sep, videoName, "_", str(frame + 1),".jpg"])
+        if frame not in validFrames:
+            silentremove(path)
+    return 0
 
 # process an MLF file containing video paths, and corresponding phoneme/time combinations; extract the corresponding frames from the .mat file and store it all in a new mat file.
 # this new mat file contains three variables: 'validImages' and 'validPhonemes'. We can use these for network training.
@@ -162,196 +121,100 @@ def processMLF(MLFfile, storeDir):
     return 0
 
 
-def extractFaces(sourceDir, storeDir, videoName):
-    """
-     detect lower half of face on every file, store them in storeDir
-    """
-    #storeDir / videoName / VideoName_frameNumber.jpg
-    from os import listdir
-    from os.path import isfile, join
-    dirPath = sourceDir
-    onlyfiles = [f for f in listdir(dirPath) if isfile(join(dirPath, f))]
-    onlyfiles.sort(key=tryint)  # sorts list in place
-    #print(onlyfiles)
-    if not os.path.exists(storeDir):
-        os.makedirs(storeDir)
-    for file in onlyfiles:
-        if "face" in file: continue #skip face-extraced files
-        filename, ext = os.path.splitext(file)
-        videoName, frame = filename.split("_")
-        filePath = ''.join([dirPath,os.sep,file]) #the file we're processing now
-        storePath = ''.join([storeDir, os.sep, videoName, "_face_", str(frame), ".jpg"]) # the face will be saved here
-        if os.path.exists(storePath):continue #skip existing 'face' files
+#################################
+########### 2nd GEN  ############
+#################################
+
+    ### Executing ###
+def processDatabase(MLFfile, storageLocation):
+    print("###################################")
+    videos = readfile(MLFfile)
+    framerate = 29.97
+    batchSize = 8 # number of videos per iteration
+    
+    print("This program will process all video files specified in {mlf}. It will store the extracted faces and mouths in {storageLocation}. \n \
+            The process might take a while (~10h)".format(mlf=MLFfile,storageLocation=storageLocation))
+    if query_yes_no("Are you sure this is correct?", "no"):
         
-        print("Exctracting face from: ", file)
-        extractFace(filePath, storePath)
+        batchIndex = 0
+        running = 1
+        # multithread the operations
+        executor = concurrent.futures.ThreadPoolExecutor(8)
         
-def extractFacesFunction(video, topDir):
-    videoPath, phonemes = processVideoFile(video)
-    videoName = os.path.splitext(os.path.basename(videoPath))[0]
-    sourceDir = fixStoreDirName(topDir, videoName, video[0])
-    storeDir = ''.join([sourceDir, os.sep, "faces"])
-    print("getting data from: \t", sourceDir)
-    print("saving faces to: \t", storeDir)
-    extractFaces(sourceDir, storeDir, videoName)
-     
-def removeInvalidFrames (phonemes, videoName, storeDir, framerate):
-    """
-    remove all frames not in validFrames
-    """
-    validTimes, validFrames, validPhonemes = getValid(phonemes,framerate)
-    print(len(validFrames)," | ", validFrames)
-    for frame in range(validFrames[0], validFrames[-1]):
-        if frame not in validFrames:
-            path = ''.join([storeDir, os.sep, videoName, "_", str(frame+1), ".jpg"]) #eg TCD-TIMIT/lipspeakers/LipSkr1/sa1/sa1_59.jpg
-            silentremove(path)
+        while running:
+            if batchIndex+batchSize > len(videos):
+                print("Processing LAST BATCH of videos...")
+                running = 0
+                currentVideos = videos[batchIndex:] #till the end
+            else:
+                currentVideos = videos[batchIndex:batchIndex+batchSize]
+            
+            # 1. extract the frames
+            futures = []
+            for video in currentVideos:
+                videoPath, phonemes = processVideoFile(video)
+                videoName = os.path.splitext(os.path.basename(videoPath))[0]
+                storeDir = fixStoreDirName(storageLocation, videoName, video[0])
+                print("Extracting frames from ", videoPath, ", saving to: \t", storeDir)
+                futures.append(executor.submit(extractAllFrames, videoPath, videoName, storeDir, framerate, targetSize='800:800', cropStartPixel='600:300'))
+            concurrent.futures.wait(futures)
+            
+            print([future.result() for future in futures])
+            nbVideosExtracted = sum([future.result() for future in futures])
+            sleepTime = 1+nbVideosExtracted*3
+            print("Sleeping for ",sleepTime, " seconds to allow files to be written to disk.")
+            time.sleep(sleepTime) # wait till files have been written
+            print("\tAll frames extracted.")
+            print("----------------------------------")
+            
+            # 2. remove unneccessary frames
+            futures = []
+            for video in currentVideos:
+                videoPath, phonemes = processVideoFile(video)
+                videoName = os.path.splitext(os.path.basename(videoPath))[0]
+                storeDir = fixStoreDirName(storageLocation, videoName, video[0])
+                print("removing invalid frames from ", storeDir)
+                futures.append(executor.submit(removeInvalidFrames, phonemes, videoName, storeDir, framerate))
+            concurrent.futures.wait(futures)
+            print("\tAll unnecessary frames removed.")
+            print("----------------------------------")
+
+            # 3. extract faces and mouths
+            futures = []
+            for video in currentVideos:
+                videoPath, phonemes = processVideoFile(video)
+                videoName = os.path.splitext(os.path.basename(videoPath))[0]
+                sourceDir = fixStoreDirName(storageLocation, videoName, video[0])
+                storeDir = sourceDir
+                print("Extracting faces from ", sourceDir)
+                futures.append(executor.submit(extractFacesMouths, sourceDir, storeDir)) #storeDir = sourceDir
+            concurrent.futures.wait(futures)
+            print("\tAll faces and mouths have been extracted.")
+            print("----------------------------------")
+    
+            # 5. resize mouth images, for convnet usage
+            futures = []
+            for video in currentVideos:
+                videoPath, phonemes = processVideoFile(video)
+                videoName = os.path.splitext(os.path.basename(videoPath))[0]
+                storeDir = fixStoreDirName(storageLocation, videoName, video[0])  # eg /media/matthijs/TOSHIBA EXT/TCDTIMIT/processed/lipspeakers/LipSpkr1/sa1
+                storeDir = storeDir+os.sep+"mouths"
+                futures.append(executor.submit(resizeImages, storeDir, 320.0))
+            concurrent.futures.wait(futures)
+            print("\tAll mouths have been resized.")
+            print("----------------------------------")
+    
+            print("#####################################")
+            print("\t Batch Done")
+            print("#####################################")
+            
+            # update the batchIndex
+            batchIndex += batchSize
+        
+        print("All done.")
+    else:
+        print("Okay then, goodbye!")
     return 0
-
-
-def extractAllFrames (videoPath, videoName, storeDir, framerate, targetSize='960x540'):
-    """
-    extract all frames from a video, and store them in storeDir
-    """
-    # 1. [extracting all frames](https://ubuntuforums.org/showthread.php?t=1141293): `mkdir videoName; ffmpeg -i VideoName.mp4 frames/%d.jpg`
-    
-    if not os.path.exists(storeDir):  # skip already existing videos (it is assumed the exist if the directory exists)
-        os.makedirs(storeDir)
-        # eg vid1_. frame number and extension will be added by ffmpeg
-        outputPath = ''.join([storeDir, os.sep, videoName, "_", ]) # eg .../sa1_3.jpg (frame and extension added by ffmpg)
-
-        command = ['ffmpeg',
-               '-i', videoPath,
-               '-s', targetSize,
-               outputPath + "%d.jpg"]  # add frame number and extension
-
-        # actually run the command, only show stderror on terminal, close the processes (don't wait for user input)
-        FNULL = open(os.devnull, 'w')
-        p = subprocess.Popen(command, stdout=FNULL, stderr=subprocess.STDOUT, close_fds=True)  # stdout=subprocess.PIPE
-        return 1
-
-    else:
-        return 0 #files already exist?
-
-def extractAllFramesMethod (video, topDir, framerate):
-    videoPath, phonemes = processVideoFile(video)
-    videoName = os.path.splitext(os.path.basename(videoPath))[0]
-    storeDir = fixStoreDirName(topDir, videoName, video[0])  # eg storeDir = '/media/matthijs/TOSHIBA EXT/TCDTIMIT/processed/lipspeakers/LipSpkr1'
-    print("saving frames to: \t", storeDir)
-    return extractAllFrames(videoPath, videoName, storeDir, framerate, '1920x1080') # 0 if not done, 1 if done
-
-def fixStoreDirName (topDirName, videoName, pathLine):
-    """
-    Fix the path of the root dir of all the newly generated files for this video.
-    Gets base path from the MLF file; removes everything from 'Clips' on; adds storeDirName
-    For example: file for lipspeaker will be '/media/matthijs/TOSHIBA EXT/TCDTIMIT/processed/lipspeakers/Lipspkr1'
-    :param storeDir: the name of the root dir (which will be just under the 'TCDTIMIT' dir)
-    :return:
-    """
-    storeDir = str(pathLine).replace('"', '')
-    storeDir = storeDir.replace('rec', 'mp4')
-    storeDir = storeDir.replace("TCDTIMIT", "TCDTIMIT/"+topDirName)
-    storeDir, second = storeDir.split("Clips")
-    if storeDir.endswith('/'):
-        storeDir = storeDir[:-1]
-        
-    # now add the video Name
-    storeDir = ''.join([storeDir, os.sep, videoName])
-    return storeDir
-
-  
-  
-    ### TESTING ###
-print("###################################")
-videos = readfile('./lipspeaker_labelfiles.mlf')
-framerate = 29.97
-topDir = "processed"
-batchSize = 10 # number of videos per iteration
-
-batchIndex = 0
-running = 1
-
-# multithread the operations
-executor = concurrent.futures.ProcessPoolExecutor(10)
-
-while running:
-    if batchIndex+batchSize > len(videos):
-        print("Processing LAST BATCH of videos...")
-        running = 0
-        currentVideos = videos[batchIndex:] #till the end
-    else:
-        currentVideos = videos[batchIndex:batchIndex+batchSize]
-    # 1. extract the frames
-    
-    futures = [executor.submit(extractAllFramesMethod, video, topDir, framerate) for video in currentVideos]
-    concurrent.futures.wait(futures)
-    print([future.result(20) for future in futures])
-    nbVideosExtracted = sum([future.result() for future in futures])
-    
-    # nbVideosExtracted = 0
-    # for video in currentVideos:
-    #     extractAllFramesMethod(video, topDir, framerate)
-    #     nbVideosExtracted += 1
-    
-    sleepTime = 5+nbVideosExtracted*3
-    print("Sleeping for ",sleepTime, " seconds to allow files to be written to disk.")
-    time.sleep(sleepTime) # wait till files have been written
-    print("\tAll frames extracted.")
-    print("----------------------------------")
-
-    # 2. remove unneccessary frames
-    for video in currentVideos:
-        videoPath, phonemes = processVideoFile(video)
-        videoName = os.path.splitext(os.path.basename(videoPath))[0]
-        storeDir = fixStoreDirName(topDir, videoName, video[0])
-        print("removing frames from: \t", storeDir)
-        removeInvalidFrames(phonemes, videoName, storeDir, framerate)
-    time.sleep(len(currentVideos))
-    print("\tAll unnecessary frames removed.")
-    print("----------------------------------")
-
-    # 3. extract faces, store in subdir 'faces'
-    futures = [executor.submit(extractFacesFunction, video, topDir) for video in currentVideos]
-    # for video in currentVideos:
-    #     extractFacesFunction(video)
-    print("\tAll faces extracted.")
-    print("----------------------------------")
-    
-    # update the batchIndex
-    batchIndex += batchSize
-
-print("All done.")
-
-
-def extractMouths (phonemes, videoPath, storeDir, framerate=29.97):
-    # 1. [extracting all frames](https://ubuntuforums.org/showthread.php?t=1141293): `mkdir videoName; ffmpeg -i VideoName.mp4 frames/%d.jpg`
-    # 2. calculate needed frames from video labels
-    # 3. throw away all non-needed frames
-    # 4. compress
-    # 5. extract face
-    # 6. extract mouth
-    if not os.path.exists(videoPath):
-        print("This video does not exist:", videoPath)
-        return -1
-    
-    videoName = os.path.basename(videoPath)
-    videoName = os.path.splitext(videoName)[0]  # remove extension
-    
-    if os.path.exists(storeDir + os.sep + videoName):
-        print("video already processed. Skipping...")
-        return 0
-    
-    # 1. [extracting all frames](https://ubuntuforums.org/showthread.php?t=1141293): `mkdir videoName; ffmpeg -i VideoName.mp4 frames/%d.jpg`
-    # stored in 'storeDir/videoName/VideoName_frameNumber.jpg'
-    extractAllFrames(videoPath, storeDir, framerate, '1920x1080')
-    
-    # this takes some time, extract for another video before running the next command
-    
-    # 2. calculate needed frames from video labels
-    removeInvalidFrames(phonemes, videoName, storeDir, framerate)
-    
-    # 3. extract face from images
-    # extractFaces(storeDir, videoName)
-
 
 
 

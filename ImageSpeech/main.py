@@ -15,5 +15,22 @@ logging.basicConfig(stream=sys.stderr, level=logging.DEBUG) #http://stackoverflo
 #print(phoneme0)
 
 # get phone list from file, extract phonemes and times, get the frames corresponding to those phonemes
-# !!!! Before running this, make sure all the paths to the videos in the MLF file are correct!
-processMLF('./lipspeaker_labelfiles.mlf', '/media/matthijs/TOSHIBA EXT/TCDTIMIT/preparedDB')
+
+###################################################################################################
+# !!!! Before running this, make sure all the paths to the videos in the MLF file are correct !!!!#0
+###################################################################################################
+#processDatabase('./volunteer_labelfiles.mlf',"/home/matthijs/TCDTIMIT/processed2")
+
+# testing
+startTime = time.clock()
+processDatabase('/home/matthijs/test/test.mlf', '/home/matthijs/test/processed')
+duration = time.clock() - startTime
+
+print("This took ", duration, " seconds")
+
+# OLD
+#processMLF('./lipspeaker_test.mlf', '/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/Datasets/TCD-TIMIT/processed')
+
+
+
+
