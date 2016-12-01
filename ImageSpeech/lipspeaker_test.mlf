@@ -1,5 +1,5 @@
 #!MLF!#
-"/media/matthijs/TOSHIBA EXT/TCDTIMIT/lipspeakers/Lipspkr1/Clips/straightcam/sa1.rec"
+"/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/Datasets/TCD-TIMIT/lipspeakers/Lipspkr1/Clips/straightcam/sa1.mp4"
 0 10300000 sil
 10300000 11800000 sh
 11800000 12300000 iy
@@ -39,7 +39,7 @@
 53600000 54400000 r
 54400000 64600000 sil
 .
-"/media/matthijs/TOSHIBA EXT/TCDTIMIT/lipspeakers/Lipspkr1/Clips/straightcam/sa2.rec"
+"/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/Datasets/TCD-TIMIT/lipspeakers/Lipspkr1/Clips/straightcam/sa2.mp4"
 0 10200000 sil
 10200000 10800000 d
 10800000 12400000 ow
@@ -74,7 +74,7 @@
 40600000 42600000 t
 42600000 53000000 sil
 .
-"/media/matthijs/TOSHIBA EXT/TCDTIMIT/lipspeakers/Lipspkr1/Clips/straightcam/si1001.rec"
+"/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/Datasets/TCD-TIMIT/lipspeakers/Lipspkr1/Clips/straightcam/si1001.mp4"
 0 10100000 sil
 10100000 14400000 ow
 14400000 16600000 hh
