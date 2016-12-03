@@ -124,7 +124,6 @@ def fixStoreDirName (storageLocation, videoName, pathLine):
     return storeDir
 
 
-
 def extractAllFrames (videoPath, videoName, storeDir, framerate, targetSize='640:640', cropStartPixel='640:300'):
     """
     extract all frames from a video, and store them in storeDir
