@@ -2,79 +2,72 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6f99c397-9dfe-48cd-8859-553dca035fa6" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/si560_150.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_1.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_109.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_31.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_32.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_33.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_35.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_36.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_39.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_42.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_44.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_45.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_46.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_47.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_53.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_54.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_55.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_57.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_58.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_59.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_60.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_61.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_62.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_64.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_66.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_67.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_68.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_69.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_71.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_75.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_77.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/dlib.so" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/dlib.so" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/mouthDetectionTest.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/openCVMouthDetectionVideo.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/opencvCropFace.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/shape_predictor_68_face_landmarks.dat" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mouthDetection/test.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/removeFaceDirs.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/unzipStructure.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../cifar10/networkStructural.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../cifar10/train_net.py" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/dlibface.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/faceTest.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master.zip" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master/LICENSE" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master/README.md" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master/classifiers/haarcascade_eye.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master/classifiers/haarcascade_lefteye_2splits.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master/classifiers/haarcascade_mcs_eyepair_small.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master/classifiers/haarcascade_mcs_lefteye.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master/classifiers/haarcascade_mcs_nose.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master/classifiers/haarcascade_mouth.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master/src/__main__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master/src/displayUtils.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/facialFeatures-master/src/faceFeatures.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/haarcascade_frontalface_default.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/matthijs.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/matthijs2.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/matthijs_face.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/mouthExtract.m" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/obama.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/test.py" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/ImageSpeech.iml" afterPath="$PROJECT_DIR$/.idea/ImageSpeech.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/fileDirOps.py" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/downloadTCDTimit.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/dlib.so" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/dlibface_original.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/faces/si560_147.jpg" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/faces/si560_150.jpg" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/mouthDetectionTest.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/oldFunctions.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/openCVMouthDetectionVideo.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/opencvCropFace.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/test.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/mouthDetection/visualizeROI.m" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/phonemeLabelConversion.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/.gitignore" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/README.md" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/dbnmodel/DBN" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/dbnmodel/DBN.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/dbnmodel/__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/dbnmodel/logistic_sgd.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/dbnmodel/mlp.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/dbnmodel/rbm.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/dbnmodel/utils.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/decoder/README" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/decoder/decode.sh" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/decoder/eval.scp" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/decoder/eval_actual.trn" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/decoder/eval_estimated.trn" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/decoder/oracle_lna.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/decoder/our_list_phone" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/decoder/recognize_lna_dir.sh" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/evalModel.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/evalModel_1.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/list_monophones" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/mlpmodel/__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/mlpmodel/mlpClassifier.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/preproc_data.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/report/main.aux" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/report/main.pdf" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/report/main.synctex.gz" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/report/main.tex" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/report/references.bib" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/rnnmodel/__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/rnnmodel/rnnClassifier.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/temp.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/temp/README" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/temp/run_dnn.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/train_model.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/utils/__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/utils/dataprovider.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/utils/solver.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/utils/utils.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/dnn-speech-master/windowing.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/preprocessing/preproc_data.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/removeFaceDirs.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/videoToImage" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/videoToImage.m" afterPath="" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/mouthDetection/dlib-landmark-mean.png" afterPath="$PROJECT_DIR$/dlibLandmarks.png" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/mouthDetection/extractMouthRegion.py" afterPath="$PROJECT_DIR$/README.md" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/mouthDetection/shape_predictor_68_face_landmarks.dat" afterPath="$PROJECT_DIR$/shape_predictor_68_face_landmarks.dat" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/helpFunctions.py" afterPath="$PROJECT_DIR$/helpFunctions.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lipspeaker_labelfiles.mlf" afterPath="$PROJECT_DIR$/lipspeaker_labelfiles.mlf" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lipspeaker_test.mlf" afterPath="$PROJECT_DIR$/lipspeaker_test.mlf" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mouthDetection/dlibface_original.py" afterPath="$PROJECT_DIR$/mouthDetection/dlibface_original.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mouthDetection/oldFunctions.py" afterPath="$PROJECT_DIR$/mouthDetection/oldFunctions.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/processDatabase.py" afterPath="$PROJECT_DIR$/processDatabase.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/unzipStructure.py" afterPath="$PROJECT_DIR$/unzipStructure.py" />
     </list>
     <ignored path="ImageSpeech.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -97,9 +90,12 @@
       <file leaf-file-name="main.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="308">
-              <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
-              <folding />
+            <state relative-caret-position="162">
+              <caret line="9" column="82" selection-start-line="9" selection-start-column="82" selection-end-line="9" selection-end-column="82" />
+              <folding>
+                <marker date="1480807239125" expanded="true" signature="29:435" ph="..." />
+                <marker date="1480807239125" expanded="true" signature="665:666" ph="..." />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -107,23 +103,22 @@
       <file leaf-file-name="processDatabase.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/processDatabase.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="336">
-              <caret line="159" column="44" selection-start-line="159" selection-start-column="44" selection-end-line="159" selection-end-column="44" />
+            <state relative-caret-position="126">
+              <caret line="107" column="0" selection-start-line="107" selection-start-column="0" selection-end-line="107" selection-end-column="0" />
               <folding>
                 <element signature="e#215#252#0" expanded="true" />
-                <element signature="e#2130#3171#0" expanded="false" />
-                <element signature="e#3302#3568#0" expanded="false" />
-                <element signature="e#4391#5298#0" expanded="false" />
+                <element signature="e#1374#1842#0" expanded="false" />
+                <element signature="e#2428#3469#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="helpFunctions.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="helpFunctions.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/helpFunctions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="290">
-              <caret line="173" column="19" selection-start-line="173" selection-start-column="19" selection-end-line="173" selection-end-column="19" />
+            <state relative-caret-position="560">
+              <caret line="187" column="57" selection-start-line="187" selection-start-column="57" selection-end-line="187" selection-end-column="57" />
               <folding>
                 <element signature="e#39#76#0" expanded="true" />
               </folding>
@@ -131,53 +126,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="removeFaceDirs.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/removeFaceDirs.py">
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/README.md">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="450">
-              <caret line="33" column="19" selection-start-line="33" selection-start-column="19" selection-end-line="33" selection-end-column="19" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="volunteer_labelfiles.mlf" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/volunteer_labelfiles.mlf">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="300">
-              <caret line="32753" column="40" selection-start-line="32753" selection-start-column="40" selection-end-line="32753" selection-end-column="40" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="mouthDetectionTest.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/mouthDetection/mouthDetectionTest.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="236">
-              <caret line="35" column="19" selection-start-line="35" selection-start-column="19" selection-end-line="35" selection-end-column="19" />
-              <folding>
-                <element signature="e#18#28#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="face_detector.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/face_detector.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-756">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="oldFunctions.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/mouthDetection/oldFunctions.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="648">
-              <caret line="36" column="0" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
+            <state relative-caret-position="306">
+              <caret line="17" column="122" selection-start-line="17" selection-start-column="122" selection-end-line="17" selection-end-column="122" />
               <folding />
             </state>
           </provider>
@@ -217,12 +170,9 @@
         <option value="$PROJECT_DIR$/mouthDetection/extractFaces.py" />
         <option value="$PROJECT_DIR$/mouthDetection/facialFeatures-master/src/faceFeatures.py" />
         <option value="$PROJECT_DIR$/mouthDetection/dlibface.py" />
-        <option value="$PROJECT_DIR$/test.py" />
         <option value="$PROJECT_DIR$/../cifar10/networkStructural.py" />
         <option value="$PROJECT_DIR$/../cifar10/train_net.py" />
         <option value="$PROJECT_DIR$/lipspeaker_labelfiles.mlf" />
-        <option value="$PROJECT_DIR$/lipspeaker_test.mlf" />
-        <option value="$PROJECT_DIR$/unzipStructure.py" />
         <option value="$PROJECT_DIR$/volunteer_labelfiles.mlf" />
         <option value="$PROJECT_DIR$/mouthDetection/dlibface_original.py" />
         <option value="$PROJECT_DIR$/mouthDetection/facialFeatures-master/src/__main__.py" />
@@ -235,12 +185,20 @@
         <option value="$PROJECT_DIR$/mouthDetection/test.py" />
         <option value="$PROJECT_DIR$/mouthDetection/faceLandmarkTest.py" />
         <option value="$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/face_landmark_detection.py" />
-        <option value="$PROJECT_DIR$/mouthDetection/oldFunctions.py" />
         <option value="$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/mouthDetectionTest.py" />
-        <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/renameFacePics.py" />
         <option value="$PROJECT_DIR$/removeFaceDirs.py" />
-        <option value="$PROJECT_DIR$/processDatabase.py" />
+        <option value="$PROJECT_DIR$/test.py" />
+        <option value="$PROJECT_DIR$/fileDirOps.py" />
+        <option value="$PROJECT_DIR$/lipspeaker_test.mlf" />
+        <option value="$PROJECT_DIR$/lipSpeaker_test2.mlf" />
+        <option value="$PROJECT_DIR$/lipspeaker_test2.mlf" />
         <option value="$PROJECT_DIR$/mouthDetection/mouthDetectionTest.py" />
+        <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/unzipStructure.py" />
+        <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/processDatabase.py" />
+        <option value="$PROJECT_DIR$/mouthDetection/oldFunctions.py" />
         <option value="$PROJECT_DIR$/helpFunctions.py" />
       </list>
     </option>
@@ -307,6 +265,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -349,50 +308,9 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ImageSpeech" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ImageSpeech" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="mouthDetection" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="dlib-master" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ImageSpeech" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ImageSpeech" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="mouthDetection" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="dlib-master" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="python_examples" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
         </subPane>
       </pane>
       <pane id="Scope" />
-      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -409,16 +327,17 @@
     </option>
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$" />
-      <recent name="$PROJECT_DIR$/mouthDetection" />
-      <recent name="$PROJECT_DIR$/mouthDetection/faces/sx146" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/mouthDetection" />
       <recent name="$PROJECT_DIR$/mouthDetection/dlib-master/python_examples" />
       <recent name="$PROJECT_DIR$/mouthDetection/faces" />
       <recent name="$PROJECT_DIR$/resnet50" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/mouthDetection" />
+      <recent name="$PROJECT_DIR$/mouthDetection/faces/sx146" />
     </key>
   </component>
   <component name="RunManager" selected="Python.processDatabase">
@@ -702,17 +621,16 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-1" y="19" width="1922" height="1062" extended-state="7" />
-    <editor active="false" />
+    <frame x="-1" y="19" width="1922" height="1062" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1819149" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15319149" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32905984" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.4" sideWeight="0.08670213" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32804233" sideWeight="0.49414894" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.43809524" sideWeight="0.10531915" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2486631" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32804233" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32804233" sideWeight="0.49787235" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.17819148" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.4" sideWeight="0.9132979" order="9" side_tool="false" content_ui="tabs" x="1036" y="191" width="613" height="936" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.43809524" sideWeight="0.89468086" order="9" side_tool="false" content_ui="tabs" x="1036" y="191" width="613" height="936" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -720,6 +638,7 @@
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2960725" sideWeight="0.75" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32804233" sideWeight="0.49414894" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.16346154" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
@@ -742,74 +661,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/resnet152.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3438">
-          <caret line="201" column="0" selection-start-line="201" selection-start-column="0" selection-end-line="201" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50CaffeToLasagne.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2772">
-          <caret line="189" column="0" selection-start-line="189" selection-start-column="0" selection-end-line="189" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50CaffeToLasagne_ImageNet.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="186">
-          <caret line="108" column="41" selection-start-line="108" selection-start-column="41" selection-end-line="108" selection-end-column="41" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/resnet50/trainNetwork.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3672">
-          <caret line="214" column="0" selection-start-line="214" selection-start-column="0" selection-end-line="214" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/matthijs.jpg" />
-    <entry file="file://$PROJECT_DIR$/mouthDetection/extractFaces.py" />
-    <entry file="file://$PROJECT_DIR$/resnet50/resnet50_evaluateNetwork.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="501">
-          <caret line="99" column="53" selection-start-line="99" selection-start-column="53" selection-end-line="99" selection-end-column="53" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/facialFeatures-master/README.md">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/facialFeatures-master/src/displayUtils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/facialFeatures-master/src/faceFeatures.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="144">
-          <caret line="38" column="19" selection-start-line="38" selection-start-column="19" selection-end-line="38" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test.py" />
-    <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50_evaluateNetwork.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///tmp/mozilla_matthijs0/cifar10_koen.py" />
-    <entry file="file:///tmp/mozilla_matthijs0/train_net.py" />
     <entry file="file://$PROJECT_DIR$/../cifar10/train_net.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2250">
@@ -824,84 +675,124 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lipspeaker_test.mlf">
+    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/shape_predictor_68_face_landmarks.dat">
+      <provider selected="true" editor-type-id="LargeFileEditor">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/si560_150cropped.jpg" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/si560_147cropped.jpg" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/testMouth.py" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/faceLandmarkDetector.py" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/facialFeatures-master/src/__main__.py" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/matthijs.jpg" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/matthijs2.jpg" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/mouthExtract.m" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/faceTest.py" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/dlibface.py" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/openCVMouthDetectionVideo.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="36">
-          <caret line="2" column="14" selection-start-line="2" selection-start-column="14" selection-end-line="2" selection-end-column="14" />
+        <state relative-caret-position="234">
+          <caret line="14" column="35" selection-start-line="14" selection-start-column="4" selection-end-line="14" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_31cropped.jpg" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/faceLandmarkTest.py" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/si560_150_mouth.jpg" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/si560_147_mouth.jpg" />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/LICENSE_FOR_EXAMPLE_PROGRAMS.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/face_landmark_detection.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="396">
+          <caret line="73" column="22" selection-start-line="73" selection-start-column="22" selection-end-line="73" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib.so">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dlib.so">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/volunteer_labelfiles.mlf">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="589554">
+          <caret line="32753" column="40" selection-start-line="32753" selection-start-column="40" selection-end-line="32753" selection-end-column="40" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/lipspeaker_labelfiles.mlf">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="44">
-          <caret line="44739" column="86" selection-start-line="44739" selection-start-column="86" selection-end-line="44739" selection-end-column="86" />
+        <state relative-caret-position="142">
+          <caret line="20902" column="15" selection-start-line="20878" selection-start-column="0" selection-end-line="20905" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/face_detector.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-682">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/downloadTCDTimit.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/getTCD-TIMIT.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lipspeaker_test2.mlf">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1332">
+          <caret line="74" column="1" selection-start-line="74" selection-start-column="1" selection-end-line="74" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/phonemeList.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/unzipStructure.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="234">
-          <caret line="40" column="69" selection-start-line="40" selection-start-column="0" selection-end-line="40" selection-end-column="69" />
-          <folding>
-            <element signature="e#0#23#0" expanded="false" />
-            <marker date="1480535629773" expanded="true" signature="778:898" ph="..." />
-            <marker date="1480535629773" expanded="true" signature="1153:2191" ph="..." />
-            <marker date="1480535629773" expanded="true" signature="1878:1955" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/shape_predictor_68_face_landmarks.dat">
-      <provider selected="true" editor-type-id="LargeFileEditor">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/si560_150cropped.jpg">
-      <provider selected="true" editor-type-id="images">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/si560_147cropped.jpg">
-      <provider selected="true" editor-type-id="images">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/testMouth.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-162">
-          <caret line="15" column="36" selection-start-line="15" selection-start-column="36" selection-end-line="15" selection-end-column="36" />
+        <state relative-caret-position="218">
+          <caret line="42" column="34" selection-start-line="42" selection-start-column="34" selection-end-line="42" selection-end-column="34" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/faceLandmarkDetector.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-186">
-          <caret line="61" column="28" selection-start-line="61" selection-start-column="28" selection-end-line="61" selection-end-column="28" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/facialFeatures-master/src/__main__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="270">
-          <caret line="15" column="58" selection-start-line="15" selection-start-column="58" selection-end-line="15" selection-end-column="58" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/matthijs.jpg">
-      <provider selected="true" editor-type-id="images">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/matthijs2.jpg">
-      <provider selected="true" editor-type-id="images">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/mouthExtract.m">
+    <entry file="file://$PROJECT_DIR$/videoToImage">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
@@ -909,43 +800,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/faceTest.py">
+    <entry file="file://$PROJECT_DIR$/videoToImage.m">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
+        <state relative-caret-position="-1620">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/dlibface.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="88">
-          <caret line="69" column="61" selection-start-line="69" selection-start-column="61" selection-end-line="69" selection-end-column="61" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/dlibface_original.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="466">
-          <caret line="71" column="32" selection-start-line="71" selection-start-column="32" selection-end-line="71" selection-end-column="32" />
-          <folding>
-            <marker date="1480548991468" expanded="true" signature="2562:2663" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/openCVMouthDetectionVideo.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="234">
-          <caret line="14" column="35" selection-start-line="14" selection-start-column="4" selection-end-line="14" selection-end-column="35" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/sx146/sx146_31cropped.jpg">
-      <provider selected="true" editor-type-id="images">
-        <state />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/phonemeLabelConversion.txt">
@@ -956,148 +816,159 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/faceLandmarkTest.py">
+    <entry file="file://$PROJECT_DIR$/CMU_Pronunciation_Dictionary_phones.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="20" column="43" selection-start-line="20" selection-start-column="43" selection-end-line="20" selection-end-column="43" />
+        <state relative-caret-position="-304">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/si560_150_mouth.jpg">
+    <entry file="file://$PROJECT_DIR$/CMU_Pronunciation_Dictionary">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dlibLandmarks.png">
       <provider selected="true" editor-type-id="images">
         <state />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/faces/si560_147_mouth.jpg">
-      <provider selected="true" editor-type-id="images">
-        <state />
+    <entry file="file://$PROJECT_DIR$/mouthDetection/visualizeROI.m">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-16">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/opencvCropFace.py">
+    <entry file="file://$PROJECT_DIR$/renameFacePics.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="362">
-          <caret line="35" column="36" selection-start-line="35" selection-start-column="36" selection-end-line="35" selection-end-column="36" />
+          <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/LICENSE_FOR_EXAMPLE_PROGRAMS.txt">
+    <entry file="file://$PROJECT_DIR$/test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="342">
-          <caret line="19" column="22" selection-start-line="19" selection-start-column="22" selection-end-line="19" selection-end-column="22" />
-          <folding>
-            <marker date="1480602885545" expanded="true" signature="959:1080" ph="..." />
-            <marker date="1480602885545" expanded="true" signature="1141:2405" ph="..." />
-            <marker date="1480602885545" expanded="true" signature="1887:2405" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/face_landmark_detection.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="396">
-          <caret line="73" column="22" selection-start-line="73" selection-start-column="22" selection-end-line="73" selection-end-column="22" />
-          <folding>
-            <element signature="e#2192#2202#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/volunteer_labelfiles.mlf">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="300">
-          <caret line="32753" column="40" selection-start-line="32753" selection-start-column="40" selection-end-line="32753" selection-end-column="40" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib.so">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dlib.so">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/oldFunctions.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="648">
-          <caret line="36" column="0" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/face_detector.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-756">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/removeFaceDirs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="450">
-          <caret line="33" column="19" selection-start-line="33" selection-start-column="19" selection-end-line="33" selection-end-column="19" />
+        <state relative-caret-position="362">
+          <caret line="96" column="63" selection-start-line="96" selection-start-column="63" selection-end-line="96" selection-end-column="63" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="308">
-          <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
+        <state relative-caret-position="162">
+          <caret line="9" column="82" selection-start-line="9" selection-start-column="82" selection-end-line="9" selection-end-column="82" />
+          <folding>
+            <marker date="1480807239125" expanded="true" signature="29:435" ph="..." />
+            <marker date="1480807239125" expanded="true" signature="665:666" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mouthDetection/oldFunctions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="10" column="4" selection-start-line="10" selection-start-column="4" selection-end-line="10" selection-end-column="4" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/processDatabase.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="336">
-          <caret line="159" column="44" selection-start-line="159" selection-start-column="44" selection-end-line="159" selection-end-column="44" />
+        <state relative-caret-position="126">
+          <caret line="107" column="0" selection-start-line="107" selection-start-column="0" selection-end-line="107" selection-end-column="0" />
           <folding>
             <element signature="e#215#252#0" expanded="true" />
-            <element signature="e#2130#3171#0" expanded="false" />
-            <element signature="e#3302#3568#0" expanded="false" />
-            <element signature="e#4391#5298#0" expanded="false" />
+            <element signature="e#1374#1842#0" expanded="false" />
+            <element signature="e#2428#3469#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/mouthDetectionTest.py">
+    <entry file="file://$PROJECT_DIR$/lipspeaker_test.mlf">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="236">
-          <caret line="35" column="19" selection-start-line="35" selection-start-column="19" selection-end-line="35" selection-end-column="19" />
-          <folding>
-            <element signature="e#18#28#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="1334">
+          <caret line="120" column="20" selection-start-line="120" selection-start-column="20" selection-end-line="120" selection-end-column="20" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/helpFunctions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="290">
-          <caret line="173" column="19" selection-start-line="173" selection-start-column="19" selection-end-line="173" selection-end-column="19" />
+        <state relative-caret-position="560">
+          <caret line="187" column="57" selection-start-line="187" selection-start-column="57" selection-end-line="187" selection-end-column="57" />
           <folding>
             <element signature="e#39#76#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fileDirOps.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="918">
+          <caret line="61" column="0" selection-start-line="61" selection-start-column="0" selection-end-line="61" selection-end-column="0" />
+          <folding>
+            <marker date="1480803065660" expanded="true" signature="495:2597" ph="..." />
+            <marker date="1480803065660" expanded="true" signature="1344:1438" ph="..." />
+            <marker date="1480803065660" expanded="true" signature="1730:2484" ph="..." />
+            <marker date="1480803065660" expanded="true" signature="2730:3748" ph="..." />
+            <marker date="1480803065660" expanded="true" signature="4856:5783" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mouthDetection/extractMouthRegion.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mouthDetection/dlibfaceDetection.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1028">
+          <caret line="87" column="0" selection-start-line="87" selection-start-column="0" selection-end-line="87" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mouthDetection/mouthDetectionTest.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1312">
+          <caret line="5" column="22" selection-start-line="5" selection-start-column="22" selection-end-line="5" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mouthDetection/opencvCropFace.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="594">
+          <caret line="35" column="36" selection-start-line="35" selection-start-column="36" selection-end-line="35" selection-end-column="36" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mouthDetection/test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1998">
+          <caret line="112" column="0" selection-start-line="112" selection-start-column="0" selection-end-line="112" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="17" column="122" selection-start-line="17" selection-start-column="122" selection-end-line="17" selection-end-column="122" />
+          <folding />
         </state>
       </provider>
     </entry>

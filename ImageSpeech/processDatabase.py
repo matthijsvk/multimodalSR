@@ -20,6 +20,11 @@ import cv2
 
 from helpFunctions import *
 
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG) #http://stackoverflow.com/questions/6579496/using-print-statements-only-to-debug
+# levels: debug, info, warning, error and critical.
+# logging.debug('A debug message!')
+# logging.info('We processed %d records', len(processed_records))
+
 # read all the times from the mlf file, split on line with new video
 # Return:           a list, where each list element contains the text of one video, stored in another list, line by line
 
@@ -52,7 +57,7 @@ def readfile(filename):
 #                              as well as  a list of the phonemes at those times (for keeping track of which image belongs to what)
 # timeModifier:            extract image at beginning, middle, end of phoneme interval?
 #                            (value between 0 and 1, 0 meaning at beginning)
-def processVideoFile(videoPhonemeList, timeModifier = 1):
+def processVideoFile(videoPhonemeList, timeModifier = 0.5):
     videoPath =  str(videoPhonemeList[0]).replace('"','')
     videoPath =  videoPath.replace('rec','mp4')
 
@@ -86,6 +91,7 @@ def getValid(phonemes, framerate):  # frameRate = 29.97 for the TCDTimit databas
     validPhonemes = [phoneme[1] for phoneme in phonemes]
     return validTimes, validFrames, validPhonemes
 
+
 def removeInvalidFrames (phonemes, videoName, storeDir, framerate):
     validTimes, validFrames, validPhonemes = getValid(phonemes, framerate)
     #print(len(validFrames)," | ", validFrames)
@@ -94,46 +100,27 @@ def removeInvalidFrames (phonemes, videoName, storeDir, framerate):
         path = ''.join([storeDir, os.sep, videoName, "_", str(frame + 1),".jpg"])
         if frame not in validFrames:
             silentremove(path)
-    return 0
-
-# process an MLF file containing video paths, and corresponding phoneme/time combinations; extract the corresponding frames from the .mat file and store it all in a new mat file.
-# this new mat file contains three variables: 'validImages' and 'validPhonemes'. We can use these for network training.
-def processMLF(MLFfile, storeDir):
-    videos = readfile(MLFfile)
-    nbErrors = 0
-    errorlist = []
-    for video in videos:
-            videoPath, phonemes = processVideoFile(video) # phonemes: tuple of (time, phoneme)
-            videoName = os.path.basename(videoPath)
-            videoName = os.path.splitext(videoName)[0]  # remove extension
-            print("Processing ", videoPath , " ...")
-            logging.info("\t phonemes: %s", ':'.join([str(phoneme) for phoneme in phonemes]))
-    
-            #writePhonemesToFile(videoName, phonemes, storeDir)
-            #videoToImages(videoPath, phonemes, storeDir, targetSize='296:224')
-            result= saveMatFile(videoPath, phonemes, storeDir)
             
-            if result != 0:
-                errorList.append(result)
-            print("NUMBER OF ERRORS: ", nbErrors)
-            print("-----------------------------------------------------------------------")
-
+    # write phonemes and frame numbers to file
+    speakerName = os.path.basename(os.path.dirname(storeDir))
+    writePhonemesToFile(videoName, speakerName, phonemes, storeDir)
     return 0
 
 
-#################################
-########### 2nd GEN  ############
-#################################
+#####################################
+########### Main Function  ##########
+#####################################
 
     ### Executing ###
-def processDatabase(MLFfile, storageLocation):
+def processDatabase(MLFfile, storageLocation, nbThreads):
     print("###################################")
     videos = readfile(MLFfile)
+    print("There are ", len(videos), " videos to be processed...")
     framerate = 29.97
-    batchSize = 8 # number of videos per iteration
+    batchSize = nbThreads # number of videos per iteration
     
     print("This program will process all video files specified in {mlf}. It will store the extracted faces and mouths in {storageLocation}. \n \
-            The process might take a while (~10h)".format(mlf=MLFfile,storageLocation=storageLocation))
+            The process might take a while (for the lipspeaker files ~3h, for the volunteer files ~10h)".format(mlf=MLFfile,storageLocation=storageLocation))
     if query_yes_no("Are you sure this is correct?", "no"):
         
         batchIndex = 0
@@ -142,7 +129,7 @@ def processDatabase(MLFfile, storageLocation):
         executor = concurrent.futures.ThreadPoolExecutor(8)
         
         while running:
-            if batchIndex+batchSize > len(videos):
+            if batchIndex+batchSize >= len(videos):
                 print("Processing LAST BATCH of videos...")
                 running = 0
                 currentVideos = videos[batchIndex:] #till the end
@@ -153,15 +140,20 @@ def processDatabase(MLFfile, storageLocation):
             futures = []
             for video in currentVideos:
                 videoPath, phonemes = processVideoFile(video)
+                if not os.path.exists(videoPath):
+                    print("The file ", videoPath, " does not exist.")
+                    print("Stopping...")
+                    running = 0;
+                    return
                 videoName = os.path.splitext(os.path.basename(videoPath))[0]
                 storeDir = fixStoreDirName(storageLocation, videoName, video[0])
                 print("Extracting frames from ", videoPath, ", saving to: \t", storeDir)
-                futures.append(executor.submit(extractAllFrames, videoPath, videoName, storeDir, framerate, targetSize='800:800', cropStartPixel='600:300'))
+                futures.append(executor.submit(extractAllFrames, videoPath, videoName, storeDir, framerate, targetSize='800:800', cropStartPixel='550:250'))
             concurrent.futures.wait(futures)
             
             print([future.result() for future in futures])
             nbVideosExtracted = sum([future.result() for future in futures])
-            sleepTime = 1+nbVideosExtracted*3
+            sleepTime = 0+nbVideosExtracted*4
             print("Sleeping for ",sleepTime, " seconds to allow files to be written to disk.")
             time.sleep(sleepTime) # wait till files have been written
             print("\tAll frames extracted.")
@@ -187,7 +179,8 @@ def processDatabase(MLFfile, storageLocation):
                 sourceDir = fixStoreDirName(storageLocation, videoName, video[0])
                 storeDir = sourceDir
                 print("Extracting faces from ", sourceDir)
-                futures.append(executor.submit(extractFacesMouths, sourceDir, storeDir)) #storeDir = sourceDir
+                # exectute. The third argument is the path to the dlib facial landmark predictor
+                futures.append(executor.submit(extractFacesMouths, sourceDir, storeDir, "/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/ImageSpeech/mouthDetection/shape_predictor_68_face_landmarks.dat")) #storeDir = sourceDir
             concurrent.futures.wait(futures)
             print("\tAll faces and mouths have been extracted.")
             print("----------------------------------")
