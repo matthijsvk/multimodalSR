@@ -6,6 +6,7 @@ from helpFunctions import *
 import os, errno
 import subprocess
 
+# Some helper functions
 def silentremove (filename):
     try:
         os.remove(filename)
@@ -34,16 +35,20 @@ def extractZip(filePath, delete=False):
         silentremove(filePath)
     return 0
     
+######################################
+########## Main Function #############
+######################################
 
 rootDir = "/media/matthijs/TOSHIBA EXT/TCDTIMIT/volunteers"
+batchSize = 1 # 1 or 2 recommended
+
 zipList= createZipList(rootDir)
 print("\n".join(zipList))
+
 if query_yes_no("Would you like to process these zip files?", "yes"):
     deleteZips = query_yes_no("Would you like to remove the zip files after extraction?", "no")
     batchIndex = 0
-    batchSize = 1
     executor = concurrent.futures.ProcessPoolExecutor(batchSize)
-    
     running = 1
     while running:
         # get commands for current batch
