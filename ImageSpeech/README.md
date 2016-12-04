@@ -22,11 +22,7 @@ The most important files are:
     - You can use the `lipspeaker_test.mlp` for a (much) smaller version of the database, to try it out. You'll have to extract the zip files first, though.  
 
 3. `main.py`: 
-    - use this to specify the main MLF file, which contains paths of the videos to be processed, and start-and stop times for each phoneme in the videos.  
-<<<<<<< HEAD
-=======
-              You also set the target directory and the number of threads to use.  
->>>>>>> 9e1c87c... Update README.md
+    - use this to specify the main MLF file, which contains paths of the videos to be processed, and start-and stop times for each phoneme in the videos.  You also set the target directory and the number of threads to use.  
     - In order to process the database, you need to change all the paths in this file to the paths where you downloaded the database.  
             
 4. `processDatabase.py`:
