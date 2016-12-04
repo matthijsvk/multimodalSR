@@ -112,7 +112,7 @@ def fixStoreDirName (storageLocation, videoName, pathLine):
     """
     storeDir = str(pathLine).replace('"', '')
     storeDir = storeDir.replace('.rec', '.mp4')
-    print(storeDir)
+    if not "TCDTIMIT/" in storeDir: raise Exception("You have to create a 'TCDTIMIT' top level directory!!"); sys.exit(-1)
     oldStoragePath, relPath = storeDir.split("TCDTIMIT/") #/home/matthijs/TCDTIMIT/volunteers/...
     storeDir = ''.join([storageLocation, os.sep, relPath])
     storeDir, second = storeDir.split("Clips")
@@ -124,7 +124,7 @@ def fixStoreDirName (storageLocation, videoName, pathLine):
     return storeDir
 
 
-def extractAllFrames (videoPath, videoName, storeDir, framerate, targetSize='640:640', cropStartPixel='640:300'):
+def extractAllFrames (videoPath, videoName, storeDir, framerate, targetSize, cropStartPixel):
     """
     extract all frames from a video, and store them in storeDir
     """
@@ -172,6 +172,9 @@ def writePhonemesToFile (videoName, speakerName, phonemes, targetDir):
 # detect faces in all jpg's in sourceDir
 # extract faces to "storeDir/faces", and mouths to "storeDir/mouths"
 def extractFacesMouths (sourceDir, storeDir, predictor_path):
+    if not os.path.exists(predictor_path):
+        print('Landmark predictor not found!')
+        # sys.exit(1)
     import dlib
     storeFaceDir = storeDir + os.sep + "faces"
     if not os.path.exists(storeFaceDir):
