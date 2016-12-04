@@ -1,5 +1,9 @@
 from processDatabase import *
 
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG) #http://stackoverflow.com/questions/6579496/using-print-statements-only-to-debug
+# setConsoleLevel(logging.ERROR)
+# setFileLevel(logging.INFO)
+
 # get phone list from file, extract phonemes and times, get the frames corresponding to those phonemes
 
 ###################################################################################################
@@ -7,7 +11,7 @@ from processDatabase import *
 ###################################################################################################
 startTime = time.clock()
 
-processDatabase('./lipspeaker_test.mlf',"/home/matthijs/TCDTIMIT/processedTest", 8) #storeDir requires TCDTIMIT in the name
+processDatabase('./lipspeaker_labelfiles.mlf',"/home/matthijs/TCDTIMIT/processed", 8) #storeDir requires TCDTIMIT in the name
 
 duration = time.clock() - startTime
 print("This took ", duration, " seconds")

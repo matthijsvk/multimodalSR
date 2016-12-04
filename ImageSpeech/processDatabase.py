@@ -141,14 +141,14 @@ def processDatabase(MLFfile, storageLocation, nbThreads):
             for video in currentVideos:
                 videoPath, phonemes = processVideoFile(video)
                 if not os.path.exists(videoPath):
-                    print("The file ", videoPath, " does not exist.")
-                    print("Stopping...")
+                    logging.critical("The file ", videoPath, " does not exist.")
+                    logging.critical("Stopping...")
                     running = 0;
                     return
                 videoName = os.path.splitext(os.path.basename(videoPath))[0]
                 storeDir = fixStoreDirName(storageLocation, videoName, video[0])
                 print("Extracting frames from ", videoPath, ", saving to: \t", storeDir)
-                futures.append(executor.submit(extractAllFrames, videoPath, videoName, storeDir, framerate, targetSize='800:800', cropStartPixel='550:250'))
+                futures.append(executor.submit(extractAllFrames, videoPath, videoName, storeDir, framerate, '960:960', '480:0'))
             concurrent.futures.wait(futures)
             
             print([future.result() for future in futures])
@@ -171,6 +171,7 @@ def processDatabase(MLFfile, storageLocation, nbThreads):
             print("\tAll unnecessary frames removed.")
             print("----------------------------------")
 
+            time.sleep(1)
             # 3. extract faces and mouths
             futures = []
             for video in currentVideos:
@@ -180,7 +181,7 @@ def processDatabase(MLFfile, storageLocation, nbThreads):
                 storeDir = sourceDir
                 print("Extracting faces from ", sourceDir)
                 # exectute. The third argument is the path to the dlib facial landmark predictor
-                futures.append(executor.submit(extractFacesMouths, sourceDir, storeDir, "/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/ImageSpeech/mouthDetection/shape_predictor_68_face_landmarks.dat")) #storeDir = sourceDir
+                futures.append(executor.submit(extractFacesMouths, sourceDir, storeDir, "/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/ImageSpeech/shape_predictor_68_face_landmarks.dat")) #storeDir = sourceDir
             concurrent.futures.wait(futures)
             print("\tAll faces and mouths have been extracted.")
             print("----------------------------------")
