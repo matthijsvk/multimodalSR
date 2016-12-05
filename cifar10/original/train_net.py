@@ -119,7 +119,6 @@ def train (train_fn, val_fn,
             best_val_err = val_err
             best_epoch = epoch + 1
             
-            
             test_err, test_loss = val_epoch(X_test, y_test)
             
             if save_path is None:
@@ -146,14 +145,6 @@ def train (train_fn, val_fn,
         # decay the LR
         LR *= LR_decay
     
-    # store the best model
-    model = {
-        'values': lasagne.layers.get_all_param_values(net['prob']),
-        'synset_words': classes,
-        'mean_image': mean_values
-    }
-
-    print
-    "comapared all images. Storing Lasagne model in Pickle (pkl) file..."
-    pickle.dump(model, open('./resnet50imageNet.pkl', 'wb'), protocol=-1)
+    print("Done.")
+    
 
