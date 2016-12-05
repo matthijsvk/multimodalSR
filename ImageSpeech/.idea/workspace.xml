@@ -2,30 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6f99c397-9dfe-48cd-8859-553dca035fa6" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/.ipynb_checkpoints/ImageNet Pretrained Network (ResNet-50)-checkpoint.ipynb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/.ipynb_checkpoints/ResNet50-checkpoint.ipynb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/ResNet-50-deploy.prototxt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/ResNet50.ipynb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/ResNet_TrainedModel/ResNet-101-deploy.prototxt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/ResNet_TrainedModel/ResNet-152-deploy.prototxt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/ResNet_TrainedModel/ResNet_mean.binaryproto" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/ResNet_mean.binaryproto" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/bridge.jpeg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/elephantDrawing.jpeg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/elephantDrawing2.jpeg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/image.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/imagenet_classes.txt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/indianElephant.jpeg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/indianElephant2.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50CaffeToLasagne_ImageNet.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50CaffeToLasagnefunctions.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50imageNet.pkl" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/soccerBall.jpeg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/voodoo.jpg" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50CaffeToLasagne.py" afterPath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50CaffeToLasagne.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50_evaluateNetwork.py" afterPath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50_evaluateNetwork.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/trainNetwork.py" afterPath="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/trainNetwork.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../cifar10/original/train_net.py" afterPath="$PROJECT_DIR$/../cifar10/original/train_net.py" />
     </list>
     <ignored path="ImageSpeech.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -48,8 +25,8 @@
       <file leaf-file-name="networkStructural.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../cifar10/original/networkStructural.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="162">
-              <caret line="9" column="33" selection-start-line="9" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
+            <state relative-caret-position="882">
+              <caret line="127" column="58" selection-start-line="127" selection-start-column="58" selection-end-line="127" selection-end-column="58" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
@@ -57,56 +34,16 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="train_net.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="train_net.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../cifar10/original/train_net.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="315">
-              <caret line="135" column="106" selection-start-line="135" selection-start-column="106" selection-end-line="135" selection-end-column="106" />
+            <state relative-caret-position="557">
+              <caret line="147" column="18" selection-start-line="147" selection-start-column="18" selection-end-line="147" selection-end-column="18" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
-                <marker date="1480954319945" expanded="true" signature="3017:3709" ph="..." />
-                <marker date="1480954319945" expanded="true" signature="3365:3461" ph="..." />
+                <marker date="1480959610532" expanded="true" signature="3017:3696" ph="..." />
+                <marker date="1480959610532" expanded="true" signature="3365:3461" ph="..." />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="resnet50_evaluateNetwork.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50_evaluateNetwork.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="432">
-              <caret line="24" column="0" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
-              <folding>
-                <element signature="e#0#13#0" expanded="true" />
-                <element signature="e#912#1251#0" expanded="false" />
-                <element signature="e#1293#2050#0" expanded="false" />
-                <element signature="e#2561#2868#0" expanded="false" />
-                <element signature="e#3051#3365#0" expanded="false" />
-                <element signature="e#3518#4512#0" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="resnet50CaffeToLasagne.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50CaffeToLasagne.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="216">
-              <caret line="12" column="32" selection-start-line="12" selection-start-column="32" selection-end-line="12" selection-end-column="32" />
-              <folding>
-                <element signature="e#3536#3675#0" expanded="false" />
-                <element signature="e#3772#4034#0" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="resnet50LasagneModel.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50LasagneModel.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="162">
-              <caret line="9" column="32" selection-start-line="9" selection-start-column="32" selection-end-line="9" selection-end-column="32" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -171,12 +108,12 @@
         <option value="$PROJECT_DIR$/fileDirOps.py" />
         <option value="$PROJECT_DIR$/../cifar10/googleSpeech.py" />
         <option value="$PROJECT_DIR$/../cifar10/original/networkStructural.py" />
-        <option value="$PROJECT_DIR$/../cifar10/original/train_net.py" />
         <option value="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/trainNetwork.py" />
         <option value="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50CaffeToLasagne_ImageNet.py" />
         <option value="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50_evaluateNetwork.py" />
         <option value="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50CaffeToLasagne.py" />
         <option value="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50LasagneModel.py" />
+        <option value="$PROJECT_DIR$/../cifar10/original/train_net.py" />
       </list>
     </option>
   </component>
@@ -631,7 +568,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-1" y="19" width="1922" height="1062" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1819149" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32905984" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -640,7 +577,7 @@
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32804233" sideWeight="0.49787235" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.29554045" sideWeight="0.75" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.08031915" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32698414" sideWeight="0.8909575" order="9" side_tool="false" content_ui="tabs" x="1036" y="191" width="613" height="936" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32698414" sideWeight="0.8909575" order="9" side_tool="false" content_ui="tabs" x="1036" y="191" width="613" height="936" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.16346154" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -900,18 +837,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../cifar10/original/train_net.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="315">
-          <caret line="135" column="106" selection-start-line="135" selection-start-column="106" selection-end-line="135" selection-end-column="106" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-            <marker date="1480954319945" expanded="true" signature="3017:3709" ph="..." />
-            <marker date="1480954319945" expanded="true" signature="3365:3461" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/trainNetwork.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="3348">
@@ -941,16 +866,6 @@
         <state />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../cifar10/original/networkStructural.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="162">
-          <caret line="9" column="33" selection-start-line="9" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50CaffeToLasagne.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="216">
@@ -962,10 +877,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50LasagneModel.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="24" column="0" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
+          <folding>
+            <element signature="e#327#341#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50_evaluateNetwork.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="432">
-          <caret line="24" column="0" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
+        <state relative-caret-position="378">
+          <caret line="21" column="55" selection-start-line="21" selection-start-column="55" selection-end-line="21" selection-end-column="55" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
             <element signature="e#912#1251#0" expanded="false" />
@@ -977,11 +902,25 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50LasagneModel.py">
+    <entry file="file://$PROJECT_DIR$/../cifar10/original/networkStructural.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="162">
-          <caret line="9" column="32" selection-start-line="9" selection-start-column="32" selection-end-line="9" selection-end-column="32" />
-          <folding />
+        <state relative-caret-position="882">
+          <caret line="127" column="58" selection-start-line="127" selection-start-column="58" selection-end-line="127" selection-end-column="58" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../cifar10/original/train_net.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="557">
+          <caret line="147" column="18" selection-start-line="147" selection-start-column="18" selection-end-line="147" selection-end-column="18" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+            <marker date="1480959610532" expanded="true" signature="3017:3696" ph="..." />
+            <marker date="1480959610532" expanded="true" signature="3365:3461" ph="..." />
+          </folding>
         </state>
       </provider>
     </entry>
