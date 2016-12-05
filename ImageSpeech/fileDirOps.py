@@ -117,6 +117,37 @@ def deleteDirs(rootDir, names):
 # deleteDirs(root,name)
 
 
+# convert all images in folders specified in the list 'dirNames', that are found under the rootDir, to grayscale.
+def convertToGrayScale(rootDir, dirNames):
+    nbConverted = 0
+    print(dirNames)
+    for root, dirs, files in os.walk(rootDir):
+        files.sort(key=tryint)
+        for file in files:
+            parentDir = os.path.basename(root)
+            fname = os.path.splitext(file)[0] # no path, no extension. only filename
+            if parentDir in dirNames:
+                # convert all images in here to grayscale, store to dirName_gray
+                newDirPath = ''.join([os.path.dirname(root), os.sep, parentDir+"_gray"])
+                newFilePath =''.join([newDirPath, os.sep, fname+"_gray.jpg"])
+                if not os.path.exists(newDirPath):
+                    os.makedirs(newDirPath)
+                if not os.path.exists(newFilePath):
+                    # read in grayscale, write to new path
+                    # with OpenCV: weird results (gray image larger than color ?!?)
+                    # img = cv2.imread(root+os.sep+file, 0)
+                    # cv2.imwrite(newFilePath, img)
+
+                    from skimage import color
+                    from skimage import io
+                    img = color.rgb2gray(io.imread('image.png'));
+                    io.imsave(newFilePath, img)  # don't write to disk if already exists
+                    nbConverted += 1
+
+    print(nbConverted, " files have been converted to Grayscale")
+    return 0
+
+
 def main():
     # parse command line options
     try:
@@ -143,11 +174,24 @@ def main():
             names = args[2]
         else: print("not enough arguments!")
         deleteDirs(rootDir,names)
+    elif function == "convertToGray":
+        if length(args) > 2:
+            names = args[2]
+        else: print("not enough arguments!")
+        convertToGrayScale(rootDir,names)
     else:
         print("not a valid function!")
         return -1
     return 0
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
+
+# Testing
+import time
+startTime = time.clock()
+deleteDirs("/home/matthijs/TCDTIMIT/processed", ["faces_gray","mouths_gray"])
+convertToGrayScale("/home/matthijs/TCDTIMIT/processed", ["faces","mouths"])
+duration = time.clock() - startTime
+print("This took ", duration, " seconds")
