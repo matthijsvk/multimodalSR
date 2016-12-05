@@ -171,6 +171,8 @@ def unfreeze (layer):
     for param in layer.params:
         layer.params[param].discard('trainable')
     return layer  # optional, if you want to use it in-line
+
+
 # ############################## Main program ################################
 # Everything else will be handled in our main program now. We could pull out
 # more functions to better separate the code, but it wouldn't make it any
