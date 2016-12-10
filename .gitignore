@@ -7,3 +7,4 @@ protobuf-master/
 *caffemodel*
 .idea/
 dlib-master/
+*.pkl
