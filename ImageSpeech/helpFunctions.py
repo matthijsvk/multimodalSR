@@ -74,33 +74,6 @@ def tryint (s):
             return int(u)
         except:
             return t
-                       
-# extract faces out of an image using dlib
-import sys, os
-import dlib
-from skimage import io
-import cv2
-
-
-def resize_image (filePath, filePathResized, width=360.0):
-    im = cv2.imread(filePath)
-    r = width / im.shape[1]
-    dim = (int(width), int(im.shape[0] * r))
-    resized = cv2.resize(im, dim)
-    cv2.imwrite(filePathResized, resized)
-
-
-def resizeImages (dirPath, width=640.0):
-    from os import listdir
-    from os.path import isfile, join
-    onlyfiles = [f for f in listdir(dirPath) if isfile(join(dirPath, f))]
-    onlyfiles.sort(key=tryint)
-    for file in onlyfiles:
-        filename, ext = os.path.splitext(file)
-        filePath = ''.join([dirPath, os.sep, file])  # the file we're processing now
-        resize_image(filePath, filePath, width)
-    return 0
-
 
 def fixStoreDirName (storageLocation, videoName, pathLine):
     """
@@ -123,6 +96,45 @@ def fixStoreDirName (storageLocation, videoName, pathLine):
     storeDir = ''.join([storeDir, os.sep, videoName])
     return storeDir
 
+# delete unneeded files,  based on a phoneme file
+def deleteUnneededFiles (videoDir):
+    # read correct frames: firs column of text file
+    parentName = os.path.basename(os.path.dirname(videoDir))
+    dirName = os.path.basename(videoDir)
+    validFrames = []
+    with open(videoDir + os.sep + parentName + "_" + dirName + "_PHN.txt") as inf:
+        for line in inf:
+            parts = line.split()  # split line into parts
+            if len(parts) > 1:  # if at least 2 parts/columns
+                validFrames.append(parts[0])  # print column 2
+    
+    # walk through the files, if a file doesn't contain '_validFrame', then remove it.
+    from os import listdir
+    from os.path import isfile, join
+    nbRemoved = 0
+    for root, dirs, files in os.walk(videoDir):
+        files.sort(key=tryint)
+        for f in files:
+            for validFrame in validFrames:
+                remove = 1
+                # only jpg
+                name, ext = os.path.splitext(f)
+                if ext != ".jpg": remove = 0; continue
+                # must contain some validFrame
+                fname = os.path.splitext(f)[0]
+                fnumber = fname.split("_")[1]
+                if validFrame == fnumber:
+                    #print(f + " has frame number: ", fnumber, " and won't be removed")
+                    remove = 0
+                    break
+            if remove == 1:
+                filePath = os.path.join(root, f)
+                #print(filePath + " will be removed")
+                os.remove(filePath)
+                nbRemoved += 1
+    #print(validFrames)
+    return nbRemoved
+    
 
 def extractAllFrames (videoPath, videoName, storeDir, framerate, targetSize, cropStartPixel):
     """
@@ -148,27 +160,6 @@ def extractAllFrames (videoPath, videoName, storeDir, framerate, targetSize, cro
     else:
         return 0  # files already exist?
 
-# write file with phonemes and corresponding frame numbers
-def writePhonemesToFile (videoName, speakerName, phonemes, targetDir):
-    # print(phonemes)
-    validTimes, validFrames, validPhonemes = getValid(phonemes, 29.97)
-    phonemeFile = ''.join([targetDir, os.sep, speakerName, "_", videoName, "_PHN.txt"])
-
-    # add 1 to the validFrames to fix the ffmpeg issue (starts at 1 instead of 0)
-    for i in range(0, len(validFrames)):
-        validFrames[i] += 1
-
-    # write to file
-    thefile = open(phonemeFile, 'w')
-    writeTuples = (validFrames, validPhonemes)
-    for item in writeTuples:
-        thefile.write(' '.join(map(str, item)) + "\r\n")
-    thefile.close()
-
-    sio.savemat('phonemeFrames.mat', {'validFrames': np.array(validFrames), 'validPhonemes': np.array(validPhonemes)})
-    return 0
-
-
 # detect faces in all jpg's in sourceDir
 # extract faces to "storeDir/faces", and mouths to "storeDir/mouths"
 def extractFacesMouths (sourceDir, storeDir, predictor_path):
@@ -192,10 +183,10 @@ def extractFacesMouths (sourceDir, storeDir, predictor_path):
         fname = os.path.splitext(os.path.basename(f))[0]
         facePath = storeFaceDir + os.sep + fname + "_face.jpg"
         mouthPath = storeMouthsDir + os.sep + fname + "_mouth.jpg"
-        img = io.imread(f)
-        
-        # don't reprocess images that already have a face extracted, as we've already done this before!
         if os.path.exists(facePath): continue
+
+        img = io.imread(f)
+        # don't reprocess images that already have a face extracted, as we've already done this before!
         
         # detect face, then keypoints. Store face and mouth
         resizer = 4
@@ -256,3 +247,73 @@ def extractFacesMouths (sourceDir, storeDir, predictor_path):
             
             mouth_img = img[my:my + mh, mx:mx + mw]
             io.imsave(mouthPath, mouth_img)
+
+
+# extract faces out of an image using dlib
+import sys, os
+import dlib
+from skimage import io
+import cv2
+
+def resize_image (filePath, filePathResized, keepAR=True, width=120.0):
+    from skimage import data
+    from skimage.transform import resize
+    im = io.imread(filePath)
+    if keepAR:
+        r = width / im.shape[1]
+        dim = (int(im.shape[0] * r), int(width))
+        im_resized = resize(im,dim)
+    else:
+        im_resized = resize(im, (120,120))
+    io.imsave(filePathResized, im_resized)
+
+def resizeImages (rootDir, dirNames, keepAR= True, width=640.0):
+    from os import listdir
+    from os.path import isfile, join
+    for dirName in dirNames:
+        dirPath = rootDir + os.sep + dirName
+        targetDirPath = rootDir + os.sep + dirName + "_" + str(int(width))
+        if not os.path.exists(targetDirPath):
+            os.makedirs(targetDirPath)
+            
+        # loop through the files
+        onlyfiles = [f for f in listdir(dirPath) if isfile(join(dirPath, f))]
+        onlyfiles.sort(key=tryint)
+        for file in onlyfiles:
+            # print("processing ", file)
+            filename, ext = os.path.splitext(file)
+            filePath = ''.join([dirPath, os.sep, file])  # the file we're processing now
+            targetPath = ''.join([targetDirPath, os.sep, file])
+            # print("resizing ", filePath, " to ", targetPath)
+            if not os.path.exists(targetPath):
+                resize_image(filePath, targetPath, keepAR, width)
+    return 0
+
+# convert all images in folders specified in the list 'dirNames', that are found under the rootDir, to grayscale.
+def convertToGrayScale(rootDir, dirNames):
+    nbConverted = 0
+    for root, dirs, files in os.walk(rootDir):
+        files.sort(key=tryint)
+        for file in files:
+            parentDir = os.path.basename(root)
+            fname = os.path.splitext(file)[0] # no path, no extension. only filename
+            if parentDir in dirNames:
+                # convert all images in here to grayscale, store to dirName_gray
+                newDirPath = ''.join([os.path.dirname(root), os.sep, parentDir+"_gray"])
+                newFilePath =''.join([newDirPath, os.sep, fname+"_gray.jpg"])
+                if not os.path.exists(newDirPath):
+                    os.makedirs(newDirPath)
+                if not os.path.exists(newFilePath):
+                    # read in grayscale, write to new path
+                    # with OpenCV: weird results (gray image larger than color ?!?)
+                    # img = cv2.imread(root+os.sep+file, 0)
+                    # cv2.imwrite(newFilePath, img)
+
+                    from skimage.color import rgb2gray
+                    from skimage import io
+                    img_gray = rgb2gray(io.imread(root+os.sep+file))
+                    io.imsave(newFilePath, img_gray)  # don't write to disk if already exists
+                    nbConverted += 1
+
+    # print(nbConverted, " files have been converted to Grayscale")
+    return 0

@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import time
 
 from collections import OrderedDict
@@ -101,8 +103,9 @@ def train (train_fn, val_fn,
     LR = LR_start
     
     # We iterate over epochs:
+    print("starting training for ", num_epochs, " epochs...")
     for epoch in range(num_epochs):
-        
+        print("epoch ", epoch + 1, "started...")
         start_time = time.time()
         
         train_loss = train_epoch(X_train, y_train, LR)
@@ -118,8 +121,13 @@ def train (train_fn, val_fn,
             
             test_err, test_loss = val_epoch(X_test, y_test)
             
-            if save_path is not None:
-                np.savez(save_path, *lasagne.layers.get_all_param_values(model))
+            if save_path is None:
+                save_path = "./bestModel.pkl"
+                # np.savez(save_path, *lasagne.layers.get_all_param_values(model))
+                # update the best model
+            model = {'params': lasagne.layers.get_all_param_values(model)},
+            print("Storing new best model in Pickle (pkl) file at ", savePath)
+            pickle.dump(model, open(save_path, 'wb'), protocol=-1)
         
         epoch_duration = time.time() - start_time
         
@@ -136,4 +144,7 @@ def train (train_fn, val_fn,
         
         # decay the LR
         LR *= LR_decay
+    
+    print("Done.")
+
 
