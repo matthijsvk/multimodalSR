@@ -11,13 +11,7 @@ logging.basicConfig(stream=sys.stderr, level=logging.DEBUG) #http://stackoverflo
 ###################################################################################################
 startTime = time.clock()
 
-processDatabase('./lipspeaker_labelfiles_local.mlf',"/home/matthijs/TCDTIMIT/processed", 8) #storeDir requires TCDTIMIT in the name
-# processDatabase('/home/matthijs/TCDTIMIT_test/test.mlf',"/home/matthijs/TCDTIMIT_test/processed", 8) #storeDir requires TCDTIMIT in the name
+processDatabase('/home/matthijs/TCDTIMIT_test/test.mlf',"/home/matthijs/TCDTIMIT_test/processed", 8) #storeDir requires TCDTIMIT in the name
 
 duration = time.clock() - startTime
 print("This took ", duration, " seconds")
-
-
-
-
-

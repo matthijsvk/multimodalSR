@@ -91,6 +91,26 @@ def getValid(phonemes, framerate):  # frameRate = 29.97 for the TCDTimit databas
     validPhonemes = [phoneme[1] for phoneme in phonemes]
     return validTimes, validFrames, validPhonemes
 
+# write file with phonemes and corresponding frame numbers. First column = frames. Second column = corresponding phonemes
+def writePhonemesToFile (videoName, speakerName, phonemes, targetDir):
+    validTimes, validFrames, validPhonemes = getValid(phonemes, 29.97)
+    phonemeFile = ''.join([targetDir, os.sep, speakerName, "_", videoName, "_PHN.txt"])
+
+    # add 1 to the validFrames to fix the ffmpeg issue (starts at 1 instead of 0)
+    for i in range(0, len(validFrames)):
+        validFrames[i] += 1
+
+    # write to file
+    
+    thefile = open(phonemeFile, 'w')
+    for i in range(len(validFrames)):
+        item = (validFrames[i],validPhonemes[i])
+        thefile.write(' '.join(map(str, item)) + "\r\n")
+    thefile.close()
+
+    matPath = targetDir+os.sep+"phonemeFrames.mat"
+    sio.savemat( matPath, {'validFrames': np.array(validFrames), 'validPhonemes': np.array(validPhonemes)})
+    return 0
 
 def removeInvalidFrames (phonemes, videoName, storeDir, framerate):
     validTimes, validFrames, validPhonemes = getValid(phonemes, framerate)
@@ -100,10 +120,7 @@ def removeInvalidFrames (phonemes, videoName, storeDir, framerate):
         path = ''.join([storeDir, os.sep, videoName, "_", str(frame + 1),".jpg"])
         if frame not in validFrames:
             silentremove(path)
-            
-    # write phonemes and frame numbers to file
-    speakerName = os.path.basename(os.path.dirname(storeDir))
-    writePhonemesToFile(videoName, speakerName, phonemes, storeDir)
+        
     return 0
 
 
@@ -141,21 +158,26 @@ def processDatabase(MLFfile, storageLocation, nbThreads):
             for video in currentVideos:
                 videoPath, phonemes = processVideoFile(video)
                 if not os.path.exists(videoPath):
-                    logging.critical("The file ", videoPath, " does not exist.")
+                    print("The file ", videoPath, " does not exist.")
                     logging.critical("Stopping...")
                     running = 0;
-                    return
+                    return -1
                 videoName = os.path.splitext(os.path.basename(videoPath))[0]
                 storeDir = fixStoreDirName(storageLocation, videoName, video[0])
                 print("Extracting frames from ", videoPath, ", saving to: \t", storeDir)
                 futures.append(executor.submit(extractAllFrames, videoPath, videoName, storeDir, framerate, '960:960', '480:0'))
+                # write phonemes and frame numbers to file
+                print("writing phonemes...")
+                speakerName = os.path.basename(os.path.dirname(storeDir))
+                futures.append(executor.submit(writePhonemesToFile,videoName, speakerName, phonemes, storeDir))
             concurrent.futures.wait(futures)
             
             print([future.result() for future in futures])
             nbVideosExtracted = sum([future.result() for future in futures])
-            sleepTime = 0+nbVideosExtracted*4
+            sleepTime = 0+nbVideosExtracted*3
             print("Sleeping for ",sleepTime, " seconds to allow files to be written to disk.")
             time.sleep(sleepTime) # wait till files have been written
+            
             print("\tAll frames extracted.")
             print("----------------------------------")
             
@@ -164,14 +186,16 @@ def processDatabase(MLFfile, storageLocation, nbThreads):
             for video in currentVideos:
                 videoPath, phonemes = processVideoFile(video)
                 videoName = os.path.splitext(os.path.basename(videoPath))[0]
-                storeDir = fixStoreDirName(storageLocation, videoName, video[0])
+                videoDir = fixStoreDirName(storageLocation, videoName, video[0])
                 print("removing invalid frames from ", storeDir)
-                futures.append(executor.submit(removeInvalidFrames, phonemes, videoName, storeDir, framerate))
+                futures.append(executor.submit(deleteUnneededFiles, videoDir))
             concurrent.futures.wait(futures)
             print("\tAll unnecessary frames removed.")
             print("----------------------------------")
+            nbRemoved= sum([future.result() for future in futures])
+            sleepTime = nbRemoved * 0.01
+            time.sleep(sleepTime)
 
-            time.sleep(1)
             # 3. extract faces and mouths
             futures = []
             for video in currentVideos:
@@ -186,14 +210,30 @@ def processDatabase(MLFfile, storageLocation, nbThreads):
             print("\tAll faces and mouths have been extracted.")
             print("----------------------------------")
     
+            # 4. convert to grayscale
+            futures = []
+            for video in currentVideos:
+                videoPath, phonemes = processVideoFile(video)
+                videoName = os.path.splitext(os.path.basename(videoPath))[0]
+                sourceDir = fixStoreDirName(storageLocation, videoName, video[0])
+                storeDir = sourceDir
+                dirNames = ["faces", "mouths"]
+                print("Converting to grayscale from: ", sourceDir)
+                futures.append(executor.submit(convertToGrayScale, sourceDir, dirNames))
+            concurrent.futures.wait(futures)
+            print("\tAll faces and mouths have been converted to grayscale.")
+            print("----------------------------------")
+            
             # 5. resize mouth images, for convnet usage
             futures = []
             for video in currentVideos:
                 videoPath, phonemes = processVideoFile(video)
                 videoName = os.path.splitext(os.path.basename(videoPath))[0]
                 storeDir = fixStoreDirName(storageLocation, videoName, video[0])  # eg /media/matthijs/TOSHIBA EXT/TCDTIMIT/processed/lipspeakers/LipSpkr1/sa1
-                storeDir = storeDir+os.sep+"mouths"
-                futures.append(executor.submit(resizeImages, storeDir, 320.0))
+                rootDir = storeDir
+                dirNames = ["mouths_gray", "faces_gray"]
+                print("Resizing images from: ", sourceDir)
+                futures.append(executor.submit(resizeImages, storeDir,dirNames, False, 120.0))
             concurrent.futures.wait(futures)
             print("\tAll mouths have been resized.")
             print("----------------------------------")

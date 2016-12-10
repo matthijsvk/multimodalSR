@@ -15,12 +15,14 @@ import theano.tensor as T
 
 import lasagne
 
-import train_googleSpeech
+import train_net
+
 from pylearn2.datasets.cifar10 import CIFAR10
 
-if __name__ == "__main__":
+
+def main ():
     # BN parameters
-    batch_size = 64
+    batch_size = 50
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
@@ -37,11 +39,6 @@ if __name__ == "__main__":
     print("num_epochs = " + str(num_epochs))
     
     # Decaying LR
-    # Google: An initial learning rate of 0.1 was used, and decreased by
-            # 10% every time the training error did not improve for 2,000
-            # iterations. Training on the full sentence data was stopped
-            # when the validation error did not improve for 5,000 itera-
-            # tions.
     LR_start = 0.001
     print("LR_start = " + str(LR_start))
     LR_fin = 0.0000003
@@ -57,31 +54,7 @@ if __name__ == "__main__":
     
     print('Loading CIFAR-10 dataset...')
     
-    train_set = CIFAR10(which_set="train", start=0, stop=train_set_size)
-    valid_set = CIFAR10(which_set="train", start=train_set_size, stop=50000)
-    test_set = CIFAR10(which_set="test")
-    
-    # bc01 format
-    # Inputs in the range [-1,+1]. First 255 -> [0,2], then -1 to get [-1,1]
-    # print("Inputs in the range [-1,+1]")
-    train_set.X = np.reshape(np.subtract(np.multiply(2. / 255., train_set.X), 1.), (-1, 3, 32, 32))
-    valid_set.X = np.reshape(np.subtract(np.multiply(2. / 255., valid_set.X), 1.), (-1, 3, 32, 32))
-    test_set.X = np.reshape(np.subtract(np.multiply(2. / 255., test_set.X), 1.), (-1, 3, 32, 32))
-    
-    # flatten targets
-    train_set.y = np.hstack(train_set.y)
-    valid_set.y = np.hstack(valid_set.y)
-    test_set.y = np.hstack(test_set.y)
-    
-    # Onehot the targets
-    train_set.y = np.float32(np.eye(10)[train_set.y])
-    valid_set.y = np.float32(np.eye(10)[valid_set.y])
-    test_set.y = np.float32(np.eye(10)[test_set.y])
-    
-    # for hinge loss
-    train_set.y = 2 * train_set.y - 1.
-    valid_set.y = 2 * valid_set.y - 1.
-    test_set.y = 2 * test_set.y - 1.
+    train_set, valid_set, test_set = load_dataset(train_set_size)
     
     print('Building the CNN...')
     
@@ -90,162 +63,18 @@ if __name__ == "__main__":
     target = T.matrix('targets')
     LR = T.scalar('LR', dtype=theano.config.floatX)
     
-    cnn = lasagne.layers.InputLayer(
-            shape=(None, 1, 120, 120),
-            input_var=input)
+    # get the network structure
+    # cnn = build_network()
     
-    # conv1
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn,
-            num_filters=96,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
+    cnn = build_network(activation, alpha, epsilon, input)
     
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-    
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-    
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn,
-            num_filters=256,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-    
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-    
-    
-    # 256C3-256C3-P2
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn,
-            num_filters=256,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-    
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-    
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn,
-            num_filters=256,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-    
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-    
-    # 512C3-512C3-P2
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn,
-            num_filters=512,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-    
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-    
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn,
-            num_filters=512,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-    
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-    
-    # print(cnn.output_shape)
-    
-    # 1024FP-1024FP-10FP
-    cnn = lasagne.layers.DenseLayer(
-            cnn,
-            nonlinearity=lasagne.nonlinearities.identity,
-            num_units=1024)
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-    
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-    
-    cnn = lasagne.layers.DenseLayer(
-            cnn,
-            nonlinearity=lasagne.nonlinearities.identity,
-            num_units=1024)
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-    
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-    
-    cnn = lasagne.layers.DenseLayer(
-            cnn,
-            nonlinearity=lasagne.nonlinearities.identity,
-            num_units=10)
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-    
+    # get output layer, for calculating loss etc
     train_output = lasagne.layers.get_output(cnn, deterministic=False)
     
     # squared hinge loss
     loss = T.mean(T.sqr(T.maximum(0., 1. - target * train_output)))
     
+    # set all params to trainable
     params = lasagne.layers.get_all_params(cnn, trainable=True)
     updates = lasagne.updates.adam(loss_or_grads=loss, params=params, learning_rate=LR)
     
@@ -271,4 +100,116 @@ if __name__ == "__main__":
             train_set.X, train_set.y,
             valid_set.X, valid_set.y,
             test_set.X, test_set.y,
+            save_path="./cifar10BestModel.pkl",
             shuffle_parts=shuffle_parts)
+
+
+def build_network (activation, alpha, epsilon, input):
+    # input
+    cnn = lasagne.layers.InputLayer(
+            shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
+            input_var=input)
+    # conv 1
+    cnn = lasagne.layers.Conv2DLayer(
+            cnn,
+            num_filters=96,
+            filter_size=(3, 3),
+            pad=1,
+            nonlinearity=lasagne.nonlinearities.identity)
+    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
+    cnn = lasagne.layers.BatchNormLayer(
+            cnn,
+            epsilon=epsilon,
+            alpha=alpha)
+    cnn = lasagne.layers.NonlinearityLayer(
+            cnn,
+            nonlinearity=activation)
+    
+    # conv 2
+    cnn = lasagne.layers.Conv2DLayer(
+            cnn,
+            num_filters=256,
+            filter_size=(3, 3),
+            stride=(2, 2)
+    pad = 1,
+          nonlinearity = lasagne.nonlinearities.identity)
+    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
+    cnn = lasagne.layers.BatchNormLayer(
+            cnn,
+            epsilon=epsilon,
+            alpha=alpha)
+    cnn = lasagne.layers.NonlinearityLayer(
+            cnn,
+            nonlinearity=activation)
+    
+    # conv3
+    cnn = lasagne.layers.Conv2DLayer(
+            cnn,
+            num_filters=512,
+            filter_size=(3, 3),
+            pad=1,
+            nonlinearity=lasagne.nonlinearities.identity)
+    cnn = lasagne.layers.NonlinearityLayer(
+            cnn,
+            nonlinearity=activation)
+    
+    # conv 4
+    cnn = lasagne.layers.Conv2DLayer(
+            cnn,
+            num_filters=512,
+            filter_size=(3, 3),
+            pad=1,
+            nonlinearity=lasagne.nonlinearities.identity)
+    cnn = lasagne.layers.NonlinearityLayer(
+            cnn,
+            nonlinearity=activation)
+    
+    # conv 5
+    cnn = lasagne.layers.Conv2DLayer(
+            cnn,
+            num_filters=512,
+            filter_size=(3, 3),
+            pad=1,
+            nonlinearity=lasagne.nonlinearities.identity)
+    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
+    cnn = lasagne.layers.NonlinearityLayer(
+            cnn,
+            nonlinearity=activation)
+    print(cnn.output_shape)
+    
+    # FC layer
+    cnn = lasagne.layers.DenseLayer(
+            cnn,
+            nonlinearity=lasagne.nonlinearities.identity,
+            num_units=39)
+    return cnn
+
+
+def load_dataset (train_set_size):
+    train_set = CIFAR10(which_set="train", start=0, stop=train_set_size)
+    valid_set = CIFAR10(which_set="train", start=train_set_size, stop=50000)
+    test_set = CIFAR10(which_set="test")
+    # bc01 format
+    # Inputs in the range [-1,+1]
+    # print("Inputs in the range [-1,+1]")
+    train_set.X = np.reshape(np.subtract(np.multiply(2. / 255., train_set.X), 1.), (-1, 3, 32, 32))
+    valid_set.X = np.reshape(np.subtract(np.multiply(2. / 255., valid_set.X), 1.), (-1, 3, 32, 32))
+    test_set.X = np.reshape(np.subtract(np.multiply(2. / 255., test_set.X), 1.), (-1, 3, 32, 32))
+    # flatten targets
+    train_set.y = np.hstack(train_set.y)
+    valid_set.y = np.hstack(valid_set.y)
+    test_set.y = np.hstack(test_set.y)
+    # Onehot the targets
+    train_set.y = np.float32(np.eye(10)[train_set.y])
+    valid_set.y = np.float32(np.eye(10)[valid_set.y])
+    test_set.y = np.float32(np.eye(10)[test_set.y])
+    # for hinge loss
+    train_set.y = 2 * train_set.y - 1.
+    valid_set.y = 2 * valid_set.y - 1.
+    test_set.y = 2 * test_set.y - 1.
+    
+    return train_set, valid_set, test_set
+
+
+if __name__ == "__main__":
+    main()
