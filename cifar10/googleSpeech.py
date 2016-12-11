@@ -52,7 +52,7 @@ def main ():
     shuffle_parts = 1
     print("shuffle_parts = " + str(shuffle_parts))
     
-    print('Loading CIFAR-10 dataset...')
+    print('Loading TCDTIMIT dataset...')
     
     train_set, valid_set, test_set = load_dataset(train_set_size)
     
@@ -100,7 +100,7 @@ def main ():
             train_set.X, train_set.y,
             valid_set.X, valid_set.y,
             test_set.X, test_set.y,
-            save_path="./cifar10BestModel.pkl",
+            save_path="./TCDTIMITBestModel.pkl",
             shuffle_parts=shuffle_parts)
 
 
@@ -186,23 +186,27 @@ def build_network (activation, alpha, epsilon, input):
 
 
 def load_dataset (train_set_size):
-    train_set = CIFAR10(which_set="train", start=0, stop=train_set_size)
-    valid_set = CIFAR10(which_set="train", start=train_set_size, stop=50000)
-    test_set = CIFAR10(which_set="test")
+    
+    
+    # train_set = CIFAR10(which_set="train", start=0, stop=train_set_size)
+    # valid_set = CIFAR10(which_set="train", start=train_set_size, stop=50000)
+    # test_set = CIFAR10(which_set="test")
+    
+    
     # bc01 format
     # Inputs in the range [-1,+1]
     # print("Inputs in the range [-1,+1]")
-    train_set.X = np.reshape(np.subtract(np.multiply(2. / 255., train_set.X), 1.), (-1, 3, 32, 32))
-    valid_set.X = np.reshape(np.subtract(np.multiply(2. / 255., valid_set.X), 1.), (-1, 3, 32, 32))
-    test_set.X = np.reshape(np.subtract(np.multiply(2. / 255., test_set.X), 1.), (-1, 3, 32, 32))
+    train_set.X = np.reshape(np.subtract(np.multiply(2. / 255., train_set.X), 1.), (-1, 1, 120, 120))
+    valid_set.X = np.reshape(np.subtract(np.multiply(2. / 255., valid_set.X), 1.), (-1, 1, 120, 120))
+    test_set.X = np.reshape(np.subtract(np.multiply(2. / 255., test_set.X), 1.), (-1, 1, 120, 120))
     # flatten targets
     train_set.y = np.hstack(train_set.y)
     valid_set.y = np.hstack(valid_set.y)
     test_set.y = np.hstack(test_set.y)
     # Onehot the targets
-    train_set.y = np.float32(np.eye(10)[train_set.y])
-    valid_set.y = np.float32(np.eye(10)[valid_set.y])
-    test_set.y = np.float32(np.eye(10)[test_set.y])
+    train_set.y = np.float32(np.eye(39)[train_set.y])
+    valid_set.y = np.float32(np.eye(39)[valid_set.y])
+    test_set.y = np.float32(np.eye(39)[test_set.y])
     # for hinge loss
     train_set.y = 2 * train_set.y - 1.
     valid_set.y = 2 * valid_set.y - 1.
