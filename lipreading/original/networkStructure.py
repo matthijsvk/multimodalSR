@@ -103,10 +103,6 @@ if __name__ == "__main__":
             shape=(None, 3, 32, 32),
             input_var=input)
 
-    # input
-    cnn = lasagne.layers.InputLayer(
-            shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
-            input_var=input)
     # conv 1
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
@@ -169,7 +165,7 @@ if __name__ == "__main__":
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
+#    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
