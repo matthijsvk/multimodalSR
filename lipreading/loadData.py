@@ -5,6 +5,7 @@
 """
 import os
 import logging
+import pickle
 
 import numpy
 from theano.compat.six.moves import xrange
@@ -18,7 +19,7 @@ from pylearn2.utils import string_utils
 _logger = logging.getLogger(__name__)
 
 
-class TCDTIMIT(dense_design_matrix.DenseDesignMatrix):
+class CIFAR10(dense_design_matrix.DenseDesignMatrix):
 
     """
     .. todo::
@@ -52,27 +53,20 @@ class TCDTIMIT(dense_design_matrix.DenseDesignMatrix):
         self.img_shape = (1, 120, 120)
         self.img_size = numpy.prod(self.img_shape)
         self.n_classes = 39
-        self.label_names = vocab = [line.rstrip('\n') for line in open('../ImageSpeech/phonemeList.txt')]
+        self.label_names = [line.rstrip('\n') for line in open('../ImageSpeech/phonemeList.txt')]
         
         # prepare loading
-        fnames = ['Lipspkr%i' % i for i in range(1, 1)] #only use lipspeaker 1 for now
+        fnames = ['Lipspkr%i.pkl' % i for i in range(1, 2)] #only use lipspeaker 1 for now
         datasets = {}
-        datapath = os.path.join('~/TCDTIMIT/database_binary')
+        datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
         for name in fnames:
             fname = os.path.join(datapath, name)
             if not os.path.exists(fname):
-                raise IOError(fname + " was not found. You need to run some scripts")
+                raise IOError(fname + " was not found.")
             datasets[name] = cache.datasetCache.cache_file(fname)
             
-# total size of CIFAR10 = 60000 images -> 6 batches of 10000 images
-# Loaded in this way, each of the batch files contains a dictionary with the following elements:
-#     data -- a 10000x3072 numpy array of uint8s. Each row of the array stores a 32x32 colour image. The first 1024 entries contain the red channel values, the next 1024 the green, and the final 1024 the blue. The image is stored in row-major order, so that the first 32 entries of the array are the red channel values of the first row of the image.
-#     labels -- a list of 10000 numbers in the range 0-9. The number at index i indicates the label of the ith image in the array data.
-       
-       # our batch is 14627 images long -> 14500 to make it round (batch_size in lipreading....py of 50)
         batchLength = ntotal
-       
-        lenx = int(numpy.ceil((ntrain + nvalid) / float(batchLength)) * batchLength) # 10000 is the batch size
+        lenx = int(numpy.ceil((ntotal) / float(batchLength)) * batchLength) # 10000 is the batch size
         x = numpy.zeros((lenx, self.img_size), dtype=dtype)
         y = numpy.zeros((lenx, 1), dtype=dtype)
 
@@ -80,16 +74,13 @@ class TCDTIMIT(dense_design_matrix.DenseDesignMatrix):
         nloaded = 0
         for i, fname in enumerate(fnames):
             _logger.info('loading file %s' % datasets[fname])
-            data = serial.load(datasets[fname]) #dictionary of 'data' and 'labels'
-            x[i * batchLength:(i + 1) * batchLength, :] = data['data']
-            y[i * batchLength:(i + 1) * batchLength, 0] = data['labels']
+            with open(datasets[fname], 'rb') as f:
+                data = pickle.load(f) #dictionary of 'data' and 'labels'
+            x[i * batchLength:(i + 1) * batchLength, :] = data['data'][0:ntotal]
+            y[i * batchLength:(i + 1) * batchLength, 0] = data['labels'][0:ntotal]
             nloaded += batchLength
-            if nloaded >= ntrain + nvalid + ntest:
+            if nloaded >= ntotal:
                 break
-
-        # # load test data
-        # _logger.info('loading file %s' % datasets['test_batch'])
-        # data = serial.load(datasets['test_batch'])
 
         # process this data
         Xs = {'train': x[0:ntrain],
@@ -103,7 +94,10 @@ class TCDTIMIT(dense_design_matrix.DenseDesignMatrix):
 
         if isinstance(y, list):
             y = numpy.asarray(y).astype(dtype)
-
+            
+        # labels start at 1, but the library expects them to start at 0
+        y = y - 1
+        
         if which_set == 'test':
             assert y.shape[0] == ntest
             y = y.reshape((y.shape[0], 1))
@@ -149,11 +143,11 @@ class TCDTIMIT(dense_design_matrix.DenseDesignMatrix):
 
         view_converter = dense_design_matrix.DefaultViewConverter((120, 120, 1),
                                                                   axes)
-
-        super(TCDTIMIT, self).__init__(X=X, y=y, view_converter=view_converter,
+        super(CIFAR10, self).__init__(X=X, y=y, view_converter=view_converter,
                                       y_labels=self.n_classes)
 
         assert not contains_nan(self.X)
+        assert not contains_nan(self.y)
 
         if preprocessor:
             preprocessor.apply(self)

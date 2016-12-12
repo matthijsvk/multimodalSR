@@ -15,7 +15,7 @@ import theano.sandbox.cuda
 theano.sandbox.cuda.use('gpu1')
 
 import train_lipreadingTCDTIMIT # load training functions
-from loadData import TCDTIMIT   # load the binary dataset in proper format
+from loadData import CIFAR10   # load the binary dataset in proper format
 
 # from http://blog.christianperone.com/2015/08/convolutional-neural-networks-and-feature-extraction-with-python/
 import matplotlib
@@ -204,9 +204,11 @@ def build_network (activation, alpha, epsilon, input):
             cnn,
             nonlinearity=lasagne.nonlinearities.identity,
             num_units=39)
-    
-    print(cnn.output_shape)
 
+    cnn = lasagne.layers.BatchNormLayer(
+            cnn,
+            epsilon=epsilon,
+            alpha=alpha)
     return cnn
 
 
@@ -214,13 +216,7 @@ def load_dataset (train_set_size):
     
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
-    def unpickle (file):
-        import cPickle
-        fo = open(file, 'rb')
-        dict = cPickle.load(fo)
-        fo.close()
-        return dict
-    
+
     # CIFAR10 files stored in /home/matthijs/Documents/Pylearn_datasets/cifar10/cifar-10-batches-py
     # then processed with /home/matthijs/bin/pylearn2/pylearn2/datasets/cifar10.py
     
@@ -232,9 +228,9 @@ def load_dataset (train_set_size):
     # Lipspeaker 3:  42535 - 28363 = 14172 phonemes
     
     # lipspeaker 1 : 14627 -> 11.5k train, 1.5k valid, 1.627k test
-    train_set = TCDTIMIT(which_set="train", start=0, stop=train_set_size)
-    valid_set = TCDTIMIT(which_set="train", start=train_set_size, stop=13000)
-    test_set = TCDTIMIT(which_set="test")
+    train_set = CIFAR10(which_set="train", start=0, stop=train_set_size)
+    valid_set = CIFAR10(which_set="train", start=train_set_size, stop=13000)
+    test_set = CIFAR10(which_set="test")
 
     
     # bc01 format

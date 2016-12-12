@@ -24,7 +24,11 @@ def unpickle(file):
 batch1 = unpickle("/home/matthijs/TCDTIMIT/database_binary/Lipspkr1.pkl")
 
 print(batch1['data'][0:10])
-train_set
 
-
-plt.imshow(train_set.X[0][0], cmap=cm.binary)
+ys = batch1['labels'][0:9]
+if isinstance(ys, list):
+    ys = np.asarray(ys).astype('uint8')
+    
+print(ys)
+ys = ys -1
+print(ys)
