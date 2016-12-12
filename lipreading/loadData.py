@@ -53,7 +53,7 @@ class TCDTIMIT(dense_design_matrix.DenseDesignMatrix):
         self.img_size = numpy.prod(self.img_shape)
         self.n_classes = 39
         self.label_names = vocab = [line.rstrip('\n') for line in open('../ImageSpeech/phonemeList.txt')]
-
+        
         # prepare loading
         fnames = ['Lipspkr%i' % i for i in range(1, 1)] #only use lipspeaker 1 for now
         datasets = {}
@@ -80,7 +80,7 @@ class TCDTIMIT(dense_design_matrix.DenseDesignMatrix):
         nloaded = 0
         for i, fname in enumerate(fnames):
             _logger.info('loading file %s' % datasets[fname])
-            data = serial.load(datasets[fname])
+            data = serial.load(datasets[fname]) #dictionary of 'data' and 'labels'
             x[i * batchLength:(i + 1) * batchLength, :] = data['data']
             y[i * batchLength:(i + 1) * batchLength, 0] = data['labels']
             nloaded += batchLength

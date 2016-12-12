@@ -1,23 +1,39 @@
 from __future__ import print_function
 
-import numpy as np
 
+import numpy as np
 np.random.seed(1234)  # for reproducibility?
 
-# specifying the gpu to use
-# import theano.sandbox.cuda
-# theano.sandbox.cuda.use('gpu1')
 import os
-
 os.environ["THEANO_FLAGS"] = "cuda.root=/usr/local/cuda,device=gpu,floatX=float32"
 import theano
 import theano.tensor as T
-
 import lasagne
 
-import train_lipreadingTCDTIMIT
+# specifying the gpu to use
+import theano.sandbox.cuda
+theano.sandbox.cuda.use('gpu1')
 
-from loadData import TCDTIMIT
+import train_lipreadingTCDTIMIT # load training functions
+from loadData import TCDTIMIT   # load the binary dataset in proper format
+
+# from http://blog.christianperone.com/2015/08/convolutional-neural-networks-and-feature-extraction-with-python/
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from urllib import urlretrieve
+import cPickle as pickle
+import os
+import gzip
+import numpy as np
+import theano
+import lasagne
+from lasagne import layers
+from lasagne.updates import nesterov_momentum
+from nolearn.lasagne import NeuralNet
+from nolearn.lasagne import visualize
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 
 
 def main ():
@@ -69,7 +85,11 @@ def main ():
     # get the network structure
     cnn = build_network(activation, alpha, epsilon, input)
     
-    # visualize the thing
+    
+    # visualize the thing:
+    plt.imshow(train_set.X[0][0], cmap=cm.binary)
+    
+    
     
     # get output layer, for calculating loss etc
     train_output = lasagne.layers.get_output(cnn, deterministic=False)
@@ -178,14 +198,15 @@ def build_network (activation, alpha, epsilon, input):
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
-    print(cnn.output_shape)
-    
+
     # FC layer
     cnn = lasagne.layers.DenseLayer(
             cnn,
             nonlinearity=lasagne.nonlinearities.identity,
             num_units=39)
+    
+    print(cnn.output_shape)
+
     return cnn
 
 
@@ -211,9 +232,9 @@ def load_dataset (train_set_size):
     # Lipspeaker 3:  42535 - 28363 = 14172 phonemes
     
     # lipspeaker 1 : 14627 -> 11.5k train, 1.5k valid, 1.627k test
-    train_set = TCDTIMIT(which_set="train", start=0, stop=train_set_size)
-    valid_set = TCDTIMIT(which_set="train", start=train_set_size, stop=13000)
-    test_set = TCDTIMIT(which_set="test")
+    # train_set = TCDTIMIT(which_set="train", start=0, stop=train_set_size)
+    # valid_set = TCDTIMIT(which_set="train", start=train_set_size, stop=13000)
+    # test_set = TCDTIMIT(which_set="test")
 
     
     # bc01 format

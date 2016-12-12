@@ -102,147 +102,83 @@ if __name__ == "__main__":
     cnn = lasagne.layers.InputLayer(
             shape=(None, 3, 32, 32),
             input_var=input)
-    
-    # 128C3-128C3-P2             
+
+    # input
+    cnn = lasagne.layers.InputLayer(
+            shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
+            input_var=input)
+    # conv 1
     cnn = lasagne.layers.Conv2DLayer(
-            cnn, 
-            num_filters=128, 
+            cnn,
+            num_filters=96,
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon, 
-            alpha=alpha)
-                
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation) 
-            
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn, 
-            num_filters=128, 
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    
     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
-            epsilon=epsilon, 
+            epsilon=epsilon,
             alpha=alpha)
-                
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
-            nonlinearity=activation) 
-            
-    # 256C3-256C3-P2             
+            nonlinearity=activation)
+
+    # conv 2
     cnn = lasagne.layers.Conv2DLayer(
-            cnn, 
-            num_filters=256, 
+            cnn,
+            num_filters=256,
             filter_size=(3, 3),
+            stride=(2, 2),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon, 
-            alpha=alpha)
-                
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation) 
-            
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn, 
-            num_filters=256, 
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    
     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
-            epsilon=epsilon, 
+            epsilon=epsilon,
             alpha=alpha)
-                
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
-            nonlinearity=activation) 
-            
-    # 512C3-512C3-P2              
+            nonlinearity=activation)
+
+    # conv3
     cnn = lasagne.layers.Conv2DLayer(
-            cnn, 
-            num_filters=512, 
+            cnn,
+            num_filters=512,
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon, 
-            alpha=alpha)
-                
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
-            nonlinearity=activation) 
-                  
+            nonlinearity=activation)
+
+    # conv 4
     cnn = lasagne.layers.Conv2DLayer(
-            cnn, 
-            num_filters=512, 
+            cnn,
+            num_filters=512,
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    
+    cnn = lasagne.layers.NonlinearityLayer(
+            cnn,
+            nonlinearity=activation)
+
+    # conv 5
+    cnn = lasagne.layers.Conv2DLayer(
+            cnn,
+            num_filters=512,
+            filter_size=(3, 3),
+            pad=1,
+            nonlinearity=lasagne.nonlinearities.identity)
     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon, 
-            alpha=alpha)
-                
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
-            nonlinearity=activation) 
-    
-    # print(cnn.output_shape)
-    
-    # 1024FP-1024FP-10FP            
+            nonlinearity=activation)
+
+    # FC layer
     cnn = lasagne.layers.DenseLayer(
-                cnn, 
-                nonlinearity=lasagne.nonlinearities.identity,
-                num_units=1024)      
-                  
-    cnn = lasagne.layers.BatchNormLayer(
             cnn,
-            epsilon=epsilon, 
-            alpha=alpha)
-                
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation) 
-            
-    cnn = lasagne.layers.DenseLayer(
-                cnn, 
-                nonlinearity=lasagne.nonlinearities.identity,
-                num_units=1024)      
-                  
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon, 
-            alpha=alpha)
-                
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation) 
-    
-    cnn = lasagne.layers.DenseLayer(
-                cnn, 
-                nonlinearity=lasagne.nonlinearities.identity,
-                num_units=10)      
+            nonlinearity=lasagne.nonlinearities.identity,
+            num_units=10)
                   
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
