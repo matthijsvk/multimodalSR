@@ -165,11 +165,7 @@ if __name__ == "__main__":
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-<<<<<<< HEAD
-#    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-=======
     #cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
->>>>>>> cc9e6f6f46bdec674c7a95c599896b00cbde8dc2
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
