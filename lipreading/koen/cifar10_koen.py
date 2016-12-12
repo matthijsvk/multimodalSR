@@ -248,6 +248,8 @@ if __name__ == "__main__":
             epsilon=epsilon,
             alpha=alpha)
     
+    print(cnn.output_shape)
+    
     train_output = lasagne.layers.get_output(cnn, deterministic=False)
     
     # squared hinge loss
