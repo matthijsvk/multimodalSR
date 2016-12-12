@@ -1,21 +1,13 @@
 from __future__ import print_function
-
 import time
-
 from collections import OrderedDict
-
 import numpy as np
-
 import theano
 import theano.tensor as T
-
 import lasagne
-
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
-
 from theano.scalar.basic import UnaryScalarOp, same_out_nocomplex
 from theano.tensor.elemwise import Elemwise
-
 
 # Given a dataset and a model, this function trains the model on the dataset for several epochs
 # (There is no default trainer function in Lasagne yet)
