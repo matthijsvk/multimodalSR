@@ -2,16 +2,20 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6f99c397-9dfe-48cd-8859-553dca035fa6" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/oldFunctions.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../cifar10/imagesToCifar10.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/phonemeLabelConversion.ods" afterPath="$PROJECT_DIR$/phonemeLabelConversion.ods" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/googleSpeechConvNet.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/googleSpeechConvNetOverview.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/googleSpeechOverview.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/imagesToCifar10.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/lipreadingTCDTIMIT.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/original/__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/original/networkStructure.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/original/train_net.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/train_lipreadingTCDTIMIT.py" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/ImageSpeech.iml" afterPath="$PROJECT_DIR$/.idea/ImageSpeech.iml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/countNbPhonemes.py" afterPath="$PROJECT_DIR$/countNbPhonemes.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fileDirOps.py" afterPath="$PROJECT_DIR$/fileDirOps.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/phonemeList.txt" afterPath="$PROJECT_DIR$/phonemeList.txt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../cifar10/googleSpeech.py" afterPath="$PROJECT_DIR$/../cifar10/googleSpeech.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../cifar10/train_googleSpeech.py" afterPath="$PROJECT_DIR$/../cifar10/train_googleSpeech.py" />
     </list>
     <ignored path="ImageSpeech.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -28,89 +32,269 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FavoritesManager">
     <favorites_list name="ImageSpeech" />
+    <favorites_list name="convNets">
+      <favorite_root url="file://$PROJECT_DIR$/../cifar10" module="cifar10" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+        <favorite_root url="file://$PROJECT_DIR$/../cifar10/.idea" module="cifar10" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+          <favorite_root url="file://$PROJECT_DIR$/../cifar10/.idea/misc.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../cifar10/.idea/cifar10.iml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../cifar10/.idea/modules.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../cifar10/.idea/workspace.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        </favorite_root>
+        <favorite_root url="file://$PROJECT_DIR$/../cifar10/original" module="cifar10" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+          <favorite_root url="file://$PROJECT_DIR$/../cifar10/original/__init__.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../cifar10/original/train_net.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../cifar10/original/networkStructure.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../cifar10/original/cifar10BestModel.pkl" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        </favorite_root>
+        <favorite_root url="file://$PROJECT_DIR$/../cifar10/loadData.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/../cifar10/lipreadingTCDTIMIT.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/../cifar10/googleSpeechConvNet.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/../cifar10/googleSpeechOverview.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/../cifar10/train_lipreadingTCDTIMIT.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/../cifar10/googleSpeechConvNetOverview.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+      </favorite_root>
+      <favorite_root url="file://$PROJECT_DIR$" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+        <favorite_root url="file://$PROJECT_DIR$/.idea" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+          <favorite_root url="file://$PROJECT_DIR$/.idea/vcs.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/.idea/misc.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/.idea/modules.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/.idea/workspace.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/.idea/ImageSpeech.iml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/.idea/inspectionProfiles" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/.idea/markdown-navigator" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/.idea/markdown-navigator/profiles_settings.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/.idea/markdown-navigator.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        </favorite_root>
+        <favorite_root url="file://$PROJECT_DIR$/dlib.so" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/main.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/test.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/resnet50" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/.idea" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/.idea/misc.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/.idea/modules.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/.idea/resnet50.iml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/.idea/workspace.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/images" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/images/head.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/images/conv1x1.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/images/conv3x3.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/images/decrease_fn.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/images/increase_fn.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/images/left_branch.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/images/no_left_branch.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/images/decrease_fnstride.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/ResNet_TrainedModel" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+              <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/ResNet_TrainedModel/ResNet50.ipynb" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/ResNet_TrainedModel/OneDrive-2016-12-05.zip" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/ResNet_TrainedModel/ResNet_mean.binaryproto" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/ResNet_TrainedModel/ResNet-50-deploy.prototxt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/ResNet_TrainedModel/ResNet-101-deploy.prototxt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/ResNet_TrainedModel/ResNet-152-deploy.prototxt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/ResNet_TrainedModel/ResNet-50-model.caffemodel" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            </favorite_root>
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/imagenet_classes.txt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/resnet50imageNet.pkl" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/Link to deep_residual_learning" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+              <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/Link to deep_residual_learning/cifar_model_n5.npz" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/Link to deep_residual_learning/cifar_model_n9.npz" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/resnet50/modelFiles/Link to deep_residual_learning/Deep_Residual_Learning_CIFAR-10.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            </favorite_root>
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/testImages" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/testImages/image.jpg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/testImages/voodoo.jpg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/testImages/bridge.jpeg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/testImages/soccerBall.jpeg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/testImages/indianElephant.jpeg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/testImages/indianElephant2.jpg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/testImages/elephantDrawing.jpeg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/resnet50/testImages/elephantDrawing2.jpeg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/__init__.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/trainNetwork.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/ResNet_TrainedModel" module="ImageSpeech" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/resnet50imageNet.pkl" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/resnet50LasagneModel.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/resnet50CaffeToLasagne.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/resnet50_evaluateNetwork.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/resnet50/ImageNet Pretrained Network (ResNet-50).ipynb" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        </favorite_root>
+        <favorite_root url="file://$PROJECT_DIR$/sa1_data" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/README.md" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/main_test.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/fileDirOps.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/getTCD-TIMIT.sh" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/oldFunctions.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/phonemeList.txt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/helpFunctions.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/dlibLandmarks.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/unzipStructure.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/EGillen_thesis.pdf" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/countNbPhonemes.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/processDatabase.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/lipspeaker_test.mlf" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/lipspeaker_test2.mlf" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/downloadLocations.txt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/volunteer_labelfiles.mlf" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/lipspeaker_labelfiles.mlf" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/TCDTIMITphonemesOffset.mlf" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/phonemeLabelConversion.ods" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/phonemeLabelConversion.txt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/CMU_Pronunciation_Dictionary" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/TCD-TIMIT Additional Info.xlsx" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/lipspeaker_labelfiles_local.mlf" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/shape_predictor_68_face_landmarks.dat" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        <favorite_root url="file://$PROJECT_DIR$/CMU_Pronunciation_Dictionary_phones.txt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+      </favorite_root>
+      <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+        <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/.idea" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/.idea/misc.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/.idea/ResNets.iml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/.idea/modules.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/.idea/workspace.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        </favorite_root>
+        <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/.idea" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/.idea/misc.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/.idea/modules.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/.idea/resnet50.iml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/.idea/workspace.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/images" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/images/head.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/images/conv1x1.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/images/conv3x3.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/images/decrease_fn.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/images/increase_fn.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/images/left_branch.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/images/no_left_branch.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/images/decrease_fnstride.png" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/ResNet_TrainedModel" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+              <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/ResNet_TrainedModel/ResNet50.ipynb" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/ResNet_TrainedModel/OneDrive-2016-12-05.zip" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/ResNet_TrainedModel/ResNet_mean.binaryproto" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/ResNet_TrainedModel/ResNet-50-deploy.prototxt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/ResNet_TrainedModel/ResNet-101-deploy.prototxt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/ResNet_TrainedModel/ResNet-152-deploy.prototxt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/ResNet_TrainedModel/ResNet-50-model.caffemodel" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            </favorite_root>
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/imagenet_classes.txt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/resnet50imageNet.pkl" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/Link to deep_residual_learning" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+              <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/Link to deep_residual_learning/cifar_model_n5.npz" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/Link to deep_residual_learning/cifar_model_n9.npz" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+              <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/modelFiles/Link to deep_residual_learning/Deep_Residual_Learning_CIFAR-10.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            </favorite_root>
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/testImages" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/testImages/image.jpg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/testImages/voodoo.jpg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/testImages/bridge.jpeg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/testImages/soccerBall.jpeg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/testImages/indianElephant.jpeg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/testImages/indianElephant2.jpg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/testImages/elephantDrawing.jpeg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/testImages/elephantDrawing2.jpeg" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/__init__.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/trainNetwork.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/ResNet_TrainedModel" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50imageNet.pkl" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50LasagneModel.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50CaffeToLasagne.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50_evaluateNetwork.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/ImageNet Pretrained Network (ResNet-50).ipynb" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        </favorite_root>
+        <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/link" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/.idea" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/.idea/misc.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/.idea/modules.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/.idea/workspace.xml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/.idea/resnet152-pre-trained-imagenet-master.iml" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/README.md" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/resnet152.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/Untitled.ipynb" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/resnet152_test.py" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/.ipynb_checkpoints" module="ResNets" type="directory" klass="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode">
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/.ipynb_checkpoints/Untitled-checkpoint.ipynb" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+            <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/.ipynb_checkpoints/ImageNet Pretrained Network (ResNet-152)-checkpoint.ipynb" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          </favorite_root>
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/imagenet_classes.txt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/ResNet_mean.binaryproto" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/ResNet-152-deploy.prototxt" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+          <favorite_root url="file://$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet152/ImageNet Pretrained Network (ResNet-152).ipynb" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+        </favorite_root>
+      </favorite_root>
+    </favorites_list>
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="googleSpeech.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../cifar10/googleSpeech.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3654">
-              <caret line="205" column="4" selection-start-line="205" selection-start-column="4" selection-end-line="205" selection-end-column="4" />
-              <folding>
-                <element signature="e#0#37#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="cifar10.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/bin/pylearn2/pylearn2/datasets/cifar10.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1640">
-              <caret line="114" column="0" selection-start-line="114" selection-start-column="0" selection-end-line="114" selection-end-column="0" />
-              <folding>
-                <element signature="e#31#40#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="imagesToCifar10.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../cifar10/imagesToCifar10.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="36">
-              <caret line="2" column="4" selection-start-line="2" selection-start-column="0" selection-end-line="49" selection-end-column="73" />
-              <folding>
-                <marker date="1481545871914" expanded="true" signature="1700:2022" ph="..." />
-                <marker date="1481545871914" expanded="true" signature="1854:2022" ph="..." />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="fileDirOps.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/fileDirOps.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="324">
-              <caret line="178" column="47" selection-start-line="178" selection-start-column="47" selection-end-line="178" selection-end-column="47" />
-              <folding>
-                <element signature="e#0#37#0" expanded="true" />
-                <element signature="e#1417#1544#0" expanded="false" />
-                <element signature="e#1585#1769#0" expanded="false" />
-                <element signature="e#1863#2028#0" expanded="false" />
-                <element signature="e#2532#2899#0" expanded="false" />
-                <element signature="e#6391#6551#0" expanded="false" />
-                <element signature="e#6574#6599#0" expanded="false" />
-                <marker date="1481547375063" expanded="true" signature="1325:1385" ph="..." />
-                <marker date="1481547375063" expanded="true" signature="3071:3504" ph="..." />
-                <marker date="1481547375063" expanded="true" signature="3071:3505" ph="..." />
-                <marker date="1481547375063" expanded="true" signature="3283:3504" ph="..." />
-                <marker date="1481547375063" expanded="true" signature="3510:3568" ph="..." />
-                <marker date="1481547375063" expanded="true" signature="5277:6228" ph="..." />
-                <marker date="1481547375063" expanded="true" signature="5304:6228" ph="..." />
-                <marker date="1481547375063" expanded="true" signature="6764:6946" ph="..." />
-                <marker date="1481547375063" expanded="true" signature="7716:9212" ph="..." />
-                <marker date="1481547375063" expanded="true" signature="9392:9643" ph="..." />
-                <marker date="1481547375063" expanded="true" signature="9440:9624" ph="..." />
-                <marker date="1481547375063" expanded="true" signature="9783:10717" ph="..." />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="train_googleSpeech.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../cifar10/train_googleSpeech.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="884">
-              <caret line="59" column="4" selection-start-line="59" selection-start-column="4" selection-end-line="59" selection-end-column="4" />
-              <folding>
-                <element signature="e#0#37#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+    <splitter split-orientation="horizontal" split-proportion="0.5276596">
+      <split-first>
+        <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+          <file leaf-file-name="lipreadingTCDTIMIT.py" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="1278">
+                  <caret line="71" column="25" selection-start-line="71" selection-start-column="25" selection-end-line="71" selection-end-column="25" />
+                  <folding>
+                    <element signature="e#0#37#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="train_lipreadingTCDTIMIT.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/../lipreading/train_lipreadingTCDTIMIT.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="336">
+                  <caret line="66" column="31" selection-start-line="66" selection-start-column="31" selection-end-line="66" selection-end-column="31" />
+                  <folding>
+                    <element signature="e#0#37#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-first>
+      <split-second>
+        <leaf>
+          <file leaf-file-name="cifar10.py" pinned="false" current-in-tab="false">
+            <entry file="file://$USER_HOME$/bin/pylearn2/pylearn2/datasets/cifar10.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="344">
+                  <caret line="159" column="38" selection-start-line="159" selection-start-column="38" selection-end-line="159" selection-end-column="38" />
+                  <folding>
+                    <element signature="e#31#40#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="loadData.py" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/../lipreading/loadData.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="270">
+                  <caret line="55" column="0" selection-start-line="55" selection-start-column="0" selection-end-line="55" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-second>
+    </splitter>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -125,11 +309,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/ResNets/resnet50/resnet50.py" />
-        <option value="$PROJECT_DIR$/../Experiments/Lasagne_examples/examples/mnist_example/mnist.py" />
-        <option value="$PROJECT_DIR$/trainNetwork.py" />
-        <option value="$PROJECT_DIR$/mouthDetection/extractFaces.py" />
-        <option value="$PROJECT_DIR$/mouthDetection/facialFeatures-master/src/faceFeatures.py" />
         <option value="$PROJECT_DIR$/mouthDetection/dlibface.py" />
         <option value="$PROJECT_DIR$/../cifar10/networkStructural.py" />
         <option value="$PROJECT_DIR$/../cifar10/train_net.py" />
@@ -172,10 +351,15 @@
         <option value="$PROJECT_DIR$/oldFunctions.py" />
         <option value="$PROJECT_DIR$/test.py" />
         <option value="$USER_HOME$/bin/pylearn2/pylearn2/datasets/cifar10.py" />
-        <option value="$PROJECT_DIR$/../cifar10/googleSpeech.py" />
         <option value="$PROJECT_DIR$/../cifar10/imagesToCifar10.py" />
         <option value="$PROJECT_DIR$/fileDirOps.py" />
+        <option value="$PROJECT_DIR$/../cifar10/LoadData.py" />
         <option value="$PROJECT_DIR$/countNbPhonemes.py" />
+        <option value="$PROJECT_DIR$/../cifar10/googleSpeech.py" />
+        <option value="$PROJECT_DIR$/../cifar10/lipreadingTCDTIMIT.py" />
+        <option value="$PROJECT_DIR$/../cifar10/loadData.py" />
+        <option value="$PROJECT_DIR$/../lipreading/train_lipreadingTCDTIMIT.py" />
+        <option value="$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py" />
       </list>
     </option>
   </component>
@@ -241,42 +425,15 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
-        <subPane>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ImageSpeech" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ImageSpeech" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="cifar10" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ImageSpeech" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ImageSpeech" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
+        <subPane />
       </pane>
+      <pane id="Scope" />
       <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$USER_HOME$/bin/pylearn2/pylearn2/datasets/cifar10.py" />
     <property name="settings.editor.selected.configurable" value="configurable.group.tools" />
     <property name="settings.editor.splitter.proportion" value="0.14993307" />
   </component>
@@ -289,6 +446,12 @@
     </option>
   </component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/../cifar10" />
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/mouthDetection" />
+      <recent name="$PROJECT_DIR$/mouthDetection/faces/sx146" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/../cifar10/original" />
       <recent name="$PROJECT_DIR$" />
@@ -296,14 +459,8 @@
       <recent name="$PROJECT_DIR$/mouthDetection/dlib-master/python_examples" />
       <recent name="$PROJECT_DIR$/mouthDetection/faces" />
     </key>
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/../cifar10" />
-      <recent name="$PROJECT_DIR$" />
-      <recent name="$PROJECT_DIR$/mouthDetection" />
-      <recent name="$PROJECT_DIR$/mouthDetection/faces/sx146" />
-    </key>
   </component>
-  <component name="RunManager" selected="Python.networkStructural">
+  <component name="RunManager">
     <configuration default="false" name="resnet50CaffeToLasagne_test" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -368,23 +525,6 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ImageSpeech" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/processDatabase.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <method />
-    </configuration>
-    <configuration default="false" name="networkStructural" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../cifar10/original" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="cifar10" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../cifar10/original/networkStructural.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -540,21 +680,19 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
     </configuration>
-    <list size="6">
+    <list size="5">
       <item index="0" class="java.lang.String" itemvalue="Python.resnet50CaffeToLasagne" />
       <item index="1" class="java.lang.String" itemvalue="Python.resnet50CaffeToLasagne_test" />
       <item index="2" class="java.lang.String" itemvalue="Python.resnet50" />
       <item index="3" class="java.lang.String" itemvalue="Python.countNbPhonemes" />
       <item index="4" class="java.lang.String" itemvalue="Python.processDatabase" />
-      <item index="5" class="java.lang.String" itemvalue="Python.networkStructural" />
     </list>
     <recent_temporary>
-      <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.networkStructural" />
-        <item index="1" class="java.lang.String" itemvalue="Python.processDatabase" />
-        <item index="2" class="java.lang.String" itemvalue="Python.countNbPhonemes" />
-        <item index="3" class="java.lang.String" itemvalue="Python.resnet50" />
-        <item index="4" class="java.lang.String" itemvalue="Python.resnet50CaffeToLasagne_test" />
+      <list size="4">
+        <item index="0" class="java.lang.String" itemvalue="Python.processDatabase" />
+        <item index="1" class="java.lang.String" itemvalue="Python.countNbPhonemes" />
+        <item index="2" class="java.lang.String" itemvalue="Python.resnet50" />
+        <item index="3" class="java.lang.String" itemvalue="Python.resnet50CaffeToLasagne_test" />
       </list>
     </recent_temporary>
   </component>
@@ -604,13 +742,13 @@
     <frame x="-1" y="19" width="1922" height="1062" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.0787234" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.12925532" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32905984" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.43809524" sideWeight="0.109042555" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2486631" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21904762" sideWeight="0.49787235" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.21904762" sideWeight="0.49787235" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.08031915" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.59521276" sideWeight="0.8909575" order="4" side_tool="false" content_ui="tabs" x="1036" y="191" width="613" height="936" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.33650795" sideWeight="0.8909575" order="9" side_tool="false" content_ui="tabs" x="1036" y="191" width="613" height="936" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -622,6 +760,25 @@
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.16346154" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
+    <layout-to-restore>
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32905984" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.43809524" sideWeight="0.109042555" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2486631" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21904762" sideWeight="0.49787235" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.29554045" sideWeight="0.75" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3888298" sideWeight="0.8909575" order="4" side_tool="false" content_ui="tabs" x="1036" y="191" width="613" height="936" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.12925532" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32804233" sideWeight="0.49414894" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.08031915" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.16346154" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+    </layout-to-restore>
   </component>
   <component name="Vcs.Log.UiProperties">
     <option name="RECENTLY_FILTERED_USER_GROUPS">
@@ -636,42 +793,11 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="15" />
+      <option name="time" value="16" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib.so" />
-    <entry file="file://$PROJECT_DIR$/dlib.so">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/volunteer_labelfiles.mlf">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="589554">
-          <caret line="32753" column="40" selection-start-line="32753" selection-start-column="40" selection-end-line="32753" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/dlib-master/python_examples/face_detector.py" />
-    <entry file="file://$PROJECT_DIR$/downloadTCDTimit.py" />
-    <entry file="file://$PROJECT_DIR$/getTCD-TIMIT.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/unzipStructure.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="218">
-          <caret line="42" column="34" selection-start-line="42" selection-start-column="34" selection-end-line="42" selection-end-column="34" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/videoToImage" />
     <entry file="file://$PROJECT_DIR$/videoToImage.m" />
     <entry file="file://$PROJECT_DIR$/phonemeLabelConversion.txt" />
@@ -711,17 +837,17 @@
     </entry>
     <entry file="file:///run/user/1000/gvfs/sftp:host=leda,user=r0364010/users/start2016/r0364010/Documents/Thesis/convNets/cifar10/networkStructural.py" />
     <entry file="file://$PROJECT_DIR$/README.md">
+      <provider editor-type-id="text-editor">
+        <state relative-caret-position="846">
+          <caret line="47" column="0" selection-start-line="47" selection-start-column="0" selection-end-line="47" selection-end-column="0" />
+        </state>
+      </provider>
       <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
         <state split_layout="SPLIT">
           <first_editor relative-caret-position="288">
             <caret line="16" column="100" selection-start-line="16" selection-start-column="100" selection-end-line="16" selection-end-column="100" />
           </first_editor>
           <second_editor />
-        </state>
-      </provider>
-      <provider editor-type-id="text-editor">
-        <state relative-caret-position="846">
-          <caret line="47" column="0" selection-start-line="47" selection-start-column="0" selection-end-line="47" selection-end-column="0" />
         </state>
       </provider>
     </entry>
@@ -805,16 +931,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../cifar10/googleSpeech.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3654">
-          <caret line="205" column="4" selection-start-line="205" selection-start-column="4" selection-end-line="205" selection-end-column="4" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/test.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="576">
@@ -822,31 +938,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../cifar10/train_googleSpeech.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="884">
-          <caret line="59" column="4" selection-start-line="59" selection-start-column="4" selection-end-line="59" selection-end-column="4" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/bin/pylearn2/pylearn2/datasets/cifar10.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1640">
-          <caret line="114" column="0" selection-start-line="114" selection-start-column="0" selection-end-line="114" selection-end-column="0" />
-          <folding>
-            <element signature="e#31#40#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/phonemeList.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -854,7 +949,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1386">
           <caret line="77" column="18" selection-start-line="77" selection-start-column="18" selection-end-line="77" selection-end-column="18" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -862,7 +956,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -870,59 +963,108 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="198">
           <caret line="11" column="19" selection-start-line="11" selection-start-column="19" selection-end-line="11" selection-end-column="19" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../cifar10/imagesToCifar10.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="36">
-          <caret line="2" column="4" selection-start-line="2" selection-start-column="0" selection-end-line="49" selection-end-column="73" />
-          <folding>
-            <marker date="1481545871914" expanded="true" signature="1700:2022" ph="..." />
-            <marker date="1481545871914" expanded="true" signature="1854:2022" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/countNbPhonemes.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="231">
-          <caret line="40" column="0" selection-start-line="40" selection-start-column="0" selection-end-line="40" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-            <marker date="1481550497503" expanded="true" signature="577:801" ph="..." />
-            <marker date="1481550497503" expanded="true" signature="654:801" ph="..." />
-            <marker date="1481550497503" expanded="true" signature="988:1096" ph="..." />
-            <marker date="1481550497503" expanded="true" signature="1027:1096" ph="..." />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/fileDirOps.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="324">
-          <caret line="178" column="47" selection-start-line="178" selection-start-column="47" selection-end-line="178" selection-end-column="47" />
+        <state relative-caret-position="298">
+          <caret line="249" column="8" selection-start-line="249" selection-start-column="8" selection-end-line="249" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../cifar10/imagesToCifar10.py" />
+    <entry file="file://$PROJECT_DIR$/../cifar10/original/cifar10BestModel.pkl">
+      <provider selected="true" editor-type-id="LargeFileEditor">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../cifar10/original/networkStructure.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1152">
+          <caret line="71" column="8" selection-start-line="71" selection-start-column="8" selection-end-line="71" selection-end-column="8" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../cifar10/train_lipreadingTCDTIMIT.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="192">
+          <caret line="15" column="21" selection-start-line="15" selection-start-column="11" selection-end-line="15" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../cifar10/loadData.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-443">
+          <caret line="71" column="104" selection-start-line="71" selection-start-column="104" selection-end-line="71" selection-end-column="104" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../cifar10/lipreadingTCDTIMIT.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="264">
+          <caret line="34" column="37" selection-start-line="34" selection-start-column="37" selection-end-line="34" selection-end-column="37" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///mnt/data/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/Experiments/Lasagne_examples/examples/mnist_example/mnist.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="45" column="0" selection-start-line="45" selection-start-column="0" selection-end-line="45" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/countNbPhonemes.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="396">
+          <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
-            <element signature="e#1417#1544#0" expanded="false" />
-            <element signature="e#1585#1769#0" expanded="false" />
-            <element signature="e#1863#2028#0" expanded="false" />
-            <element signature="e#2532#2899#0" expanded="false" />
-            <element signature="e#6391#6551#0" expanded="false" />
-            <element signature="e#6574#6599#0" expanded="false" />
-            <marker date="1481547375063" expanded="true" signature="1325:1385" ph="..." />
-            <marker date="1481547375063" expanded="true" signature="3071:3504" ph="..." />
-            <marker date="1481547375063" expanded="true" signature="3071:3505" ph="..." />
-            <marker date="1481547375063" expanded="true" signature="3283:3504" ph="..." />
-            <marker date="1481547375063" expanded="true" signature="3510:3568" ph="..." />
-            <marker date="1481547375063" expanded="true" signature="5277:6228" ph="..." />
-            <marker date="1481547375063" expanded="true" signature="5304:6228" ph="..." />
-            <marker date="1481547375063" expanded="true" signature="6764:6946" ph="..." />
-            <marker date="1481547375063" expanded="true" signature="7716:9212" ph="..." />
-            <marker date="1481547375063" expanded="true" signature="9392:9643" ph="..." />
-            <marker date="1481547375063" expanded="true" signature="9440:9624" ph="..." />
-            <marker date="1481547375063" expanded="true" signature="9783:10717" ph="..." />
+            <marker date="1481551035492" expanded="true" signature="581:805" ph="..." />
+            <marker date="1481551035492" expanded="true" signature="658:805" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/bin/pylearn2/pylearn2/datasets/cifar10.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="344">
+          <caret line="159" column="38" selection-start-line="159" selection-start-column="38" selection-end-line="159" selection-end-column="38" />
+          <folding>
+            <element signature="e#31#40#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../lipreading/loadData.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="55" column="0" selection-start-line="55" selection-start-column="0" selection-end-line="55" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../lipreading/train_lipreadingTCDTIMIT.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="336">
+          <caret line="66" column="31" selection-start-line="66" selection-start-column="31" selection-end-line="66" selection-end-column="31" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1278">
+          <caret line="71" column="25" selection-start-line="71" selection-start-column="25" selection-end-line="71" selection-end-column="25" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
           </folding>
         </state>
       </provider>

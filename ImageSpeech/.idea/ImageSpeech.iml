@@ -10,5 +10,6 @@
     <orderEntry type="module" module-name="ResNets" />
     <orderEntry type="module" module-name="caffe-theano-conversion-master" />
     <orderEntry type="module" module-name="cifar10" />
+    <orderEntry type="module" module-name="cifar10" />
   </component>
 </module>

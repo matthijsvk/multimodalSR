@@ -37,7 +37,6 @@ def deleteDirs(rootDir, names):
         print(nbRemoved, " directories have been deleted")
     return dirList
 
-
 # stuff for getting relative paths between two directories
 def pathsplit(p, rest=[]):
     (h,t) = os.path.split(p)
@@ -232,9 +231,8 @@ def speakerToBinary(speakerDir, binaryDatabaseDir):
             im = np.array(Image.open(img), dtype=np.uint8)
             f.write(im[:, :].tostring())  # Write grey channel, it's the only one
     print(speakerName, "files have been written to: ", output_filename)
+    return 0
 
-        
-        
 def allSpeakersToBinary(databaseDir, binaryDatabaseDir):
     rootDir = databaseDir
     dirList = []
@@ -247,6 +245,7 @@ def allSpeakersToBinary(databaseDir, binaryDatabaseDir):
     print(dirList)
     for speakerDir in dirList:
         speakerToBinary(speakerDir, binaryDatabaseDir)
+    return 0
         
         
         
@@ -279,7 +278,7 @@ if __name__ == "__main__":
     print("-----------------------------------------")
     
     
-    # Other examples that are not normally needed
+    # Other functions that are not normally needed
     # 1. deleting directories, not needed
     # root = "/home/matthijs/TCDTIMIT2/processed"
     # name = ["mouths", "faces"]
