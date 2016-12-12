@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6f99c397-9dfe-48cd-8859-553dca035fa6" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../lipreading/resnet50.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py" afterPath="$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../lipreading/train_lipreadingTCDTIMIT.py" afterPath="$PROJECT_DIR$/../lipreading/train_lipreadingTCDTIMIT.py" />
     </list>
     <ignored path="ImageSpeech.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -229,17 +226,18 @@
     </favorites_list>
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.4885873">
+    <splitter split-orientation="horizontal" split-proportion="0.6853794">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
           <file leaf-file-name="lipreadingTCDTIMIT.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="324">
-                  <caret line="90" column="4" selection-start-line="90" selection-start-column="4" selection-end-line="90" selection-end-column="4" />
+                <state relative-caret-position="358">
+                  <caret line="92" column="79" selection-start-line="92" selection-start-column="79" selection-end-line="92" selection-end-column="79" />
                   <folding>
                     <element signature="e#0#37#0" expanded="true" />
-                    <element signature="e#4234#6637#0" expanded="false" />
+                    <element signature="e#4447#6850#0" expanded="false" />
+                    <marker date="1481586110979" expanded="true" signature="6913:10843" ph="..." />
                   </folding>
                 </state>
               </provider>
@@ -248,8 +246,8 @@
           <file leaf-file-name="resnet50.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/../lipreading/resnet50.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="240">
-                  <caret line="152" column="33" selection-start-line="152" selection-start-column="4" selection-end-line="152" selection-end-column="33" />
+                <state relative-caret-position="-70">
+                  <caret line="152" column="34" selection-start-line="152" selection-start-column="34" selection-end-line="152" selection-end-column="34" />
                   <folding>
                     <element signature="e#327#341#0" expanded="true" />
                   </folding>
@@ -260,8 +258,8 @@
           <file leaf-file-name="resnet50_evaluateNetwork.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/resnet50/resnet50_evaluateNetwork.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-756">
-                  <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+                <state relative-caret-position="630">
+                  <caret line="74" column="55" selection-start-line="74" selection-start-column="55" selection-end-line="74" selection-end-column="55" />
                   <folding>
                     <element signature="e#0#13#0" expanded="true" />
                   </folding>
@@ -1182,33 +1180,34 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/resnet50/resnet50_evaluateNetwork.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-756">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../lipreading/resnet50.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="240">
-          <caret line="152" column="33" selection-start-line="152" selection-start-column="4" selection-end-line="152" selection-end-column="33" />
+        <state relative-caret-position="-70">
+          <caret line="152" column="34" selection-start-line="152" selection-start-column="34" selection-end-line="152" selection-end-column="34" />
           <folding>
             <element signature="e#327#341#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/resnet50/resnet50_evaluateNetwork.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="630">
+          <caret line="74" column="55" selection-start-line="74" selection-start-column="55" selection-end-line="74" selection-end-column="55" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="324">
-          <caret line="90" column="4" selection-start-line="90" selection-start-column="4" selection-end-line="90" selection-end-column="4" />
+        <state relative-caret-position="358">
+          <caret line="92" column="79" selection-start-line="92" selection-start-column="79" selection-end-line="92" selection-end-column="79" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
-            <element signature="e#4234#6637#0" expanded="false" />
+            <element signature="e#4447#6850#0" expanded="false" />
+            <marker date="1481586110979" expanded="true" signature="6913:10843" ph="..." />
           </folding>
         </state>
       </provider>

@@ -86,11 +86,15 @@ def main ():
     # get the network structure
     # cnn = build_network_google(activation, alpha, epsilon, input)
     # cnn = build_network_cifar10(activation, alpha, epsilon, input)
-    cnn = build_network_resnet50(input)
-    
     
     # get output layer, for calculating loss etc
-    train_output = lasagne.layers.get_output(cnn, deterministic=False)
+    # train_output = lasagne.layers.get_output(cnn, deterministic=False)
+    
+    # resnet50; needs to be evaluated differently as well -> comment above line
+    cnn = build_network_resnet50(input)
+    train_output = theano.function([net['input'].input_var], lasagne.layers.get_output(net['prob'], deterministic=True))
+    
+    
     
     # squared hinge loss
     loss = T.mean(T.sqr(T.maximum(0., 1. - target * train_output)))
