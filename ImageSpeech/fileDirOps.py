@@ -187,8 +187,8 @@ def getPhonemeNumberMap (
     phonemeNumberMap = {}
     with open(phonemeMap) as inf:
         for line in inf:
-            parts = line.split()  # split line into parts
-            if len(parts) > 1:  # if at least 2 parts/columns
+            parts = line.split()    # split line into parts
+            if len(parts) > 1:      # if at least 2 parts/columns
                 phonemeNumberMap[str(parts[0])] = parts[1]  # part0= frame, part1 = phoneme
                 phonemeNumberMap[str(parts[1])] = parts[0]
     return phonemeNumberMap
@@ -226,9 +226,10 @@ def speakerToBinary(speakerDir, binaryDatabaseDir):
             phonemeNumberMap = getPhonemeNumberMap()
             labelNumber = phonemeNumberMap[label]
             npLabel = np.array(labelNumber, dtype=np.uint8)
+        
+            im = np.array(Image.open(img), dtype=np.uint8)
             
             f.write(npLabel.tostring())  # Write label.
-            im = np.array(Image.open(img), dtype=np.uint8)
             f.write(im[:, :].tostring())  # Write grey channel, it's the only one
     print(speakerName, "files have been written to: ", output_filename)
     return 0

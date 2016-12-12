@@ -2,20 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6f99c397-9dfe-48cd-8859-553dca035fa6" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/googleSpeechConvNet.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/googleSpeechConvNetOverview.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/googleSpeechOverview.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/imagesToCifar10.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/lipreadingTCDTIMIT.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/original/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/original/networkStructure.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/original/train_net.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../cifar10/train_lipreadingTCDTIMIT.py" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/ImageSpeech.iml" afterPath="$PROJECT_DIR$/.idea/ImageSpeech.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../lipreading/koen/cifar10_koen.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../lipreading/koen/train_net.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/countNbPhonemes.py" afterPath="$PROJECT_DIR$/countNbPhonemes.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fileDirOps.py" afterPath="$PROJECT_DIR$/fileDirOps.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../lipreading/original/networkStructure.py" afterPath="$PROJECT_DIR$/../lipreading/original/networkStructure.py" />
     </list>
     <ignored path="ImageSpeech.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -239,17 +230,37 @@
     </favorites_list>
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.5276596">
+    <splitter split-orientation="horizontal" split-proportion="0.44177672">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file leaf-file-name="lipreadingTCDTIMIT.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="lipreadingTCDTIMIT.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="1278">
-                  <caret line="71" column="25" selection-start-line="71" selection-start-column="25" selection-end-line="71" selection-end-column="25" />
+                <state relative-caret-position="360">
+                  <caret line="130" column="11" selection-start-line="130" selection-start-column="4" selection-end-line="207" selection-end-column="27" />
                   <folding>
                     <element signature="e#0#37#0" expanded="true" />
                   </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="networkStructure.py" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/../lipreading/original/networkStructure.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="300">
+                  <caret line="172" column="14" selection-start-line="172" selection-start-column="14" selection-end-line="172" selection-end-column="14" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="cifar10_koen.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/../lipreading/koen/cifar10_koen.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="566">
+                  <caret line="281" column="0" selection-start-line="281" selection-start-column="0" selection-end-line="281" selection-end-column="0" />
+                  <folding />
                 </state>
               </provider>
             </entry>
@@ -273,7 +284,7 @@
           <file leaf-file-name="cifar10.py" pinned="false" current-in-tab="false">
             <entry file="file://$USER_HOME$/bin/pylearn2/pylearn2/datasets/cifar10.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="344">
+                <state relative-caret-position="1262">
                   <caret line="159" column="38" selection-start-line="159" selection-start-column="38" selection-end-line="159" selection-end-column="38" />
                   <folding>
                     <element signature="e#31#40#0" expanded="true" />
@@ -282,12 +293,63 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="loadData.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="loadData.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/../lipreading/loadData.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="270">
-                  <caret line="55" column="0" selection-start-line="55" selection-start-column="0" selection-end-line="55" selection-end-column="0" />
+                <state relative-caret-position="180">
+                  <caret line="81" column="61" selection-start-line="81" selection-start-column="61" selection-end-line="81" selection-end-column="61" />
+                  <folding>
+                    <element signature="e#31#40#0" expanded="true" />
+                    <marker date="1481563879136" expanded="true" signature="937:5714" ph="..." />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="test.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/test.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="494">
+                  <caret line="32" column="33" selection-start-line="32" selection-start-column="33" selection-end-line="32" selection-end-column="33" />
                   <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="testLoad.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/../lipreading/testLoad.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="468">
+                  <caret line="26" column="9" selection-start-line="26" selection-start-column="9" selection-end-line="26" selection-end-column="9" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="fileDirOps.py" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/fileDirOps.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="360">
+                  <caret line="230" column="12" selection-start-line="230" selection-start-column="12" selection-end-line="230" selection-end-column="12" />
+                  <folding>
+                    <element signature="e#0#37#0" expanded="true" />
+                    <element signature="e#697#1324#0" expanded="false" />
+                    <element signature="e#1416#1543#0" expanded="false" />
+                    <element signature="e#1584#1768#0" expanded="false" />
+                    <element signature="e#1862#2027#0" expanded="false" />
+                    <element signature="e#2531#2898#0" expanded="false" />
+                    <element signature="e#2961#4547#0" expanded="false" />
+                    <element signature="e#4654#6312#0" expanded="false" />
+                    <element signature="e#6390#6550#0" expanded="false" />
+                    <element signature="e#6573#6598#0" expanded="false" />
+                    <element signature="e#6714#7108#0" expanded="false" />
+                    <marker date="1481565482117" expanded="true" signature="1324:1384" ph="..." />
+                    <marker date="1481565482117" expanded="true" signature="3070:3504" ph="..." />
+                    <marker date="1481565482117" expanded="true" signature="3509:3567" ph="..." />
+                    <marker date="1481565482117" expanded="true" signature="7721:9226" ph="..." />
+                    <marker date="1481565482117" expanded="true" signature="9401:9652" ph="..." />
+                    <marker date="1481565482117" expanded="true" signature="9805:10739" ph="..." />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -309,11 +371,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/mouthDetection/dlibface.py" />
-        <option value="$PROJECT_DIR$/../cifar10/networkStructural.py" />
-        <option value="$PROJECT_DIR$/../cifar10/train_net.py" />
-        <option value="$PROJECT_DIR$/lipspeaker_labelfiles.mlf" />
-        <option value="$PROJECT_DIR$/volunteer_labelfiles.mlf" />
         <option value="$PROJECT_DIR$/mouthDetection/dlibface_original.py" />
         <option value="$PROJECT_DIR$/mouthDetection/facialFeatures-master/src/__main__.py" />
         <option value="$PROJECT_DIR$/mouthDetection/faceLandmarkDetector.py" />
@@ -352,14 +409,19 @@
         <option value="$PROJECT_DIR$/test.py" />
         <option value="$USER_HOME$/bin/pylearn2/pylearn2/datasets/cifar10.py" />
         <option value="$PROJECT_DIR$/../cifar10/imagesToCifar10.py" />
-        <option value="$PROJECT_DIR$/fileDirOps.py" />
         <option value="$PROJECT_DIR$/../cifar10/LoadData.py" />
         <option value="$PROJECT_DIR$/countNbPhonemes.py" />
         <option value="$PROJECT_DIR$/../cifar10/googleSpeech.py" />
         <option value="$PROJECT_DIR$/../cifar10/lipreadingTCDTIMIT.py" />
         <option value="$PROJECT_DIR$/../cifar10/loadData.py" />
         <option value="$PROJECT_DIR$/../lipreading/train_lipreadingTCDTIMIT.py" />
+        <option value="$PROJECT_DIR$/../lipreading/testLoad.py" />
+        <option value="$PROJECT_DIR$/../lipreading/loadData.py" />
+        <option value="$PROJECT_DIR$/fileDirOps.py" />
         <option value="$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py" />
+        <option value="$PROJECT_DIR$/../lipreading/original/networkStructure.py" />
+        <option value="$PROJECT_DIR$/../lipreading/koen/cifar10_koen.py" />
+        <option value="$PROJECT_DIR$/../lipreading/koen/train_net.py" />
       </list>
     </option>
   </component>
@@ -426,7 +488,62 @@
     </navigator>
     <panes>
       <pane id="ProjectPane">
-        <subPane />
+        <subPane>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ImageSpeech" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ImageSpeech" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="lipreading" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ImageSpeech" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="lipreading" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="original" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ImageSpeech" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="lipreading" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="koen" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ImageSpeech" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ImageSpeech" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+        </subPane>
       </pane>
       <pane id="Scope" />
       <pane id="Scratches" />
@@ -446,18 +563,18 @@
     </option>
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/../cifar10" />
-      <recent name="$PROJECT_DIR$" />
-      <recent name="$PROJECT_DIR$/mouthDetection" />
-      <recent name="$PROJECT_DIR$/mouthDetection/faces/sx146" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/../cifar10/original" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/mouthDetection" />
       <recent name="$PROJECT_DIR$/mouthDetection/dlib-master/python_examples" />
       <recent name="$PROJECT_DIR$/mouthDetection/faces" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/../cifar10" />
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/mouthDetection" />
+      <recent name="$PROJECT_DIR$/mouthDetection/faces/sx146" />
     </key>
   </component>
   <component name="RunManager">
@@ -739,10 +856,10 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-1" y="19" width="1922" height="1062" extended-state="0" />
+    <frame x="-1" y="19" width="1922" height="1062" extended-state="1" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.12925532" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.113829784" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32905984" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.43809524" sideWeight="0.109042555" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2486631" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -798,29 +915,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/videoToImage" />
-    <entry file="file://$PROJECT_DIR$/videoToImage.m" />
-    <entry file="file://$PROJECT_DIR$/phonemeLabelConversion.txt" />
-    <entry file="file://$PROJECT_DIR$/CMU_Pronunciation_Dictionary_phones.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-304">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CMU_Pronunciation_Dictionary">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dlibLandmarks.png">
-      <provider selected="true" editor-type-id="images">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mouthDetection/visualizeROI.m" />
     <entry file="file://$PROJECT_DIR$/renameFacePics.py" />
     <entry file="file://$PROJECT_DIR$/mouthDetection/oldFunctions.py" />
     <entry file="file://$PROJECT_DIR$/mouthDetection/extractMouthRegion.py" />
@@ -931,13 +1025,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="576">
-          <caret line="32" column="33" selection-start-line="32" selection-start-column="33" selection-end-line="32" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/phonemeList.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -963,13 +1050,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="198">
           <caret line="11" column="19" selection-start-line="11" selection-start-column="19" selection-end-line="11" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fileDirOps.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="298">
-          <caret line="249" column="8" selection-start-line="249" selection-start-column="8" selection-end-line="249" selection-end-column="8" />
         </state>
       </provider>
     </entry>
@@ -1024,7 +1104,7 @@
         <state relative-caret-position="396">
           <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
           <folding>
-            <element signature="e#0#37#0" expanded="true" />
+            <element signature="e#0#37#0" expanded="false" />
             <marker date="1481551035492" expanded="true" signature="581:805" ph="..." />
             <marker date="1481551035492" expanded="true" signature="658:805" ph="..." />
           </folding>
@@ -1033,7 +1113,7 @@
     </entry>
     <entry file="file://$USER_HOME$/bin/pylearn2/pylearn2/datasets/cifar10.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="344">
+        <state relative-caret-position="1262">
           <caret line="159" column="38" selection-start-line="159" selection-start-column="38" selection-end-line="159" selection-end-column="38" />
           <folding>
             <element signature="e#31#40#0" expanded="true" />
@@ -1041,11 +1121,40 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../lipreading/testLoad.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="468">
+          <caret line="26" column="9" selection-start-line="26" selection-start-column="9" selection-end-line="26" selection-end-column="9" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/../lipreading/loadData.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="270">
-          <caret line="55" column="0" selection-start-line="55" selection-start-column="0" selection-end-line="55" selection-end-column="0" />
+        <state relative-caret-position="180">
+          <caret line="81" column="61" selection-start-line="81" selection-start-column="61" selection-end-line="81" selection-end-column="61" />
+          <folding>
+            <element signature="e#31#40#0" expanded="true" />
+            <marker date="1481563879136" expanded="true" signature="937:5714" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="494">
+          <caret line="32" column="33" selection-start-line="32" selection-start-column="33" selection-end-line="32" selection-end-column="33" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="130" column="11" selection-start-line="130" selection-start-column="4" selection-end-line="207" selection-end-column="27" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -1059,12 +1168,76 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py">
+    <entry file="file:///tmp/mozilla_matthijs0/cifar10_koen.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1278">
-          <caret line="71" column="25" selection-start-line="71" selection-start-column="25" selection-end-line="71" selection-end-column="25" />
+        <state relative-caret-position="-3750">
+          <caret line="20" column="14" selection-start-line="20" selection-start-column="14" selection-end-line="20" selection-end-column="14" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../lipreading/koen/train_net.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="566">
+          <caret line="139" column="0" selection-start-line="139" selection-start-column="0" selection-end-line="139" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../lipreading/koen/cifar10_koen.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="566">
+          <caret line="281" column="0" selection-start-line="281" selection-start-column="0" selection-end-line="281" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///tmp/mozilla_matthijs0/train_net.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="54">
+          <caret line="17" column="8" selection-start-line="0" selection-start-column="0" selection-end-line="143" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///tmp/mozilla_matthijs0/cifar10_koen-1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="90">
+          <caret line="12" column="27" selection-start-line="0" selection-start-column="0" selection-end-line="282" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../lipreading/original/networkStructure.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="172" column="14" selection-start-line="172" selection-start-column="14" selection-end-line="172" selection-end-column="14" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fileDirOps.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="230" column="12" selection-start-line="230" selection-start-column="12" selection-end-line="230" selection-end-column="12" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
+            <element signature="e#697#1324#0" expanded="false" />
+            <element signature="e#1416#1543#0" expanded="false" />
+            <element signature="e#1584#1768#0" expanded="false" />
+            <element signature="e#1862#2027#0" expanded="false" />
+            <element signature="e#2531#2898#0" expanded="false" />
+            <element signature="e#2961#4547#0" expanded="false" />
+            <element signature="e#4654#6312#0" expanded="false" />
+            <element signature="e#6390#6550#0" expanded="false" />
+            <element signature="e#6573#6598#0" expanded="false" />
+            <element signature="e#6714#7108#0" expanded="false" />
+            <marker date="1481565482117" expanded="true" signature="1324:1384" ph="..." />
+            <marker date="1481565482117" expanded="true" signature="3070:3504" ph="..." />
+            <marker date="1481565482117" expanded="true" signature="3509:3567" ph="..." />
+            <marker date="1481565482117" expanded="true" signature="7721:9226" ph="..." />
+            <marker date="1481565482117" expanded="true" signature="9401:9652" ph="..." />
+            <marker date="1481565482117" expanded="true" signature="9805:10739" ph="..." />
           </folding>
         </state>
       </provider>
