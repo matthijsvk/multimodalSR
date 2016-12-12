@@ -24,8 +24,6 @@ def train (train_fn, val_fn,
     # A function which shuffles a dataset
     def shuffle (X, y):
         
-        # print(len(X))
-        
         chunk_size = len(X) / shuffle_parts
         shuffled_range = range(chunk_size)
         
@@ -62,10 +60,10 @@ def train (train_fn, val_fn,
     def train_epoch (X, y, LR):
         
         loss = 0
-        print("training with a batchsize of: ", batch_size)
+        # print("training with a batchsize of: ", batch_size)
         batches = len(X) / batch_size
-        print("len X: ", len(X))
-        print("so number of batches per epoch: ", batches)
+        # print("len X: ", len(X))
+        # print("so number of batches per epoch: ", batches)
         
         for i in range(batches):
             loss += train_fn(X[i * batch_size:(i + 1) * batch_size], y[i * batch_size:(i + 1) * batch_size], LR)
@@ -121,7 +119,7 @@ def train (train_fn, val_fn,
                 # np.savez(save_path, *lasagne.layers.get_all_param_values(model))
                 # update the best model
             model = {'params': lasagne.layers.get_all_param_values(model)},
-            print("Storing new best model in Pickle (pkl) file at ", savePath)
+            print("Storing new best model in Pickle (pkl) file at ", save_path)
             pickle.dump(model, open(save_path, 'wb'), protocol=-1)
         
         epoch_duration = time.time() - start_time
