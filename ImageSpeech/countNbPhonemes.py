@@ -13,8 +13,8 @@ lines = [line.rstrip('\n') for line in open('../Datasets/TCDTIMIT/lipspeaker_lab
 for line in lines:
 
     # # only count lipspkr1
-    if "Lipspkr2" in str(line):
-        break
+    # if "Lipspkr2" in str(line):
+    #     break
        
     for w in re.findall(r"\w+", line):  # loop through the words of the line
         if w in countLipspeakers:       # if a phoneme, add 1 to the value corresponding to the phoneme (key)
