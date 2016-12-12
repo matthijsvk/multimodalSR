@@ -13,6 +13,8 @@ import os, errno
 import subprocess
 import shutil
 
+import numpy as np
+
 from helpFunctions import *
 
 # 1. remove all specified directories and their contents
@@ -183,7 +185,7 @@ def addPhonemesToImagesDB(rootDir):
 
 # helpfunction
 def getPhonemeNumberMap (
-        phonemeMap="/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/ImageSpeech/phonemeLabelConversion.txt"):
+        phonemeMap="./phonemeLabelConversion.txt"):
     phonemeNumberMap = {}
     with open(phonemeMap) as inf:
         for line in inf:
@@ -196,6 +198,8 @@ def getPhonemeNumberMap (
 def speakerToBinary(speakerDir, binaryDatabaseDir):
     import numpy as np
     from PIL import Image
+    import pickle
+    import time
     
     rootDir = speakerDir
     targetDir = binaryDatabaseDir
@@ -218,20 +222,31 @@ def speakerToBinary(speakerDir, binaryDatabaseDir):
     
     # write label and image to binary file, 1 label+image per row
     speakerName = os.path.basename(rootDir)
-    output_filename = targetDir + os.sep + speakerName + ".bin"
+    outputPath = targetDir + os.sep + speakerName+".pkl"
     
-    with open(output_filename,
-              "wb") as f:  # from http://stackoverflow.com/questions/38880654/how-do-i-create-a-dataset-with-multiple-images-the-same-format-as-cifar10?rq=1
-        for label, img in zip(labels, images):
-            phonemeNumberMap = getPhonemeNumberMap()
-            labelNumber = phonemeNumberMap[label]
-            npLabel = np.array(labelNumber, dtype=np.uint8)
-        
-            im = np.array(Image.open(img), dtype=np.uint8)
-            
-            f.write(npLabel.tostring())  # Write label.
-            f.write(im[:, :].tostring())  # Write grey channel, it's the only one
-    print(speakerName, "files have been written to: ", output_filename)
+    rowsize = 120*120
+    data = np.zeros(shape=(len(images), rowsize), dtype=np.uint8)
+    labelNumbers = [0]*len(images)
+    
+    print(data.shape)
+   
+    for i in range(len(images)):
+        label = labels[i]
+        image = images[i]
+
+        phonemeNumberMap = getPhonemeNumberMap()
+        labelNumber = phonemeNumberMap[label]
+        labelNumbers[i] = labelNumber
+    
+        im = np.array(Image.open(image), dtype=np.uint8).flatten() # flatten to one row per image
+        data[i] = im
+    # now write python dict to a file
+    print("the data file takes: ", data.nbytes, " bytes of memory")
+    mydict = {'data': data, 'labels': labelNumbers}
+    output = open(outputPath, 'wb')
+    pickle.dump(mydict, output, 2)
+    output.close()
+    print(speakerName, "files have been written to: ", outputPath)
     return 0
 
 def allSpeakersToBinary(databaseDir, binaryDatabaseDir):
@@ -245,6 +260,7 @@ def allSpeakersToBinary(databaseDir, binaryDatabaseDir):
             dirList.append(dir)
     print(dirList)
     for speakerDir in dirList:
+        print("Extracting files of: ", speakerDir)
         speakerToBinary(speakerDir, binaryDatabaseDir)
     return 0
         
@@ -255,9 +271,9 @@ if __name__ == "__main__":
     # use this to copy the grayscale files from 'processDatabase' to another location, and fix their names with phonemes
     # then convert to files useable by CIFAR10 code
     
-    processedDir = "/home/matthijs/TCDTIMIT/processed"
-    databaseDir = "/home/matthijs/TCDTIMIT/database"
-    databaseBinaryDir = "/home/matthijs/TCDTIMIT/database_binary"
+    processedDir = "~/TCDTIMIT/processed"
+    databaseDir = "~/TCDTIMIT/database"
+    databaseBinaryDir = "~/TCDTIMIT/database_binary"
     
     # 1. copy mouths_gray_120 images and PHN.txt files to targetRoot. Move files up from their mouths_gray_120 dir to the video dir (eg sa1)
     print("Copying mouth_gray_120 directories to database location...")

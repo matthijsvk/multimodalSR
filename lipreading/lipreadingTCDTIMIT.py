@@ -227,14 +227,14 @@ def load_dataset (train_set_size):
     # our files are stored in /home/matthijs/TCDTIMIT/database_binary
     # and processed with ./loadData.py
     
-    # Lipspeaker 1:                  14627 phonemes
+    # Lipspeaker 1:                  14627 phonemes, apparently only 14530 extracted
     # Lipspeaker 2:  28363 - 14627 = 13736 phonemes
     # Lipspeaker 3:  42535 - 28363 = 14172 phonemes
     
     # lipspeaker 1 : 14627 -> 11.5k train, 1.5k valid, 1.627k test
-    # train_set = TCDTIMIT(which_set="train", start=0, stop=train_set_size)
-    # valid_set = TCDTIMIT(which_set="train", start=train_set_size, stop=13000)
-    # test_set = TCDTIMIT(which_set="test")
+    train_set = TCDTIMIT(which_set="train", start=0, stop=train_set_size)
+    valid_set = TCDTIMIT(which_set="train", start=train_set_size, stop=13000)
+    test_set = TCDTIMIT(which_set="test")
 
     
     # bc01 format

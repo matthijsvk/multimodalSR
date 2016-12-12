@@ -43,7 +43,7 @@ class TCDTIMIT(dense_design_matrix.DenseDesignMatrix):
 
         # we define here:
         dtype = 'uint8'
-        ntotal = 14600 # for lipspeaker 1: 14627 -> 11.5k train, 1.5k valid, 1.627k test
+        ntotal = 14500 # for lipspeaker 1: 14627 -> 11.5k train, 1.5k valid, 1.627k test
         ntrain = 13000
         nvalid = 0  # artefact, we won't use it
         ntest = ntotal - ntrain
@@ -57,7 +57,7 @@ class TCDTIMIT(dense_design_matrix.DenseDesignMatrix):
         # prepare loading
         fnames = ['Lipspkr%i' % i for i in range(1, 1)] #only use lipspeaker 1 for now
         datasets = {}
-        datapath = os.path.join('/home/matthijs/TCDTIMIT/database_binary')
+        datapath = os.path.join('~/TCDTIMIT/database_binary')
         for name in fnames:
             fname = os.path.join(datapath, name)
             if not os.path.exists(fname):
@@ -69,7 +69,7 @@ class TCDTIMIT(dense_design_matrix.DenseDesignMatrix):
 #     data -- a 10000x3072 numpy array of uint8s. Each row of the array stores a 32x32 colour image. The first 1024 entries contain the red channel values, the next 1024 the green, and the final 1024 the blue. The image is stored in row-major order, so that the first 32 entries of the array are the red channel values of the first row of the image.
 #     labels -- a list of 10000 numbers in the range 0-9. The number at index i indicates the label of the ith image in the array data.
        
-       # our batch is 14627 images long -> 14600 to make it round (batch_size in lipreading....py of 50)
+       # our batch is 14627 images long -> 14500 to make it round (batch_size in lipreading....py of 50)
         batchLength = ntotal
        
         lenx = int(numpy.ceil((ntrain + nvalid) / float(batchLength)) * batchLength) # 10000 is the batch size

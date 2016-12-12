@@ -21,9 +21,9 @@ def unpickle(file):
     fo.close()
     return dict
 
-batch1 = unpickle("/home/matthijs/Downloads/cifar10/data_batch_1")
+batch1 = unpickle("/home/matthijs/TCDTIMIT/database_binary/Lipspkr1.pkl")
 
-print(batch1['labels'][0:100])
+print(batch1['data'][0:10])
 train_set
 
 
