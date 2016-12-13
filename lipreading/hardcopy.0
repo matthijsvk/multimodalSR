@@ -1,0 +1,36 @@
+so number of batches per epoch:  230
+Traceback (most recent call last):
+  File "lipreadingTCDTIMIT.py", line 259, in <module>
+    main()
+  File "lipreadingTCDTIMIT.py", line 127, in main
+    shuffle_parts=shuffle_parts)
+  File "/users/start2016/r0364010/Documents/Thesis/convNets/lipreading/train_lipreadingTCDTIMIT.py", line 124, in train
+    model = {'params': lasagne.layers.get_all_param_values(model)},
+  File "/users/start2016/r0364010/.local/lib/python2.7/site-packages/lasagne/layers/helper.py", line 460, in get_all_param_values
+    params = get_all_params(layer, **tags)
+  File "/users/start2016/r0364010/.local/lib/python2.7/site-packages/lasagne/layers/helper.py", line 371, in get_all_params
+    layers = get_all_layers(layer)
+  File "/users/start2016/r0364010/.local/lib/python2.7/site-packages/lasagne/layers/helper.py", line 91, in get_all_layers
+    elif layer not in seen:
+TypeError: unhashable type: 'dict'
+Segmentation fault
+[23:37] r0364010@leda:lipreading $[master !?*] python lipreadingTCDTIMIT.py
+Using gpu device 0: GeForce GTX TITAN X (CNMeM is enabled with initial size: 20.0% of memory, cuDNN 5103)
+WARNING (theano.sandbox.cuda): Ignoring call to use(1), GPU number 0 is already in use.
+batch_size = 50
+alpha = 0.1
+epsilon = 0.0001
+activation = T.nnet.relu
+num_epochs = 50
+LR_start = 0.001
+LR_fin = 3e-07
+LR_decay = 0.850241747028
+train_set_size = 11500
+shuffle_parts = 1
+Loading TCDTIMIT dataset...
+the number of training examples is:  11500
+the number of valid examples is:  1500
+the number of test examples is:  1500
+Building the CNN...
+
+
