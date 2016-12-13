@@ -5,6 +5,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 import lasagne
+import pickle
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 from theano.scalar.basic import UnaryScalarOp, same_out_nocomplex
 from theano.tensor.elemwise import Elemwise
@@ -115,15 +116,12 @@ def train (train_fn, val_fn,
             test_err, test_loss = val_epoch(X_test, y_test)
             
             if save_path is None:
-                save_path = "./bestModel.pkl"
-                
-            # update the best model
+                save_path = "./bestModel"
             np.savez(save_path, *lasagne.layers.get_all_param_values(model))
             
-            # there seems to be something wrong with saving with Pickle (unhashable dict...)
-            # model = {'params': lasagne.layers.get_all_param_values(model)},
-            # print("Storing new best model in Pickle (pkl) file at ", save_path)
-            # pickle.dump(model, open(save_path, 'wb'), protocol=-1)
+            #model = {'params': lasagne.layers.get_all_param_values(model)},
+            #print("Storing new best model in Pickle (pkl) file at ", save_path)
+            #pickle.dump(model, open(save_path, 'wb'), protocol=-1)
         
         epoch_duration = time.time() - start_time
         
