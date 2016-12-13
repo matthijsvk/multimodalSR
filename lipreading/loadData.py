@@ -45,7 +45,7 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
         # we define here:
         dtype = 'uint8'
         ntotal = 13000 # for lipspeaker 1: 14627 -> 11.5k train, 1.5k valid, 1.627k test
-	ntest = 1000
+	    ntest = 1000
         nvalid = 1000
         ntrain = ntotal - ntest - nvalid
 

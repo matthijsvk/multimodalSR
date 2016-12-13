@@ -1,5 +1,10 @@
 from __future__ import print_function
 
+import sys, getopt
+import os
+import time
+import gc
+
 import numpy as np
 np.random.seed(1234)  # for reproducibility?
 
@@ -7,29 +12,23 @@ import os
 os.environ["THEANO_FLAGS"] = "cuda.root=/usr/local/cuda,device=gpu,floatX=float32"
 import theano
 import theano.tensor as T
+from theano import function, config, shared, sandbox
+
 import lasagne
+import numpy as np
+import sys
 
-# specifying the gpu to use
-import theano.sandbox.cuda
-theano.sandbox.cuda.use('gpu1')
+import cPickle as pickle
+from sys import getsizeof
+from lasagne import layers
+from lasagne.updates import nesterov_momentum
 
-import train_lipreadingTCDTIMIT # load training functions
-from datasetClass import CIFAR10   # load the binary dataset in proper format
-from resnet50 import *
 
 # from http://blog.christianperone.com/2015/08/convolutional-neural-networks-and-feature-extraction-with-python/
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from urllib import urlretrieve
-import cPickle as pickle
-import os
-import gzip
-import numpy as np
-import theano
-import lasagne
-from lasagne import layers
-from lasagne.updates import nesterov_momentum
 from nolearn.lasagne import NeuralNet
 from nolearn.lasagne import visualize
 from sklearn.metrics import classification_report
@@ -45,6 +44,10 @@ from pylearn2.utils import string_utils
 
 _logger = logging.getLogger(__name__)
 
+# import user-created files
+import train_lipreadingTCDTIMIT     # load training functions
+from datasetClass import CIFAR10    # load the binary dataset in proper format
+from resnet50 import *              #needed if you want the resnet network
 
 def main ():
     # BN parameters
@@ -55,15 +58,15 @@ def main ():
     print("alpha = " + str(alpha))
     epsilon = 1e-4
     print("epsilon = " + str(epsilon))
-    
+
     # activation
     activation = T.nnet.relu
     print("activation = T.nnet.relu")
-    
+
     # Training parameters
     num_epochs = 50
     print("num_epochs = " + str(num_epochs))
-    
+
     # Decaying LR
     LR_start = 0.001
     print("LR_start = " + str(LR_start))
@@ -72,57 +75,53 @@ def main ():
     LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)
     print("LR_decay = " + str(LR_decay))
     # BTW, LR decay might good for the BN moving average...
-    
+
     shuffle_parts = 1
     print("shuffle_parts = " + str(shuffle_parts))
-    
+
     print('Loading TCDTIMIT dataset...')
     train_set, valid_set, test_set = load_dataset(0.85,0.1,0.05) #train, valid, test
-    
+
     print("the number of training examples is: ", len(train_set.X))
     print("the number of valid examples is: ", len(valid_set.X))
     print("the number of test examples is: ", len(test_set.X))
 
     print('Building the CNN...')
-    
+
     # Prepare Theano variables for inputs and targets
     input = T.tensor4('inputs')
     target = T.matrix('targets')
     LR = T.scalar('LR', dtype=theano.config.floatX)
-    
+
     # get the network structure
-    cnn = build_network_google(activation, alpha, epsilon, input)
-    #cnn = build_network_cifar10(activation, alpha, epsilon, input)
-    
-    
+    #cnn = build_network_google(activation, alpha, epsilon, input)
+    cnn = build_network_cifar10(activation, alpha, epsilon, input)
     ## resnet50; you need to replce 'cnn' with 'cnn['prob']' everywhere
     #cnn = build_network_resnet50(input)
-	
 
     train_output = lasagne.layers.get_output(cnn, deterministic=True)
-    
-    
+
     # squared hinge loss
     loss = T.mean(T.sqr(T.maximum(0., 1. - target * train_output)))
-    
+
     # set all params to trainable
     params = lasagne.layers.get_all_params(cnn, trainable=True)
     updates = lasagne.updates.adam(loss_or_grads=loss, params=params, learning_rate=LR)
-    
+
     test_output = lasagne.layers.get_output(cnn, deterministic=True)
 
     test_loss = T.mean(T.sqr(T.maximum(0., 1. - target * test_output)))
     test_err = T.mean(T.neq(T.argmax(test_output, axis=1), T.argmax(target, axis=1)), dtype=theano.config.floatX)
-    
+
     # Compile a function performing a training step on a mini-batch (by giving the updates dictionary)
     # and returning the corresponding training loss:
     train_fn = theano.function([input, target, LR], loss, updates=updates)
-    
+
     # Compile a second function computing the validation loss and accuracy:
     val_fn = theano.function([input, target], [test_loss, test_err])
-    
+
     print('Training...')
-    
+
     train_lipreadingTCDTIMIT.train(
             train_fn, val_fn,
             cnn,
@@ -148,18 +147,18 @@ def build_network_google (activation, alpha, epsilon, input):
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    
+
     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    
+
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
             alpha=alpha)
-    
+
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     # conv 2
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
@@ -176,7 +175,7 @@ def build_network_google (activation, alpha, epsilon, input):
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     # conv3
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
@@ -187,7 +186,7 @@ def build_network_google (activation, alpha, epsilon, input):
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     # conv 4
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
@@ -198,7 +197,7 @@ def build_network_google (activation, alpha, epsilon, input):
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     # conv 5
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
@@ -227,7 +226,7 @@ def build_network_cifar10(activation, alpha, epsilon, input):
     cnn = lasagne.layers.InputLayer(
             shape=(None, 1, 120, 120),
             input_var=input)
-    
+
     # 128C3-128C3-P2
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
@@ -235,34 +234,34 @@ def build_network_cifar10(activation, alpha, epsilon, input):
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    
+
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
             alpha=alpha)
-    
+
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
             num_filters=128,
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    
+
     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    
+
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
             alpha=alpha)
-    
+
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     # 256C3-256C3-P2
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
@@ -270,34 +269,34 @@ def build_network_cifar10(activation, alpha, epsilon, input):
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    
+
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
             alpha=alpha)
-    
+
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
             num_filters=256,
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    
+
     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    
+
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
             alpha=alpha)
-    
+
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     # 512C3-512C3-P2
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
@@ -305,92 +304,98 @@ def build_network_cifar10(activation, alpha, epsilon, input):
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    
+
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
             alpha=alpha)
-    
+
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
             num_filters=512,
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
-    
+
     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    
+
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
             alpha=alpha)
-    
+
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     # print(cnn.output_shape)
-    
+
     # 1024FP-1024FP-10FP
     cnn = lasagne.layers.DenseLayer(
             cnn,
             nonlinearity=lasagne.nonlinearities.identity,
             num_units=1024)
-    
+
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
             alpha=alpha)
-    
+
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     cnn = lasagne.layers.DenseLayer(
             cnn,
             nonlinearity=lasagne.nonlinearities.identity,
             num_units=1024)
-    
+
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
             alpha=alpha)
-    
+
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-    
+
     cnn = lasagne.layers.DenseLayer(
             cnn,
             nonlinearity=lasagne.nonlinearities.identity,
             num_units=39)
-    
+
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
             alpha=alpha)
     return cnn
-    
+
+def unpickle(file):
+    import cPickle
+    fo = open(file, 'rb')
+    dict = cPickle.load(fo)
+    fo.close()
+    return dict
 
 def load_dataset (trainFraction=0.8, validFraction=0.1, testFraction=0.1):
-    
+
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
     # CIFAR10 files stored in /home/matthijs/Documents/Pylearn_datasets/cifar10/cifar-10-batches-py
     # then processed with /home/matthijs/bin/pylearn2/pylearn2/datasets/cifar10.py
-    
+
     # our files are stored in /home/matthijs/TCDTIMIT/database_binary
     # and processed with ./loadData.py
-    
+
     # Lipspeaker 1:                  14627 phonemes, apparently only 14530 extracted
     # Lipspeaker 2:  28363 - 14627 = 13736 phonemes
     # Lipspeaker 3:  42535 - 28363 = 14172 phonemes
-    
+
     # lipspeaker 1 : 14627 -> 11.5k train, 1.5k valid, 1.627k test
     dtype = 'uint8'
     # lipspeaker 1: 14530 -> 14500
@@ -400,9 +405,9 @@ def load_dataset (trainFraction=0.8, validFraction=0.1, testFraction=0.1):
     ntotal = 43000  # estimate, for initialization
     img_shape = (1, 120, 120)
     img_size = np.prod(img_shape)
-    
+
     # prepare data to load
-    fnames = ['Lipspkr%i.pkl' % i for i in range(1, 4)]  # all 3 lipsteakers
+    fnames = ['Lipspkr%i.pkl' % i for i in range(1, 2)]  # all 3 lipsteakers
     datasets = {}
     datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
     for name in fnames:
@@ -422,6 +427,10 @@ def load_dataset (trainFraction=0.8, validFraction=0.1, testFraction=0.1):
     yvalid = np.zeros((lenx, 1), dtype=dtype)
     ytest = np.zeros((lenx, 1), dtype=dtype)
 
+    # memory issues: print size
+    memTot = xtrain.nbytes + xvalid.nbytes + xtest.nbytes + ytrain.nbytes + yvalid.nbytes + ytest.nbytes
+    print("Empty matrices, memory required: ", memTot / 1000000, " MB")
+    
     # now load train data
     trainLoaded = 0
     validLoaded = 0
@@ -429,30 +438,29 @@ def load_dataset (trainFraction=0.8, validFraction=0.1, testFraction=0.1):
 
     for i, fname in enumerate(fnames):
         _logger.info('loading file %s' % datasets[fname])
-        with open(datasets[fname], 'rb') as f:
-            data = pickle.load(f)  # each pkl file contains a dictionary of 'data' and 'labels'
-    
+        data = unpickle(datasets[fname])
+
         thisN = data['data'].shape[0]
         print("This dataset contains ", thisN, " images")
-    
+
         thisTrain = int(trainFraction * thisN)
         thisValid = int(validFraction * thisN)
         thisTest = thisN - thisTrain - thisValid  # compensates for rounding
         print("now loading : nbTrain, nbValid, nbTest")
         print("              ", thisTrain, thisValid, thisTest)
-    
+
         xtrain[trainLoaded:trainLoaded + thisTrain, :] = data['data'][0:thisTrain]
         xvalid[validLoaded:validLoaded + thisValid, :] = data['data'][thisTrain:thisTrain + thisValid]
         xtest[testLoaded:testLoaded + thisTest, :] = data['data'][thisTrain + thisValid:thisN]
-    
+
         ytrain[trainLoaded:trainLoaded + thisTrain, 0] = data['labels'][0:thisTrain]
         yvalid[validLoaded:validLoaded + thisValid, 0] = data['labels'][thisTrain:thisTrain + thisValid]
         ytest[testLoaded:testLoaded + thisTest, 0] = data['labels'][thisTrain + thisValid:thisN]
-    
+
         trainLoaded += thisTrain
         validLoaded += thisValid
         testLoaded += thisTest
-    
+
         if (trainLoaded + validLoaded + testLoaded) >= ntotal:
             print("loaded too many?")
             break
@@ -472,6 +480,9 @@ def load_dataset (trainFraction=0.8, validFraction=0.1, testFraction=0.1):
     ytrain = ytrain[0:trainLoaded]
     yvalid = yvalid[0:validLoaded]
     ytest = ytest[0:testLoaded]
+    
+    memTot = xtrain.nbytes + xvalid.nbytes + xtest.nbytes + ytrain.nbytes + yvalid.nbytes + ytest.nbytes
+    print("Total memory size required: ", memTot/1000000, " MB")
 
     # process this data, remove all zero rows (http://stackoverflow.com/questions/18397805/how-do-i-delete-a-row-in-a-np-array-which-contains-a-zero)
     # cast to numpy array
@@ -486,18 +497,46 @@ def load_dataset (trainFraction=0.8, validFraction=0.1, testFraction=0.1):
     ytrain = ytrain - 1
     yvalid = yvalid - 1
     ytest = ytest - 1
-    
+
     # now, make objects with these matrices
     train_set = CIFAR10(xtrain, ytrain, img_shape)
     valid_set = CIFAR10(xvalid, yvalid, img_shape)
     test_set = CIFAR10(xtest, ytest, img_shape)
 
-    # bc01 format
+
     # Inputs in the range [-1,+1]
-    # print("Inputs in the range [-1,+1]")
-    train_set.X = np.reshape(np.subtract(np.multiply(2. / 255., train_set.X), 1.), (-1, 1, 120, 120))
-    valid_set.X = np.reshape(np.subtract(np.multiply(2. / 255., valid_set.X), 1.), (-1, 1, 120, 120))
-    test_set.X = np.reshape(np.subtract(np.multiply(2. / 255., test_set.X), 1.), (-1, 1, 120, 120))
+    # def f1 (x):
+    #     f = function([], sandbox.cuda.basic_ops.gpu_from_host(x * 2.0 / 255 - 1))
+    #     return f()
+    #
+    # def scaleOnGpu (matrix):
+    #     nbRows = matrix.shape[0]
+    #     done = 0
+    #     batchLength = 10
+    #     thisBatchLength = batchLength
+    #     i = 0
+    #     while done != 1:
+    #         if i + thisBatchLength > nbRows:
+    #             done = 1
+    #             thisBatchLength = nbRows - i
+    #         # do the scaling on GPU
+    #         matrix[i:(i + thisBatchLength), :] = f1(
+    #                 shared(matrix[i:(i + thisBatchLength), :]))
+    #         i += batchLength
+    #     return matrix
+    #
+    # train_set.X = scaleOnGpu(train_set.X )
+    # valid_set.X = scaleOnGpu(valid_set.X )
+    # test_set.X = scaleOnGpu(test_set.X)
+    
+    train_set.X = np.subtract(np.multiply(2. / 255., train_set.X), 1.)
+    valid_set.X = np.subtract(np.multiply(2. / 255., valid_set.X), 1.)
+    test_set.X = np.subtract(np.multiply(2. / 255., test_set.X), 1.)
+
+    train_set.X = np.reshape(train_set.X, (-1, 1, 120, 120))
+    valid_set.X = np.reshape(valid_set.X, (-1, 1, 120, 120))
+    test_set.X = np.reshape(test_set.X, (-1, 1, 120, 120))
+    
     # flatten targets
     train_set.y = np.hstack(train_set.y)
     valid_set.y = np.hstack(valid_set.y)
@@ -514,5 +553,7 @@ def load_dataset (trainFraction=0.8, validFraction=0.1, testFraction=0.1):
     return train_set, valid_set, test_set
 
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()
+
