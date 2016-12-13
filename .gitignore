@@ -8,3 +8,4 @@ protobuf-master/
 .idea/
 dlib-master/
 *.pkl
+*.npz
