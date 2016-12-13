@@ -52,7 +52,7 @@ def main ():
     print("activation = T.nnet.relu")
     
     # Training parameters
-    num_epochs = 50
+    num_epochs = 100
     print("num_epochs = " + str(num_epochs))
     
     # Decaying LR
@@ -92,18 +92,20 @@ def main ():
     
     # resnet50; needs to be evaluated differently as well -> comment above line
     cnn = build_network_resnet50(input)
-    train_output = theano.function([net['input'].input_var], lasagne.layers.get_output(net['prob'], deterministic=True))
-    
+    #train_output = theano.function([cnn['input'].input_var], lasagne.layers.get_output(cnn['prob'], deterministic=True))
+    train_output = lasagne.layers.get_output(cnn['prob'], deterministic=True)
+    #print(cnn)
     
     
     # squared hinge loss
     loss = T.mean(T.sqr(T.maximum(0., 1. - target * train_output)))
     
     # set all params to trainable
-    params = lasagne.layers.get_all_params(cnn, trainable=True)
+    params = lasagne.layers.get_all_params(cnn['prob'], trainable=True)
     updates = lasagne.updates.adam(loss_or_grads=loss, params=params, learning_rate=LR)
     
-    test_output = lasagne.layers.get_output(cnn, deterministic=True)
+    test_output = lasagne.layers.get_output(cnn['prob'], deterministic=True)
+
     test_loss = T.mean(T.sqr(T.maximum(0., 1. - target * test_output)))
     test_err = T.mean(T.neq(T.argmax(test_output, axis=1), T.argmax(target, axis=1)), dtype=theano.config.floatX)
     
@@ -118,7 +120,7 @@ def main ():
     
     train_lipreadingTCDTIMIT.train(
             train_fn, val_fn,
-            cnn,
+            cnn['prob'],
             batch_size,
             LR_start, LR_decay,
             num_epochs,
