@@ -92,7 +92,7 @@ def main ():
     
     # resnet50; needs to be evaluated differently as well -> comment above line
     cnn = build_network_resnet50(input)
-    train_output = theano.function([net['input'].input_var], lasagne.layers.get_output(net['prob'], deterministic=True))
+    train_output = lasagne.layers.get_output(net['prob'], deterministic=True))
     
     
     
