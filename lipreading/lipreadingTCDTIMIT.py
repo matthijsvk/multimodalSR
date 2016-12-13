@@ -64,7 +64,7 @@ def main ():
     print("LR_decay = " + str(LR_decay))
     # BTW, LR decay might good for the BN moving average...
     
-    train_set_size = 11500
+    train_set_size = 11000
     print("train_set_size = " + str(train_set_size))
     shuffle_parts = 1
     print("shuffle_parts = " + str(shuffle_parts))
@@ -143,11 +143,14 @@ def build_network_google (activation, alpha, epsilon, input):
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity)
+    
     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
+    
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
             alpha=alpha)
+    
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
@@ -365,7 +368,6 @@ def build_network_cifar10(activation, alpha, epsilon, input):
             cnn,
             epsilon=epsilon,
             alpha=alpha)
-
     return cnn
     
 
