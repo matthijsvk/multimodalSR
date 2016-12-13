@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-
 import numpy as np
 np.random.seed(1234)  # for reproducibility?
 
@@ -15,7 +14,7 @@ import theano.sandbox.cuda
 theano.sandbox.cuda.use('gpu1')
 
 import train_lipreadingTCDTIMIT # load training functions
-from loadData import CIFAR10   # load the binary dataset in proper format
+from datasetClass import CIFAR10   # load the binary dataset in proper format
 from resnet50 import *
 
 # from http://blog.christianperone.com/2015/08/convolutional-neural-networks-and-feature-extraction-with-python/
@@ -36,10 +35,20 @@ from nolearn.lasagne import visualize
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 
+import logging
+from theano.compat.six.moves import xrange
+from pylearn2.datasets import cache, dense_design_matrix
+from pylearn2.expr.preprocessing import global_contrast_normalize
+from pylearn2.utils import contains_nan
+from pylearn2.utils import serial
+from pylearn2.utils import string_utils
+
+_logger = logging.getLogger(__name__)
+
 
 def main ():
     # BN parameters
-    batch_size = 50
+    batch_size = 64
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
@@ -52,7 +61,7 @@ def main ():
     print("activation = T.nnet.relu")
     
     # Training parameters
-    num_epochs = 100
+    num_epochs = 50
     print("num_epochs = " + str(num_epochs))
     
     # Decaying LR
@@ -387,11 +396,110 @@ def load_dataset (train_set_size):
     # Lipspeaker 3:  42535 - 28363 = 14172 phonemes
     
     # lipspeaker 1 : 14627 -> 11.5k train, 1.5k valid, 1.627k test
-    train_set = CIFAR10(which_set="train", start=0, stop=train_set_size)
-    valid_set = CIFAR10(which_set="train", start=train_set_size, stop=13000)
-    test_set = CIFAR10(which_set="test")
-
+    dtype = 'uint8'
+    # lipspeaker 1: 14530 -> 14500
+    # lipspeaker 2: 13000
+    # lipspeaker 3: 14104 -> 14000
+    # total =  14500 + 13000 + 14000 = 41500
+    ntotal = 43000  # estimate, for initialization
+    img_shape = (1, 120, 120)
+    img_size = np.prod(img_shape)
     
+    trainFraction = 0.9
+    validFraction = 0.08
+    testFraction = 0.02
+    
+    # prepare data to load
+    fnames = ['Lipspkr%i.pkl' % i for i in range(1, 4)]  # all 3 lipsteakers
+    datasets = {}
+    datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
+    for name in fnames:
+        fname = os.path.join(datapath, name)
+        if not os.path.exists(fname):
+            raise IOError(fname + " was not found.")
+        datasets[name] = cache.datasetCache.cache_file(fname)
+
+    # load the images
+    # first initialize the matrices
+    lenx = ntotal
+    xtrain = np.zeros((lenx, img_size), dtype=dtype)
+    xvalid = np.zeros((lenx, img_size), dtype=dtype)
+    xtest = np.zeros((lenx, img_size), dtype=dtype)
+
+    ytrain = np.zeros((lenx, 1), dtype=dtype)
+    yvalid = np.zeros((lenx, 1), dtype=dtype)
+    ytest = np.zeros((lenx, 1), dtype=dtype)
+
+    # now load train data
+    trainLoaded = 0
+    validLoaded = 0
+    testLoaded = 0
+
+    for i, fname in enumerate(fnames):
+        _logger.info('loading file %s' % datasets[fname])
+        with open(datasets[fname], 'rb') as f:
+            data = pickle.load(f)  # each pkl file contains a dictionary of 'data' and 'labels'
+    
+        thisN = data['data'].shape[0]
+        print("This dataset contains ", thisN, " images")
+    
+        thisTrain = int(trainFraction * thisN)
+        thisValid = int(validFraction * thisN)
+        thisTest = thisN - thisTrain - thisValid  # compensates for rounding
+        print("now loading : nbTrain, nbValid, nbTest")
+        print("              ", thisTrain, thisValid, thisTest)
+    
+        xtrain[trainLoaded:trainLoaded + thisTrain, :] = data['data'][0:thisTrain]
+        xvalid[validLoaded:validLoaded + thisValid, :] = data['data'][thisTrain:thisTrain + thisValid]
+        xtest[testLoaded:testLoaded + thisTest, :] = data['data'][thisTrain + thisValid:thisN]
+    
+        ytrain[trainLoaded:trainLoaded + thisTrain, 0] = data['labels'][0:thisTrain]
+        yvalid[validLoaded:validLoaded + thisValid, 0] = data['labels'][thisTrain:thisTrain + thisValid]
+        ytest[testLoaded:testLoaded + thisTest, 0] = data['labels'][thisTrain + thisValid:thisN]
+    
+        trainLoaded += thisTrain
+        validLoaded += thisValid
+        testLoaded += thisTest
+    
+        if (trainLoaded + validLoaded + testLoaded) >= ntotal:
+            print("loaded too many?")
+            break
+
+    ntest = testLoaded
+    nvalid = validLoaded
+    ntrain = trainLoaded
+    print("Total loaded till now: ", trainLoaded + validLoaded + testLoaded, " out of ", ntotal)
+    print("nbTrainLoaded: ", trainLoaded)
+    print("nbValidLoaded: ", validLoaded)
+    print("nbTestLoaded: ", testLoaded)
+
+    # remove unneeded rows
+    xtrain = xtrain[0:trainLoaded]
+    xvalid = xvalid[0:validLoaded]
+    xtest = xtest[0:testLoaded]
+    ytrain = ytrain[0:trainLoaded]
+    yvalid = yvalid[0:validLoaded]
+    ytest = ytest[0:testLoaded]
+
+    # process this data, remove all zero rows (http://stackoverflow.com/questions/18397805/how-do-i-delete-a-row-in-a-np-array-which-contains-a-zero)
+    # cast to numpy array
+    if isinstance(ytrain, list):
+        ytrain = np.asarray(ytrain).astype(dtype)
+    if isinstance(yvalid, list):
+        yvalid = np.asarray(yvalid).astype(dtype)
+    if isinstance(ytest, list):
+        ytest = np.asarray(ytest).astype(dtype)
+
+    # fix labels (labels start at 1, but the library expects them to start at 0)
+    ytrain = ytrain - 1
+    yvalid = yvalid - 1
+    ytest = ytest - 1
+    
+    # now, make objects with these matrices
+    train_set = CIFAR10(xtrain, ytrain, img_shape)
+    valid_set = CIFAR10(xvalid, yvalid, img_shape)
+    test_set = CIFAR10(xtest, ytest, img_shape)
+
     # bc01 format
     # Inputs in the range [-1,+1]
     # print("Inputs in the range [-1,+1]")
