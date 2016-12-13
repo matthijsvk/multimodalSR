@@ -44,8 +44,8 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
 
         # we define here:
         dtype = 'uint8'
-        ntotal = 14500 # for lipspeaker 1: 14627 -> 11.5k train, 1.5k valid, 1.627k test
-        ntrain = 13000
+        ntotal = 13000 # for lipspeaker 1: 14627 -> 11.5k train, 1.5k valid, 1.627k test
+        ntrain = 12000
         nvalid = 0  # artefact, we won't use it
         ntest = ntotal - ntrain
 
@@ -56,7 +56,7 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
         self.label_names = [line.rstrip('\n') for line in open('../ImageSpeech/phonemeList.txt')]
         
         # prepare loading
-        fnames = ['Lipspkr%i.pkl' % i for i in range(1, 2)] #only use lipspeaker 1 for now
+        fnames = ['Lipspkr%i.pkl' % i for i in range(1, 3)] #only use lipspeaker 1 for now
         datasets = {}
         datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
         for name in fnames:
@@ -66,7 +66,7 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
             datasets[name] = cache.datasetCache.cache_file(fname)
             
         batchLength = ntotal
-        lenx = int(numpy.ceil((ntotal) / float(batchLength)) * batchLength) # 10000 is the batch size
+        lenx = int(numpy.ceil((ntotal) / float(batchLength)) * batchLength) 
         x = numpy.zeros((lenx, self.img_size), dtype=dtype)
         y = numpy.zeros((lenx, 1), dtype=dtype)
 
