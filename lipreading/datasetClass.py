@@ -60,7 +60,10 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
         self.label_names = [line.rstrip('\n') for line in open('../ImageSpeech/phonemeList.txt')]
 
         # save the input data
+        print("memory consumption (MB) of given matrix: ", X.nbytes/1000000)
         X = np.cast['float32'](X)
+        print("memory consumption (MB) after cast to float: ", X.nbytes/1000000)
+        
         if isinstance(y, list):
             y = np.asarray(y).astype(dtype)
 
