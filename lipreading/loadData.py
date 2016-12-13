@@ -45,9 +45,9 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
         # we define here:
         dtype = 'uint8'
         ntotal = 13000 # for lipspeaker 1: 14627 -> 11.5k train, 1.5k valid, 1.627k test
-        ntrain = 12000
-        nvalid = 0  # artefact, we won't use it
-        ntest = ntotal - ntrain
+	ntest = 1000
+        nvalid = 1000
+        ntrain = ntotal - ntest - nvalid
 
         # we also expose the following details:
         self.img_shape = (1, 120, 120)
@@ -56,7 +56,7 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
         self.label_names = [line.rstrip('\n') for line in open('../ImageSpeech/phonemeList.txt')]
         
         # prepare loading
-        fnames = ['Lipspkr%i.pkl' % i for i in range(1, 3)] #only use lipspeaker 1 for now
+        fnames = ['Lipspkr%i.pkl' % i for i in range(1, 2)] #only use lipspeaker 1 for now
         datasets = {}
         datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
         for name in fnames:
