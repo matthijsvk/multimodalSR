@@ -73,13 +73,11 @@ def main ():
     print("LR_decay = " + str(LR_decay))
     # BTW, LR decay might good for the BN moving average...
     
-    train_set_size = 11000
-    print("train_set_size = " + str(train_set_size))
     shuffle_parts = 1
     print("shuffle_parts = " + str(shuffle_parts))
     
     print('Loading TCDTIMIT dataset...')
-    train_set, valid_set, test_set = load_dataset(train_set_size)
+    train_set, valid_set, test_set = load_dataset(0.85,0.1,0.05) #train, valid, test
     
     print("the number of training examples is: ", len(train_set.X))
     print("the number of valid examples is: ", len(valid_set.X))
@@ -378,7 +376,7 @@ def build_network_cifar10(activation, alpha, epsilon, input):
     return cnn
     
 
-def load_dataset (train_set_size):
+def load_dataset (trainFraction=0.8, validFraction=0.1, testFraction=0.1):
     
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
@@ -402,10 +400,6 @@ def load_dataset (train_set_size):
     ntotal = 43000  # estimate, for initialization
     img_shape = (1, 120, 120)
     img_size = np.prod(img_shape)
-    
-    trainFraction = 0.9
-    validFraction = 0.08
-    testFraction = 0.02
     
     # prepare data to load
     fnames = ['Lipspkr%i.pkl' % i for i in range(1, 4)]  # all 3 lipsteakers

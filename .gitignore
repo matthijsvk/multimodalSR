@@ -9,3 +9,4 @@ protobuf-master/
 dlib-master/
 *.pkl
 *.npz
+*.pyc
