@@ -21,6 +21,7 @@ def train (train_fn, val_fn,
            X_test, y_test,
            save_path=None,
            shuffle_parts=1):
+    
     # A function which shuffles a dataset
     def shuffle (X, y):
         
@@ -58,7 +59,6 @@ def train (train_fn, val_fn,
     
     # This function trains the model a full epoch (on the whole dataset)
     def train_epoch (X, y, LR):
-        
         loss = 0
         # print("training with a batchsize of: ", batch_size)
         batches = len(X) / batch_size
@@ -116,11 +116,14 @@ def train (train_fn, val_fn,
             
             if save_path is None:
                 save_path = "./bestModel.pkl"
-                # np.savez(save_path, *lasagne.layers.get_all_param_values(model))
-                # update the best model
-            model = {'params': lasagne.layers.get_all_param_values(model)},
-            print("Storing new best model in Pickle (pkl) file at ", save_path)
-            pickle.dump(model, open(save_path, 'wb'), protocol=-1)
+                
+            # update the best model
+            np.savez(save_path, *lasagne.layers.get_all_param_values(model))
+            
+            # there seems to be something wrong with saving with Pickle (unhashable dict...)
+            # model = {'params': lasagne.layers.get_all_param_values(model)},
+            # print("Storing new best model in Pickle (pkl) file at ", save_path)
+            # pickle.dump(model, open(save_path, 'wb'), protocol=-1)
         
         epoch_duration = time.time() - start_time
         

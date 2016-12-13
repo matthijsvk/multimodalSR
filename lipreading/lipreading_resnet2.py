@@ -122,7 +122,7 @@ def build_cnn(input_var=None, n=5):
         return block
 
     # Building the network
-    l_in = InputLayer(shape=(None, 3, 32, 32), input_var=input_var)
+    l_in = InputLayer(shape=(None, 1, 120, 120), input_var=input_var)
 
     # first layer, output is 16 x 32 x 32
     l = batch_norm(ConvLayer(l_in, num_filters=16, filter_size=(3,3), stride=(1,1), nonlinearity=rectify, pad='same', W=lasagne.init.HeNormal(gain='relu'), flip_filters=False))
@@ -172,7 +172,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False, augment=False
             random_cropped = np.zeros(inputs[excerpt].shape, dtype=np.float32)
             crops = np.random.random_integers(0,high=8,size=(batchsize,2))
             for r in range(batchsize):
-                random_cropped[r,:,:,:] = padded[r,:,crops[r,0]:(crops[r,0]+32),crops[r,1]:(crops[r,1]+32)]
+                random_cropped[r,:,:,:] = padded[r,:,crops[r,0]:(crops[r,0]+120),crops[r,1]:(crops[r,1]+120)]
             inp_exc = random_cropped
         else:
             inp_exc = inputs[excerpt]
