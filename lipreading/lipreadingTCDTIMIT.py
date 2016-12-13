@@ -87,12 +87,12 @@ def main ():
     cnn = build_network_google(activation, alpha, epsilon, input)
     #cnn = build_network_cifar10(activation, alpha, epsilon, input)
     
-    # get output layer, for calculating loss etc
-    train_output = lasagne.layers.get_output(cnn, deterministic=False)
     
-    ## resnet50; needs to be evaluated differently as well -> comment above line
+    ## resnet50; you need to replce 'cnn' with 'cnn['prob']' everywhere
     #cnn = build_network_resnet50(input)
-    #train_output = lasagne.layers.get_output(cnn, deterministic=True)
+	
+
+    train_output = lasagne.layers.get_output(cnn, deterministic=True)
     
     
     # squared hinge loss
