@@ -48,6 +48,9 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
         ntrain = 13000
         nvalid = 0  # artefact, we won't use it
         ntest = ntotal - ntrain
+        
+        print("ntotal, ntrain, nvalid, ntest")
+        print(ntotal, ntrain, nvalid, ntest)
 
         # we also expose the following details:
         self.img_shape = (1, 120, 120)
@@ -91,6 +94,9 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
 
         X = numpy.cast['float32'](Xs[which_set])
         y = Ys[which_set]
+        
+        print("X.shape, y.shape")
+        print(X.shape, y.shape)
 
         if isinstance(y, list):
             y = numpy.asarray(y).astype(dtype)
@@ -99,8 +105,10 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
         y = y - 1
         
         if which_set == 'test':
+            assert X.shape[0] == ntest
             assert y.shape[0] == ntest
             y = y.reshape((y.shape[0], 1))
+
 
         if center:
             X -= 127.5
@@ -131,6 +139,7 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
         if start is not None:
             # This needs to come after the prepro so that it doesn't
             # change the pixel means computed above for toronto_prepro
+            print("start: ", start)
             assert start >= 0
             assert stop > start
             assert stop <= X.shape[0]
@@ -138,8 +147,7 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
             y = y[start:stop, :]
             assert X.shape[0] == y.shape[0]
 
-        if which_set == 'test':
-            assert X.shape[0] == ntest
+
 
         view_converter = dense_design_matrix.DefaultViewConverter((120, 120, 1),
                                                                   axes)
