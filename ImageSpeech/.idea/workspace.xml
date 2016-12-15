@@ -1,25 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="6f99c397-9dfe-48cd-8859-553dca035fa6" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/hardcopy.0" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/lipreading_resnet.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/lipreading_resnet2.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/lipreading_resnet50.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/new/datasetClass.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/new/lipreadingTCDTIMIT.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/new/loadData.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/new/testLoad.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/new/train_lipreadingTCDTIMIT.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/original/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/original/networkStructure.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/original/train_net.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../lipreading/testLoad.py" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../lipreading/googleSpeechConvNet.png" afterPath="$PROJECT_DIR$/../lipreading/illustrations/googleSpeechConvNet.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../lipreading/googleSpeechConvNetOverview.png" afterPath="$PROJECT_DIR$/../lipreading/illustrations/googleSpeechConvNetOverview.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../lipreading/googleSpeechOverview.png" afterPath="$PROJECT_DIR$/../lipreading/illustrations/googleSpeechOverview.png" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-    </list>
+    <list default="true" id="6f99c397-9dfe-48cd-8859-553dca035fa6" name="Default" comment="" />
     <ignored path="ImageSpeech.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -258,8 +240,8 @@
       <file leaf-file-name="lipreadingTCDTIMIT.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1911">
-              <caret line="175" column="76" selection-start-line="175" selection-start-column="76" selection-end-line="175" selection-end-column="76" />
+            <state relative-caret-position="219">
+              <caret line="81" column="22" selection-start-line="81" selection-start-column="22" selection-end-line="81" selection-end-column="22" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
                 <element signature="e#11776#13598#0" expanded="false" />
@@ -746,7 +728,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-1" y="19" width="1922" height="1062" extended-state="0" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.13882978" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32905984" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -1105,8 +1087,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1911">
-          <caret line="175" column="76" selection-start-line="175" selection-start-column="76" selection-end-line="175" selection-end-column="76" />
+        <state relative-caret-position="219">
+          <caret line="81" column="22" selection-start-line="81" selection-start-column="22" selection-end-line="81" selection-end-column="22" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
             <element signature="e#11776#13598#0" expanded="false" />
