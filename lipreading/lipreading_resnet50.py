@@ -16,7 +16,7 @@ theano.sandbox.cuda.use('gpu1')
 
 import train_lipreadingTCDTIMIT # load training functions
 from loadData import CIFAR10   # load the binary dataset in proper format
-from resnet50 import *
+from buildNetworks import *
 
 # from http://blog.christianperone.com/2015/08/convolutional-neural-networks-and-feature-extraction-with-python/
 import matplotlib
