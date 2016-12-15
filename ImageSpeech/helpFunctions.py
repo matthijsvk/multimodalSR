@@ -6,15 +6,22 @@ from __future__ import print_function
 # remove without complaining
 import os, errno
 import subprocess
+import getopt
+import zipfile, os.path
+import concurrent.futures
+import threading
+
+import shutil
 
 import sys
-import os
 import dlib
 import glob
 from skimage import io
 import cv2
 import numpy as np
 import scipy.io as sio
+import time
+
 
 ## http://stackoverflow.com/questions/3041986/apt-command-line-interface-like-yes-no-input#3041990
 # query_yes_no("Is cabbage yummier than cauliflower?", None)
@@ -53,14 +60,14 @@ def query_yes_no (question, default="yes"):
         else:
             sys.stdout.write("Please respond with 'yes' or 'no' "
                              "(or 'y' or 'n').\n")
-            
+
+
 def silentremove (filename):
     try:
         os.remove(filename)
     except OSError as e:  # name the Exception `e`
-        #print("Failed with:", e.strerror)  # look what it says
+        # print("Failed with:", e.strerror)  # look what it says
         pass
-
 
 
 # sort based on filenames, numerically instead of lexicographically
@@ -75,6 +82,7 @@ def tryint (s):
         except:
             return t
 
+
 def fixStoreDirName (storageLocation, videoName, pathLine):
     """
     Fix the path of the root dir of all the newly generated files for this video.
@@ -85,8 +93,9 @@ def fixStoreDirName (storageLocation, videoName, pathLine):
     """
     storeDir = str(pathLine).replace('"', '')
     storeDir = storeDir.replace('.rec', '.mp4')
-    if not "TCDTIMIT/" in storeDir: raise Exception("You have to create a 'TCDTIMIT' top level directory!!"); sys.exit(-1)
-    oldStoragePath, relPath = storeDir.split("TCDTIMIT/") #/home/matthijs/TCDTIMIT/volunteers/...
+    if not "TCDTIMIT/" in storeDir: raise Exception("You have to create a 'TCDTIMIT' top level directory!!"); sys.exit(
+        -1)
+    oldStoragePath, relPath = storeDir.split("TCDTIMIT/")  # /home/matthijs/TCDTIMIT/volunteers/...
     storeDir = ''.join([storageLocation, os.sep, relPath])
     storeDir, second = storeDir.split("Clips")
     if storeDir.endswith('/'):
@@ -95,6 +104,7 @@ def fixStoreDirName (storageLocation, videoName, pathLine):
     # now add the video Name
     storeDir = ''.join([storeDir, os.sep, videoName])
     return storeDir
+
 
 # delete unneeded files,  based on a phoneme file
 def deleteUnneededFiles (videoDir):
@@ -124,17 +134,17 @@ def deleteUnneededFiles (videoDir):
                 fname = os.path.splitext(f)[0]
                 fnumber = fname.split("_")[1]
                 if validFrame == fnumber:
-                    #print(f + " has frame number: ", fnumber, " and won't be removed")
+                    # print(f + " has frame number: ", fnumber, " and won't be removed")
                     remove = 0
                     break
             if remove == 1:
                 filePath = os.path.join(root, f)
-                #print(filePath + " will be removed")
+                # print(filePath + " will be removed")
                 os.remove(filePath)
                 nbRemoved += 1
-    #print(validFrames)
+    # print(validFrames)
     return nbRemoved
-    
+
 
 def extractAllFrames (videoPath, videoName, storeDir, framerate, targetSize, cropStartPixel):
     """
@@ -144,7 +154,8 @@ def extractAllFrames (videoPath, videoName, storeDir, framerate, targetSize, cro
     if not os.path.exists(storeDir):  # skip already existing videos (it is assumed the exist if the directory exists)
         os.makedirs(storeDir)
         # eg vid1_. frame number and extension will be added by ffmpeg
-        outputPath = ''.join([storeDir, os.sep, videoName, "_", ])  # eg .../sa1_3.jpg (frame and extension added by ffmpg)
+        outputPath = ''.join(
+                [storeDir, os.sep, videoName, "_", ])  # eg .../sa1_3.jpg (frame and extension added by ffmpg)
         
         command = ['ffmpeg',
                    '-i', videoPath,
@@ -159,6 +170,7 @@ def extractAllFrames (videoPath, videoName, storeDir, framerate, targetSize, cro
     
     else:
         return 0  # files already exist?
+
 
 # detect faces in all jpg's in sourceDir
 # extract faces to "storeDir/faces", and mouths to "storeDir/mouths"
@@ -180,37 +192,47 @@ def extractFacesMouths (sourceDir, storeDir, predictor_path):
     
     for f in glob.glob(os.path.join(sourceDir, "*.jpg")):
         dets = []
-        fname = os.path.splitext(os.path.basename(f))[0]
-        facePath = storeFaceDir + os.sep + fname + "_face.jpg"
-        mouthPath = storeMouthsDir + os.sep + fname + "_mouth.jpg"
-        if os.path.exists(facePath): continue
-
-        img = io.imread(f)
-        # don't reprocess images that already have a face extracted, as we've already done this before!
-        
-        # detect face, then keypoints. Store face and mouth
-        resizer = 4
-        height, width = img.shape[:2]
-        imgSmall = cv2.resize(img, (int(width / resizer), int(height / resizer)),
-                              interpolation=cv2.INTER_AREA)  # linear for zooming, inter_area for shrinking
-        imgSmall = cv2.cvtColor(imgSmall, cv2.COLOR_BGR2GRAY)
-        dets = detector(imgSmall, 1)  # detect face, don't upsample
-        
-        if len(dets) == 0:
-            print("no faces found for file: ", f, "; using full res image...")
-            dets = []
-            resizer = 1
+        fname, ext = os.path.splitext(os.path.basename(f))
+        if ext == ".jpg":
+            # print(f)
+            facePath = storeFaceDir + os.sep + fname + "_face.jpg"
+            mouthPath = storeMouthsDir + os.sep + fname + "_mouth.jpg"
+            
+            if os.path.exists(facePath):
+                # print(facePath, " already exists")
+                continue
+            
+            img = io.imread(f)
+            
+            # detect face, then keypoints. Store face and mouth
+            resizer = 4
             height, width = img.shape[:2]
             imgSmall = cv2.resize(img, (int(width / resizer), int(height / resizer)),
                                   interpolation=cv2.INTER_AREA)  # linear for zooming, inter_area for shrinking
             imgSmall = cv2.cvtColor(imgSmall, cv2.COLOR_BGR2GRAY)
             dets = detector(imgSmall, 1)  # detect face, don't upsample
+            
             if len(dets) == 0:
-                print("still no faces found. Skipping...")
-            else:
-                print("now we found a face.")
-        
-        for i, d in enumerate(dets):
+                # print("looking on full-res image...")
+                resizer = 1
+                height, width = img.shape[:2]
+                imgSmall = cv2.resize(img, (int(width / resizer), int(height / resizer)),
+                                      interpolation=cv2.INTER_AREA)  # linear for zooming, inter_area for shrinking
+                imgSmall = cv2.cvtColor(imgSmall, cv2.COLOR_BGR2GRAY)
+                dets = detector(imgSmall, 1)  # detect face, don't upsample
+                if len(dets) == 0:
+                    print("still no faces found. Using previous face coordinates...")
+                    if 'top' in locals():
+                        face_img = img[top:bot, left:right]
+                        io.imsave(facePath, face_img)
+                        mouth_img = img[my:my + mh, mx:mx + mw]
+                        io.imsave(mouthPath, mouth_img)
+                        continue
+                    else:
+                        print("top not in locals. ERROR")
+                    continue
+            
+            d = dets[0]
             # extract face, store in storeFacesDir
             left = d.left() * resizer
             right = d.right() * resizer
@@ -255,6 +277,7 @@ import dlib
 from skimage import io
 import cv2
 
+
 def resize_image (filePath, filePathResized, keepAR=True, width=120.0):
     from skimage import data
     from skimage.transform import resize
@@ -262,12 +285,13 @@ def resize_image (filePath, filePathResized, keepAR=True, width=120.0):
     if keepAR:
         r = width / im.shape[1]
         dim = (int(im.shape[0] * r), int(width))
-        im_resized = resize(im,dim)
+        im_resized = resize(im, dim)
     else:
-        im_resized = resize(im, (120,120))
+        im_resized = resize(im, (120, 120))
     io.imsave(filePathResized, im_resized)
 
-def resizeImages (rootDir, dirNames, keepAR= True, width=640.0):
+
+def resizeImages (rootDir, dirNames, keepAR=True, width=640.0):
     from os import listdir
     from os.path import isfile, join
     for dirName in dirNames:
@@ -275,7 +299,7 @@ def resizeImages (rootDir, dirNames, keepAR= True, width=640.0):
         targetDirPath = rootDir + os.sep + dirName + "_" + str(int(width))
         if not os.path.exists(targetDirPath):
             os.makedirs(targetDirPath)
-            
+        
         # loop through the files
         onlyfiles = [f for f in listdir(dirPath) if isfile(join(dirPath, f))]
         onlyfiles.sort(key=tryint)
@@ -289,18 +313,19 @@ def resizeImages (rootDir, dirNames, keepAR= True, width=640.0):
                 resize_image(filePath, targetPath, keepAR, width)
     return 0
 
+
 # convert all images in folders specified in the list 'dirNames', that are found under the rootDir, to grayscale.
-def convertToGrayScale(rootDir, dirNames):
+def convertToGrayScale (rootDir, dirNames):
     nbConverted = 0
     for root, dirs, files in os.walk(rootDir):
         files.sort(key=tryint)
         for file in files:
             parentDir = os.path.basename(root)
-            fname = os.path.splitext(file)[0] # no path, no extension. only filename
+            fname = os.path.splitext(file)[0]  # no path, no extension. only filename
             if parentDir in dirNames:
                 # convert all images in here to grayscale, store to dirName_gray
-                newDirPath = ''.join([os.path.dirname(root), os.sep, parentDir+"_gray"])
-                newFilePath =''.join([newDirPath, os.sep, fname+"_gray.jpg"])
+                newDirPath = ''.join([os.path.dirname(root), os.sep, parentDir + "_gray"])
+                newFilePath = ''.join([newDirPath, os.sep, fname + "_gray.jpg"])
                 if not os.path.exists(newDirPath):
                     os.makedirs(newDirPath)
                 if not os.path.exists(newFilePath):
@@ -308,12 +333,12 @@ def convertToGrayScale(rootDir, dirNames):
                     # with OpenCV: weird results (gray image larger than color ?!?)
                     # img = cv2.imread(root+os.sep+file, 0)
                     # cv2.imwrite(newFilePath, img)
-
+                    
                     from skimage.color import rgb2gray
                     from skimage import io
-                    img_gray = rgb2gray(io.imread(root+os.sep+file))
+                    img_gray = rgb2gray(io.imread(root + os.sep + file))
                     io.imsave(newFilePath, img_gray)  # don't write to disk if already exists
                     nbConverted += 1
-
+    
     # print(nbConverted, " files have been converted to Grayscale")
     return 0
