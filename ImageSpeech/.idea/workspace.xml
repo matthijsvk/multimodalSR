@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6f99c397-9dfe-48cd-8859-553dca035fa6" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../lipreading/datasetClass.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py" afterPath="$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py" />
     </list>
@@ -246,11 +245,11 @@
           <file leaf-file-name="lipreadingTCDTIMIT.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="234">
-                  <caret line="163" column="14" selection-start-line="163" selection-start-column="14" selection-end-line="163" selection-end-column="14" />
+                <state relative-caret-position="614">
+                  <caret line="257" column="4" selection-start-line="257" selection-start-column="4" selection-end-line="257" selection-end-column="4" />
                   <folding>
                     <element signature="e#0#37#0" expanded="true" />
-                    <element signature="e#11643#13465#0" expanded="false" />
+                    <element signature="e#11776#13598#0" expanded="false" />
                   </folding>
                 </state>
               </provider>
@@ -1048,6 +1047,13 @@
         </state>
       </provider>
     </entry>
+    <entry file="file:///mnt/data/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/lipreading/lipreadingTCDTIMIT.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3203">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/../lipreading/loadData.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1854">
@@ -1074,16 +1080,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../lipreading/new/testLoad.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="12" column="25" selection-start-line="12" selection-start-column="25" selection-end-line="12" selection-end-column="25" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../lipreading/new/lipreadingTCDTIMIT.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="18">
@@ -1095,10 +1091,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file:///mnt/data/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/lipreading/lipreadingTCDTIMIT.py">
+    <entry file="file://$PROJECT_DIR$/../lipreading/new/testLoad.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3203">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        <state relative-caret-position="180">
+          <caret line="12" column="25" selection-start-line="12" selection-start-column="25" selection-end-line="12" selection-end-column="25" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
           </folding>
@@ -1107,11 +1103,11 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../lipreading/lipreadingTCDTIMIT.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="234">
-          <caret line="163" column="14" selection-start-line="163" selection-start-column="14" selection-end-line="163" selection-end-column="14" />
+        <state relative-caret-position="614">
+          <caret line="257" column="4" selection-start-line="257" selection-start-column="4" selection-end-line="257" selection-end-column="4" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
-            <element signature="e#11643#13465#0" expanded="false" />
+            <element signature="e#11776#13598#0" expanded="false" />
           </folding>
         </state>
       </provider>

@@ -27,9 +27,14 @@ import os
 import gzip
 import numpy as np
 import theano
-import lasagne
-from lasagne import layers
-from lasagne.updates import nesterov_momentum
+import warnings
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    import lasagne
+    from lasagne import layers
+    from lasagne.updates import nesterov_momentum
+
 from nolearn.lasagne import NeuralNet
 from nolearn.lasagne import visualize
 from sklearn.metrics import classification_report
@@ -45,6 +50,8 @@ from pylearn2.utils import string_utils
 
 _logger = logging.getLogger(__name__)
 
+
+
 # User - created files
 import train_lipreadingTCDTIMIT # load training functions
 from datasetClass import CIFAR10 # load the binary dataset in proper format
@@ -53,7 +60,7 @@ from buildNetworks import *
 
 def main ():
     # BN parameters
-    batch_size = 8
+    batch_size = 12
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
@@ -66,7 +73,7 @@ def main ():
     print("activation = T.nnet.relu")
     
     # Training parameters
-    num_epochs = 100
+    num_epochs = 40
     print("num_epochs = " + str(num_epochs))
     
     # Decaying LR
@@ -100,7 +107,7 @@ def main ():
     #cnn = build_network_cifar10(activation, alpha, epsilon, input)
     
     ## resnet50; replace cnn by cnn['prob'] everywhere
-    # cnn = build_network_resnet50(input)
+    #cnn = build_network_resnet50(input)
     
     # get output layer, for calculating loss etc
     train_output = lasagne.layers.get_output(cnn, deterministic=False)
@@ -188,7 +195,7 @@ def load_dataset (trainFraction=0.8, validFraction=0.1, testFraction=0.1):
     
     # memory issues: print size
     memTot = xtrain.nbytes + xvalid.nbytes + xtest.nbytes + ytrain.nbytes + yvalid.nbytes + ytest.nbytes
-    print("Empty matrices, memory required: ", memTot / 1000000, " MB")
+    # print("Empty matrices, memory required: ", memTot / 1000000, " MB")
     
     # now load train data
     trainLoaded = 0
@@ -247,7 +254,7 @@ def load_dataset (trainFraction=0.8, validFraction=0.1, testFraction=0.1):
     ytest = ytest[0:testLoaded]
     
     memTot = xtrain.nbytes + xvalid.nbytes + xtest.nbytes + ytrain.nbytes + yvalid.nbytes + ytest.nbytes
-    print("Total memory size required: ", memTot / 1000000, " MB")
+    # print("Total memory size required: ", memTot / 1000000, " MB")
     
     # process this data, remove all zero rows (http://stackoverflow.com/questions/18397805/how-do-i-delete-a-row-in-a-np-array-which-contains-a-zero)
     # cast to numpy array
