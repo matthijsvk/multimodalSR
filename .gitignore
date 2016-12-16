@@ -10,3 +10,4 @@ dlib-master/
 *.pkl
 *.npz
 *.xml
+*.pyc
