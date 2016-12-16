@@ -209,7 +209,7 @@ def processDatabase (MLFfile, storageLocation, nbThreads=2):
             
             print([future.result() for future in futures])
             nbVideosExtracted = sum([future.result() for future in futures])
-            sleepTime = nbVideosExtracted * 5
+            sleepTime = nbVideosExtracted * 6
             print("Sleeping for ", sleepTime, " seconds to allow files to be written to disk.")
             time.sleep(sleepTime)  # wait till files have been written
             
@@ -262,7 +262,7 @@ def processDatabase (MLFfile, storageLocation, nbThreads=2):
                 print("Extracting faces from ", sourceDir)
                 # exectute. The third argument is the path to the dlib facial landmark predictor
                 futures.append(executor.submit(extractFacesMouths, sourceDir, storeDir,
-                                               "/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/ImageSpeech/shape_predictor_68_face_landmarks.dat"))  # storeDir = sourceDir
+                                               "./shape_predictor_68_face_landmarks.dat"))  # storeDir = sourceDir
             concurrent.futures.wait(futures)
             print("\tAll faces and mouths have been extracted.")
             print("----------------------------------")
@@ -286,8 +286,8 @@ def processDatabase (MLFfile, storageLocation, nbThreads=2):
             for video in currentVideos:
                 videoPath, phonemes = processVideoFile(video)
                 videoName = os.path.splitext(os.path.basename(videoPath))[0]
-                storeDir = fixStoreDirName(storageLocation, videoName, video[
-                    0])  # eg /media/matthijs/TOSHIBA EXT/TCDTIMIT/processed/lipspeakers/LipSpkr1/sa1
+                # storeDir: eg /home/data/TCDTIMIT/processed/lipspeakers/LipSpkr1/sa1
+                storeDir = fixStoreDirName(storageLocation, videoName, video[0])
                 rootDir = storeDir
                 dirNames = ["mouths_gray", "faces_gray"]
                 print("Resizing images from: ", sourceDir)
