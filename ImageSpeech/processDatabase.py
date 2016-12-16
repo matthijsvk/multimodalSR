@@ -262,7 +262,7 @@ def processDatabase (MLFfile, storageLocation, nbThreads=2):
                 print("Extracting faces from ", sourceDir)
                 # exectute. The third argument is the path to the dlib facial landmark predictor
                 futures.append(executor.submit(extractFacesMouths, sourceDir, storeDir,
-                                               "/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master/Thesis/ImageSpeech/shape_predictor_68_face_landmarks.dat"))  # storeDir = sourceDir
+                                               "./shape_predictor_68_face_landmarks.dat"))  # storeDir = sourceDir
             concurrent.futures.wait(futures)
             print("\tAll faces and mouths have been extracted.")
             print("----------------------------------")
