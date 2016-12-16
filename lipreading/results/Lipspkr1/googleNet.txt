@@ -1,0 +1,97 @@
+batch_size = 50
+alpha = 0.1
+epsilon = 0.0001
+activation = T.nnet.relu
+num_epochs = 100
+LR_start = 0.001
+LR_fin = 3e-07
+LR_decay = 0.922085542142
+train_set_size = 11500
+shuffle_parts = 1
+Loading TCDTIMIT dataset...
+the number of training examples is:  11500
+the number of valid examples is:  1500
+the number of test examples is:  1500
+Building the CNN...
+Training...
+starting training for  100  epochs...
+epoch  1 started...
+Epoch 1 of 100 took 45.6597881317s
+  LR:                            0.001
+  training loss:                 0.196879686221
+  validation loss:               0.0936389093598
+  validation error rate:         84.3333329757%
+  best epoch:                    1
+  best validation error rate:    84.3333329757%
+  test loss:                     0.0926807699104
+  test error rate:               82.866666317%
+epoch  2 started...
+Epoch 2 of 100 took 49.1822118759s
+  LR:                            0.000922085542142
+  training loss:                 0.08787029865
+  validation loss:               0.0866112008691
+  validation error rate:         71.6000000636%
+  best epoch:                    2
+  best validation error rate:    71.6000000636%
+  test loss:                     0.0863835379481
+  test error rate:               73.1333339214%
+epoch  3 started...
+Epoch 3 of 100 took 51.0670568943s
+  LR:                            0.000850241747028
+  training loss:                 0.0843785134347
+  validation loss:               0.0853238239884
+  validation error rate:         69.26666677%
+  best epoch:                    3
+  best validation error rate:    69.26666677%
+  test loss:                     0.0860271093746
+  test error rate:               72.0666670799%
+epoch  4 started...
+Epoch 4 of 100 took 52.1912109852s
+  LR:                            0.00078399562226
+  training loss:                 0.0817549873629
+  validation loss:               0.0834487805764
+  validation error rate:         66.8666672707%
+  best epoch:                    4
+  best validation error rate:    66.8666672707%
+  test loss:                     0.0833805533747
+  test error rate:               67.1333338817%
+epoch  5 started...
+Epoch 5 of 100 took 52.9058389664s
+  LR:                            0.000722911028389
+  training loss:                 0.0798883236945
+  validation loss:               0.0814576424658
+  validation error rate:         64.4666675727%
+  best epoch:                    5
+  best validation error rate:    64.4666675727%
+  test loss:                     0.081736579289
+  test error rate:               66.3333342473%
+epoch  6 started...
+Epoch 6 of 100 took 53.3101358414s
+  LR:                            0.000666585807533
+  training loss:                 0.0775755105783
+  validation loss:               0.0818111437062
+  validation error rate:         63.6000005404%
+  best epoch:                    6
+  best validation error rate:    63.6000005404%
+  test loss:                     0.0822065062821
+  test error rate:               65.4000004133%
+epoch  7 started...
+Epoch 7 of 100 took 53.3643829823s
+  LR:                            0.000614649135723
+  training loss:                 0.0755986809407
+  validation loss:               0.0812763154507
+  validation error rate:         62.4666669965%
+  best epoch:                    7
+  best validation error rate:    62.4666669965%
+  test loss:                     0.0811752070983
+  test error rate:               63.6666667461%
+epoch  8 started...
+Epoch 8 of 100 took 53.4513170719s
+  LR:                            0.00056675908154
+  training loss:                 0.0735834201393
+  validation loss:               0.0805561743677
+  validation error rate:         62.0666671793%
+  best epoch:                    8
+  best validation error rate:    62.0666671793%
+  test loss:                     0.080871438235
+  test error rate:               60.8000004292%

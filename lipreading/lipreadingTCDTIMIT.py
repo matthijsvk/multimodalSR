@@ -60,7 +60,7 @@ from buildNetworks import *
 
 def main ():
     # BN parameters
-    batch_size = 12
+    batch_size = 24 
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
@@ -173,7 +173,7 @@ def load_dataset (trainFraction=0.8, validFraction=0.1, testFraction=0.1):
     img_size = np.prod(img_shape)
     
     # prepare data to load
-    fnames = ['Lipspkr%i.pkl' % i for i in range(1, 4)]  # all 3 lipsteakers
+    fnames = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
     datasets = {}
     datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
     for name in fnames:

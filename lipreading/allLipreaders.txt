@@ -1,0 +1,2 @@
+Using gpu device 0: GeForce GTX TITAN X (CNMeM is enabled with initial size: 20.0% of memory, cuDNN 5103)
+WARNING (theano.sandbox.cuda): Ignoring call to use(1), GPU number 0 is already in use.
