@@ -122,10 +122,12 @@ def copyDBFiles(rootDir, names, targetRoot):
 
 # extract phonemes for each image, put them in the image name
 def addPhonemesToImageNames(videoDir):
+    print("processing: ", videoDir)
     # videoDir will be the lowest-level directory
     videoName = os.path.basename(videoDir)
     parentName = os.path.basename(os.path.dirname(videoDir))
-    validFrames = {}
+    import collections
+    validFrames = collections.OrderedDict({})
     phonemeFile = ''.join([videoDir + os.sep + parentName + "_" + videoName + "_PHN.txt"])
     #print(phonemeFile)
     with open(phonemeFile) as inf:
@@ -133,6 +135,8 @@ def addPhonemesToImageNames(videoDir):
             parts = line.split()  # split line into parts
             if len(parts) > 1:  # if at least 2 parts/columns
                 validFrames[str(parts[0])] = parts[1]  # dict, key= frame, value = phoneme
+    
+    # print("validFrames: ", validFrames)
     nbRenamed = 0
     for root, dirs, files in os.walk(videoDir):
         for file in files:
@@ -141,14 +145,15 @@ def addPhonemesToImageNames(videoDir):
                 filePath = ''.join([root,os.sep,file])
                 videoName = file.split("_")[0]
                 frameNumber = file.split("_")[1] #number-> after first underscore
-                phoneme = validFrames[frameNumber]
-                newFileName = ''.join([videoName, "_", frameNumber, "_", phoneme, ext])
-                parent = os.path.dirname(root)
-                newFilePath = ''.join([parent, os.sep, newFileName ])
-                # print(filePath, " will be renamed to: ", newFilePath)
-                os.rename(filePath, newFilePath)
-                nbRenamed += 1
-            if ext == ".txt":
+                if frameNumber in validFrames: #maybe some wrong picture got extracted
+                    phoneme = validFrames[frameNumber]
+                    newFileName = ''.join([videoName, "_", frameNumber, "_", phoneme, ext])
+                    parent = os.path.dirname(root)
+                    newFilePath = ''.join([parent, os.sep, newFileName ])
+                    # print(filePath, " will be renamed to: ", newFilePath)
+                    os.rename(filePath, newFilePath)
+                    nbRenamed += 1
+            if ext == ".txt": #the phoneme file
                 filePath = ''.join([root, os.sep, file])
                 videoName = file.split("_")[1]
                 newFilePath = filePath.replace(videoName+os.sep,'')
@@ -180,7 +185,7 @@ def addPhonemesToImagesDB(rootDir):
     print("First 10 directories to be processed: ", dirList[0:10])
     for dir in dirList:
         addPhonemesToImageNames(dir)
-        os.rmdir(dir)
+        shutil.rmtree(dir)
     return 0
 
 # helpfunction
@@ -271,9 +276,9 @@ if __name__ == "__main__":
     # use this to copy the grayscale files from 'processDatabase' to another location, and fix their names with phonemes
     # then convert to files useable by CIFAR10 code
     
-    processedDir = "~/TCDTIMIT/processed"
-    databaseDir = "~/TCDTIMIT/database"
-    databaseBinaryDir = "~/TCDTIMIT/database_binary"
+    processedDir = os.path.expanduser("~/TCDTIMIT/test/processed3")
+    databaseDir = os.path.expanduser("~/TCDTIMIT/test/database")
+    databaseBinaryDir = os.path.expanduser("~/TCDTIMIT/test/database_binary")
     
     # 1. copy mouths_gray_120 images and PHN.txt files to targetRoot. Move files up from their mouths_gray_120 dir to the video dir (eg sa1)
     print("Copying mouth_gray_120 directories to database location...")

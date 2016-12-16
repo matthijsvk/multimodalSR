@@ -1,18 +1,16 @@
 from processDatabase import *
 
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG) #http://stackoverflow.com/questions/6579496/using-print-statements-only-to-debug
-# setConsoleLevel(logging.ERROR)
-# setFileLevel(logging.INFO)
-
 # get phone list from file, extract phonemes and times, get the frames corresponding to those phonemes
+# then remove frames without phonemes, extract faces, extract mouths, convert them to grayscale images
+# also store compressed (eg 120x120) versions of grayscale faces and mouths
 
 ###################################################################################################
 # !!!! Before running this, make sure all the paths to the videos in the MLF file are correct !!!!#0
 ###################################################################################################
 startTime = time.clock()
 
-processDatabase('./lipspeaker_labelfiles.mlf',"/home/matthijs/TCDTIMIT/processed2", 4) #storeDir requires TCDTIMIT in the name
-# processDatabase('/home/matthijs/TCDTIMIT_test/test.mlf',"/home/matthijs/TCDTIMIT_test/processed", 8) #storeDir requires TCDTIMIT in the name
+processDatabase('./lipspeaker_labelfiles.mlf',os.path.expanduser("~/TCDTIMIT/test/processed3"), 4) #storeDir requires TCDTIMIT in the name
+# processDatabase('/home/matthijs/TCDTIMIT_test/test.mlf',os.path.expanduser("~/TCDTIMIT_test/processed"), 4) #storeDir requires TCDTIMIT in the name
 
 duration = time.clock() - startTime
 print("This took ", duration, " seconds")

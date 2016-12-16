@@ -95,7 +95,7 @@ def fixStoreDirName (storageLocation, videoName, pathLine):
     storeDir = storeDir.replace('.rec', '.mp4')
     if not "TCDTIMIT/" in storeDir: raise Exception("You have to create a 'TCDTIMIT' top level directory!!"); sys.exit(
         -1)
-    oldStoragePath, relPath = storeDir.split("TCDTIMIT/")  # /home/matthijs/TCDTIMIT/volunteers/...
+    oldStoragePath, relPath = storeDir.split("TCDTIMIT/")  # /home/data/TCDTIMIT/volunteers/...
     storeDir = ''.join([storageLocation, os.sep, relPath])
     storeDir, second = storeDir.split("Clips")
     if storeDir.endswith('/'):
