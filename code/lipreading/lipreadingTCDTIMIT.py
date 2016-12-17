@@ -60,7 +60,7 @@ from buildNetworks import *
 
 def main ():
     # BN parameters
-    batch_size = 24 
+    batch_size = 12
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
