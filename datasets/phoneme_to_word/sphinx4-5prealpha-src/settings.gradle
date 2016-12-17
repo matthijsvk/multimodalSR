@@ -1,4 +1,0 @@
-rootProject.name = 'sphinx4-parent'
-include ':sphinx4-core'
-include ':sphinx4-data'
-include ':sphinx4-samples'
