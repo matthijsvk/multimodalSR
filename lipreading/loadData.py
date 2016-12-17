@@ -56,7 +56,7 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
         self.img_shape = (1, 120, 120)
         self.img_size = numpy.prod(self.img_shape)
         self.n_classes = 39
-        self.label_names = [line.rstrip('\n') for line in open('../ImageSpeech/phonemeList.txt')]
+        self.label_names = [line.rstrip('\n') for line in open('../databaseExtraction/background/phonemeList.txt')]
         
         # prepare loading
         fnames = ['Lipspkr%i.pkl' % i for i in range(1, 2)] #only use lipspeaker 1 for now
