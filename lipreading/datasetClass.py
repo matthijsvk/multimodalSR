@@ -57,7 +57,7 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
         self.img_shape = img_shape
         self.img_size = np.prod(self.img_shape)
         self.n_classes = 39
-        self.label_names = [line.rstrip('\n') for line in open('../ImageSpeech/phonemeList.txt')]
+        self.label_names = [line.rstrip('\n') for line in open('../databaseExtraction/background/phonemeList.txt')]
 
         # save the input data
         print("memory consumption (MB) of given matrix: ", X.nbytes/1000000)

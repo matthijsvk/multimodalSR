@@ -190,7 +190,7 @@ def addPhonemesToImagesDB(rootDir):
 
 # helpfunction
 def getPhonemeNumberMap (
-        phonemeMap="./phonemeLabelConversion.txt"):
+        phonemeMap="./background/phonemeLabelConversion.txt"):
     phonemeNumberMap = {}
     with open(phonemeMap) as inf:
         for line in inf:
@@ -302,7 +302,7 @@ if __name__ == "__main__":
     
     # Other functions that are not normally needed
     # 1. deleting directories, not needed
-    # root = "/home/matthijs/TCDTIMIT2/processed"
+    # root = "/home/user/TCDTIMIT/processed"
     # name = ["mouths", "faces"]
     # deleteDirs(root, name)
 
@@ -357,7 +357,7 @@ def fixNames (rootDir):
 
 
 # example usage
-# root = "/home/matthijs/TCDTIMIT/processed2"
+# root = "/home/user/TCDTIMIT/processed"
 # fixNames(root)
 
 
@@ -390,5 +390,5 @@ def frameToTiming (rootDir):
     return 0
 
     # example usage
-    # root = "/home/matthijs/TCDTIMIT/processed2/lipspeakers/Lipspkr1/sa1"
+    # root = "/home/user/TCDTIMIT/processed/lipspeakers/Lipspkr1/sa1"
     # frameToTiming(root)
