@@ -207,7 +207,7 @@ def fixStoreDirName (storageLocation, videoName, pathLine):
     """
     Fix the path of the root dir of all the newly generated files for this video.
     Gets base path from the MLF file; removes everything from 'Clips' on; adds storeDirName
-    For example: file for lipspeaker will be '/media/matthijs/TOSHIBA EXT/TCDTIMIT/processed/lipspeakers/Lipspkr1'
+    For example: file for lipspeaker will be '/home/user/TCDTIMIT/processed/lipspeakers/Lipspkr1'
     :param storeDir: the name of the root dir (which will be just under the 'TCDTIMIT' dir)
     :return:
     """
