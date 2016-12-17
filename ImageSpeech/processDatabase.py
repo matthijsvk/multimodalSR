@@ -16,7 +16,7 @@ import time
 import concurrent.futures
 import dlib
 from skimage import io
-import cv2
+#import cv2
 
 from helpFunctions import *
 
@@ -209,7 +209,7 @@ def processDatabase (MLFfile, storageLocation, nbThreads=2):
             
             print([future.result() for future in futures])
             nbVideosExtracted = sum([future.result() for future in futures])
-            sleepTime = nbVideosExtracted * 6
+            sleepTime = nbVideosExtracted * 8
             print("Sleeping for ", sleepTime, " seconds to allow files to be written to disk.")
             time.sleep(sleepTime)  # wait till files have been written
             
@@ -261,8 +261,7 @@ def processDatabase (MLFfile, storageLocation, nbThreads=2):
                 storeDir = sourceDir
                 print("Extracting faces from ", sourceDir)
                 # exectute. The third argument is the path to the dlib facial landmark predictor
-                futures.append(executor.submit(extractFacesMouths, sourceDir, storeDir,
-                                               "./shape_predictor_68_face_landmarks.dat"))  # storeDir = sourceDir
+                futures.append(executor.submit(extractFacesMouths, sourceDir, storeDir, "./shape_predictor_68_face_landmarks.dat"))  # storeDir = sourceDir
             concurrent.futures.wait(futures)
             print("\tAll faces and mouths have been extracted.")
             print("----------------------------------")

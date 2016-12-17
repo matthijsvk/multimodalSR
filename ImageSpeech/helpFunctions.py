@@ -16,12 +16,17 @@ import shutil
 import sys
 import dlib
 import glob
-from skimage import io
-import cv2
 import numpy as np
 import scipy.io as sio
-import time
+import sys
+import dlib
+# import cv2
 
+import time
+from skimage.color import rgb2gray
+from skimage import io
+from skimage import data
+from skimage.transform import resize
 
 ## http://stackoverflow.com/questions/3041986/apt-command-line-interface-like-yes-no-input#3041990
 # query_yes_no("Is cabbage yummier than cauliflower?", None)
@@ -177,8 +182,8 @@ def extractAllFrames (videoPath, videoName, storeDir, framerate, targetSize, cro
 def extractFacesMouths (sourceDir, storeDir, predictor_path):
     if not os.path.exists(predictor_path):
         print('Landmark predictor not found!')
-        # sys.exit(1)
-    import dlib
+        sys.exit(1)
+        
     storeFaceDir = storeDir + os.sep + "faces"
     if not os.path.exists(storeFaceDir):
         os.makedirs(storeFaceDir)
@@ -190,97 +195,106 @@ def extractFacesMouths (sourceDir, storeDir, predictor_path):
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor(predictor_path)
     
+    print("extrcati face")
+    from os import listdir
+    from os.path import isfile, join
+    nbRemoved = 0
+    
+    print(sourceDir)
+    
     for f in glob.glob(os.path.join(sourceDir, "*.jpg")):
-        dets = []
-        fname, ext = os.path.splitext(os.path.basename(f))
-        if ext == ".jpg":
-            # print(f)
-            facePath = storeFaceDir + os.sep + fname + "_face.jpg"
-            mouthPath = storeMouthsDir + os.sep + fname + "_mouth.jpg"
-            
-            if os.path.exists(facePath):
-                # print(facePath, " already exists")
-                continue
-            
-            img = io.imread(f)
-            
-            # detect face, then keypoints. Store face and mouth
-            resizer = 4
-            height, width = img.shape[:2]
-            imgSmall = cv2.resize(img, (int(width / resizer), int(height / resizer)),
-                                  interpolation=cv2.INTER_AREA)  # linear for zooming, inter_area for shrinking
-            imgSmall = cv2.cvtColor(imgSmall, cv2.COLOR_BGR2GRAY)
-            dets = detector(imgSmall, 1)  # detect face, don't upsample
-            
-            if len(dets) == 0:
-                # print("looking on full-res image...")
-                resizer = 1
-                height, width = img.shape[:2]
-                imgSmall = cv2.resize(img, (int(width / resizer), int(height / resizer)),
-                                      interpolation=cv2.INTER_AREA)  # linear for zooming, inter_area for shrinking
-                imgSmall = cv2.cvtColor(imgSmall, cv2.COLOR_BGR2GRAY)
-                dets = detector(imgSmall, 1)  # detect face, don't upsample
-                if len(dets) == 0:
-                    print("still no faces found. Using previous face coordinates...")
-                    if 'top' in locals():
-                        face_img = img[top:bot, left:right]
-                        io.imsave(facePath, face_img)
-                        mouth_img = img[my:my + mh, mx:mx + mw]
-                        io.imsave(mouthPath, mouth_img)
+                dets = []
+                fname, ext = os.path.splitext(os.path.basename(f))
+                print(f)
+                if ext == ".jpg":
+                    print(f)
+                    facePath = storeFaceDir + os.sep + fname + "_face.jpg"
+                    mouthPath = storeMouthsDir + os.sep + fname + "_mouth.jpg"
+                    
+                    if os.path.exists(facePath):
+                        print(facePath, " already exists")
                         continue
-                    else:
-                        print("top not in locals. ERROR")
-                    continue
-            
-            d = dets[0]
-            # extract face, store in storeFacesDir
-            left = d.left() * resizer
-            right = d.right() * resizer
-            top = d.top() * resizer
-            bot = d.bottom() * resizer
-            # go no further than img borders
-            if (left < 0):      left = 0
-            if (right > width): right = width
-            if (top < 0):       top = 0
-            if (bot > height):  bot = height
-            face_img = img[top:bot, left:right]
-            io.imsave(facePath, face_img)  # don't write to disk if already exists
-            
-            # detect 68 keypoints
-            shape = predictor(imgSmall, d)
-            # Get the mouth landmarks.
-            mx = shape.part(48).x * resizer
-            mw = shape.part(54).x * resizer - mx
-            my = shape.part(31).y * resizer
-            mh = shape.part(57).y * resizer - my
-            # go no further than img borders
-            if (mx < 0):       mx = 0
-            if (mw > width):   mw = width
-            if (my < 0):       my = 0
-            if (mh > height):  mh = height
-            
-            # scale them to get a better image
-            widthScalar = 1.5
-            heightScalar = 1
-            mx = int(mx - (widthScalar - 1) / 2.0 * mw)
-            # my = int(my - (heightScalar - 1)/2.0*mh) #not need,d we already have enough nose
-            mw = int(mw * widthScalar)
-            mh = int(mh * widthScalar)
-            
-            mouth_img = img[my:my + mh, mx:mx + mw]
-            io.imsave(mouthPath, mouth_img)
-
-
-# extract faces out of an image using dlib
-import sys, os
-import dlib
-from skimage import io
-import cv2
-
+                    
+                    img = io.imread(f)
+                    
+                    # detect face, then keypoints. Store face and mouth
+                    resizer = 4
+                    
+                    height, width = img.shape[:2]
+                    # im_resized = skimage.transform.resize(im, (int(width / resizer), int(height / resizer)))
+                    # imgSmall= skimage.color.rgb2gray(img_resized)
+                    # io.imshow(imgSmall)
+                    # io.show()
+                    
+                    imgSmall = cv2.resize(img, (int(width / resizer), int(height / resizer)),interpolation = cv2.INTER_AREA)  # linear for zooming, inter_area for shrinking
+                    imgSmall = cv2.cvtColor(imgSmall, cv2.COLOR_BGR2GRAY)
+                    dets = detector(imgSmall, 1)  # detect face, don't upsample
+                    
+                    if len(dets) == 0:
+                        print("looking on full-res image...")
+                        resizer = 1
+                        height, width = img.shape[:2]
+                        # im_resized = skimage.transform.resize(im, (int(width / resizer), int(height / resizer)))
+                        # imgSmall= skimage.color.rgb2gray(img_resized)
+                        # io.imshow(imgSmall)
+                        # io.show()
+        
+                        imgSmall = cv2.resize(img, (int(width / resizer), int(height / resizer)),interpolation=cv2.INTER_AREA)  # linear for zooming, inter_area for shrinking
+                        imgSmall = cv2.cvtColor(imgSmall, cv2.COLOR_BGR2GRAY)
+                        
+                        dets = detector(imgSmall, 1)  # detect face, don't upsample
+                        if len(dets) == 0:
+                            print("still no faces found. Using previous face coordinates...")
+                            if 'top' in locals():
+                                face_img = img[top:bot, left:right]
+                                io.imsave(facePath, face_img)
+                                mouth_img = img[my:my + mh, mx:mx + mw]
+                                io.imsave(mouthPath, mouth_img)
+                                continue
+                            else:
+                                print("top not in locals. ERROR")
+                            continue
+                    
+                    d = dets[0]
+                    # extract face, store in storeFacesDir
+                    left = d.left() * resizer
+                    right = d.right() * resizer
+                    top = d.top() * resizer
+                    bot = d.bottom() * resizer
+                    # go no further than img borders
+                    if (left < 0):      left = 0
+                    if (right > width): right = width
+                    if (top < 0):       top = 0
+                    if (bot > height):  bot = height
+                    face_img = img[top:bot, left:right]
+                    io.imsave(facePath, face_img)  # don't write to disk if already exists
+                    
+                    # detect 68 keypoints
+                    shape = predictor(imgSmall, d)
+                    # Get the mouth landmarks.
+                    mx = shape.part(48).x * resizer
+                    mw = shape.part(54).x * resizer - mx
+                    my = shape.part(31).y * resizer
+                    mh = shape.part(57).y * resizer - my
+                    # go no further than img borders
+                    if (mx < 0):       mx = 0
+                    if (mw > width):   mw = width
+                    if (my < 0):       my = 0
+                    if (mh > height):  mh = height
+                    
+                    # scale them to get a better image
+                    widthScalar = 1.5
+                    heightScalar = 1
+                    mx = int(mx - (widthScalar - 1) / 2.0 * mw)
+                    # my = int(my - (heightScalar - 1)/2.0*mh) #not need,d we already have enough nose
+                    mw = int(mw * widthScalar)
+                    mh = int(mh * widthScalar)
+                    
+                    mouth_img = img[my:my + mh, mx:mx + mw]
+                    io.imsave(mouthPath, mouth_img)
 
 def resize_image (filePath, filePathResized, keepAR=True, width=120.0):
-    from skimage import data
-    from skimage.transform import resize
+    
     im = io.imread(filePath)
     if keepAR:
         r = width / im.shape[1]
