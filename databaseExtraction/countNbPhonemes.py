@@ -2,14 +2,14 @@ from __future__ import print_function
 import re
 
 # read the phonemes in a list, strip newlines
-vocab = [line.rstrip('\n') for line in open('./phonemeList.txt')]
+vocab = [line.rstrip('\n') for line in open('./background/phonemeList.txt')]
 print("Possible phonemes are: ",vocab)
 # create dict: keys= phonemes, values= nb of occurences
 countLipspeakers = dict((x,0) for x in vocab)
 
-## read MLF files, update the counters (values) of the dict
+## read MLFfiles, update the counters (values) of the dict
 # lipspeaker file
-lines = [line.rstrip('\n') for line in open('../Datasets/TCDTIMIT/lipspeaker_labelfiles.mlf')]
+lines = [line.rstrip('\n') for line in open(os.expanduser('~/TCDTIMIT/databaseExtraction/lipspeaker_labelfiles.mlf'))]
 for line in lines:
 
     # # only count lipspkr1
@@ -24,7 +24,7 @@ for line in lines:
 # read the volunteer file
 countVolunteers = dict((x,0) for x in vocab)
 
-lines = [line.rstrip('\n') for line in open('../Datasets/TCDTIMIT/volunteer_labelfiles.mlf')]
+lines = [line.rstrip('\n') for line in open(os.expanduser('~/TCDTIMIT/databaseExtraction/volunteer_labelfiles.mlf'))]
 for line in lines:
     for w in re.findall(r"\w+", line):
         if w in countVolunteers:
