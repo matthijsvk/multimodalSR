@@ -60,7 +60,7 @@ from buildNetworks import *
 
 def main ():
     # BN parameters
-    batch_size = 32
+    batch_size = 20 
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
@@ -77,7 +77,7 @@ def main ():
     print("num_epochs = " + str(num_epochs))
 
     # Decaying LR
-    LR_start = 0.001
+    LR_start = 0.002
     print("LR_start = " + str(LR_start))
     LR_fin = 0.0000003
     print("LR_fin = " + str(LR_fin))
@@ -165,13 +165,13 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     # total Lipspeakers:  14500 + 13000 + 14000 = 42477
 
     dtype = 'uint8'
-    ntotal = 45000  # estimate, for initialization. takes some safty margin
+    ntotal = 100000  # estimate, for initialization. takes some safty margin
     img_shape = (1, 120, 120)
     img_size = np.prod(img_shape)
 
     # prepare data to load
     # fnames = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
-    fnames = ['Volunteer%i.pkl' % i for i in range(1,13)]  # 12 first volunteers
+    fnames = ['Volunteer%i.pkl' % i for i in range(1,11)]  # 12 first volunteers
     datasets = {}
     for name in fnames:
         fname = os.path.join(datapath, name)
