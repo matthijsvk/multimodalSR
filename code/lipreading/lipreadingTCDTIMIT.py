@@ -90,7 +90,7 @@ def main ():
 
     print('Loading TCDTIMIT dataset...')
     database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
-    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.85,0.1,0.05) #location, %train, %valid, %test
+    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.8,0.1,0.1) #location, %train, %valid, %test
 
     print("the number of training examples is: ", len(train_set.X))
     print("the number of valid examples is: ", len(valid_set.X))
@@ -110,6 +110,7 @@ def main ():
     ## resnet50; replace cnn by cnn['prob'] everywhere
     #cnn = build_network_resnet50(input)
 
+    
     # get output layer, for calculating loss etc
     train_output = lasagne.layers.get_output(cnn, deterministic=False)
 
@@ -128,6 +129,7 @@ def main ():
     # Compile a function performing a training step on a mini-batch (by giving the updates dictionary)
     # and returning the corresponding training loss:
     train_fn = theano.function([input, target, LR], loss, updates=updates)
+    print(train_fn)
 
     # Compile a second function computing the validation loss and accuracy:
     val_fn = theano.function([input, target], [test_loss, test_err])
@@ -165,13 +167,13 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     # total Lipspeakers:  14500 + 13000 + 14000 = 42477
 
     dtype = 'uint8'
-    ntotal = 100000  # estimate, for initialization. takes some safty margin
+    ntotal = 50000  # estimate, for initialization. takes some safty margin
     img_shape = (1, 120, 120)
     img_size = np.prod(img_shape)
 
     # prepare data to load
     fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
-    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1,11)]  # 12 first volunteers
+    fnamesVolunteers = []#['Volunteer%i.pkl' % i for i in range(1,11)]  # 12 first volunteers
     fnames = fnamesLipspkrs + fnamesVolunteers
     datasets = {}
     for name in fnames:

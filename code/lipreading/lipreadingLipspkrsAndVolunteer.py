@@ -109,6 +109,12 @@ def main ():
 
     ## resnet50; replace cnn by cnn['prob'] everywhere
     #cnn = build_network_resnet50(input)
+    
+    
+    # load params from earlier training:
+    with np.load('./results/allLipspeakers/allLipspeakers.npz') as f:
+        param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+    lasagne.layers.set_all_param_values(cnn, param_values)
 
     # get output layer, for calculating loss etc
     train_output = lasagne.layers.get_output(cnn, deterministic=False)
@@ -240,6 +246,9 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     # prepare data to load
     # fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1, 4)]  # all 3 lipsteakers
     fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1, 11)]  # 12 first volunteers
+    
+    # remove 10 worst speakers: 2, 57, 47, 42, 54, 46, 29, 52, 34, 45
+    
     fnames = fnamesLipspkrs + fnamesVolunteers
     datasets = {}
     for name in fnames:
