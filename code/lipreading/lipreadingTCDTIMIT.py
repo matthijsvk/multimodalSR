@@ -170,7 +170,8 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     img_size = np.prod(img_shape)
 
     # prepare data to load
-    fnames = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
+    # fnames = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
+    fnames = ['Volunteer%i.pkl' % i for i in range(1,13)]  # 12 first volunteers
     datasets = {}
     for name in fnames:
         fname = os.path.join(datapath, name)
