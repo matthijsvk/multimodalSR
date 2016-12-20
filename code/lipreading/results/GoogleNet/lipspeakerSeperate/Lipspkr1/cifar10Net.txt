@@ -1,0 +1,10 @@
+Epoch 10 of 100 took 479.937551975s
+  LR:                            0.000481882231633
+  training loss:                 0.0758030351089
+  validation loss:               0.085967348516
+  validation error rate:         59.6666672826%
+  best epoch:                    9
+  best validation error rate:    59.2666668693%
+  test loss:                     0.0937149693569
+  test error rate:               60.8666672309%
+

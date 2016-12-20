@@ -59,7 +59,7 @@ from buildNetworks import *
 
 def main ():
     # BN parameters
-    batch_size = 8
+    batch_size = 32
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
@@ -177,8 +177,8 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     ### Load train and validation data ###
     # prepare data to load, only train on lipspkrs
     fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
-    # fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1,11)]  # 12 first volunteers
-    fnames = fnamesLipspkrs #+ fnamesVolunteers
+    #fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1,11)]  # 10 first volunteers
+    fnames = fnamesLipspkrs #fnamesVolunteers
     datasets = {}
     for name in fnames:
         fname = os.path.join(datapath, name)
@@ -243,12 +243,12 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     ###  Now, load the test data  ###
 
     # prepare data to load
-    # fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1, 4)]  # all 3 lipsteakers
+    #fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1, 4)]  # all 3 lipsteakers
     fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1, 11)]  # 12 first volunteers
-    
+    fnames = fnamesVolunteers
+
     # remove 10 worst speakers: 2, 57, 47, 42, 54, 46, 29, 52, 34, 45
     
-    fnames = fnamesLipspkrs + fnamesVolunteers
     datasets = {}
     for name in fnames:
         fname = os.path.join(datapath, name)
