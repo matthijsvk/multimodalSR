@@ -150,7 +150,7 @@ def build_residual_block(incoming_layer, ratio_n_filter=1.0, ratio_size=1.0, has
     return net, 'res%s_relu' % ix
 
 
-def build_network_resnet50(input):
+def build_network_resnet50(input, nbClasses):
     net = {}
     net['input'] = InputLayer(shape=(None, 1, 120, 120),input_var=input)
     sub_net, parent_layer_name = build_simple_block(
@@ -195,13 +195,13 @@ def build_network_resnet50(input):
         net.update(sub_net)
     net['pool5'] = PoolLayer(net[parent_layer_name], pool_size=7, stride=1, pad=0,
                              mode='average_exc_pad', ignore_border=False)
-    net['fc1000'] = DenseLayer(net['pool5'], num_units=39, nonlinearity=None)
+    net['fc1000'] = DenseLayer(net['pool5'], num_units=nbClasses, nonlinearity=None)
     net['prob'] = NonlinearityLayer(net['fc1000'], nonlinearity=softmax)
 
     return net
 
 # network from google BBC paper
-def build_network_google (activation, alpha, epsilon, input):
+def build_network_google (activation, alpha, epsilon, input,nbClasses):
     # input
     cnn = lasagne.layers.InputLayer(
             shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
@@ -286,7 +286,7 @@ def build_network_google (activation, alpha, epsilon, input):
     cnn = lasagne.layers.DenseLayer(
             cnn,
             nonlinearity=lasagne.nonlinearities.identity,
-            num_units=39)
+            num_units=nbClasses)
 
     # cnn = lasagne.layers.BatchNormLayer(
     #       cnn,
@@ -297,7 +297,7 @@ def build_network_google (activation, alpha, epsilon, input):
 
 
 # default network for cifar10
-def build_network_cifar10 (activation, alpha, epsilon, input):
+def build_network_cifar10 (activation, alpha, epsilon, input, nbClasses):
     cnn = lasagne.layers.InputLayer(
             shape=(None, 1, 120, 120),
             input_var=input)
@@ -441,7 +441,7 @@ def build_network_cifar10 (activation, alpha, epsilon, input):
     cnn = lasagne.layers.DenseLayer(
             cnn,
             nonlinearity=lasagne.nonlinearities.identity,
-            num_units=39)
+            num_units=nbClasses)
     
     # cnn = lasagne.layers.BatchNormLayer(
     #         cnn,
