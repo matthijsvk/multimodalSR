@@ -8,6 +8,15 @@ import numpy as np
 
 np.random.seed(1234)  # for reproducibility?
 
+import warnings
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    import lasagne
+    from lasagne import layers
+    from lasagne.layers import count_params
+    from lasagne.updates import nesterov_momentum
+    
 os.environ["THEANO_FLAGS"] = "cuda.root=/usr/local/cuda,device=gpu,floatX=float32"
 # specifying the gpu to use
 import theano.sandbox.cuda
@@ -15,11 +24,6 @@ theano.sandbox.cuda.use('gpu1')
 import theano
 import theano.tensor as T
 from theano import function, config, shared, sandbox
-
-import lasagne
-import lasagne.layers
-from lasagne.layers import count_params
-from lasagne.updates import nesterov_momentum
 
 # from http://blog.christianperone.com/2015/08/convolutional-neural-networks-and-feature-extraction-with-python/
 # import matplotlib
@@ -29,10 +33,11 @@ import cPickle as pickle
 import gzip
 import numpy as np
 
-# from nolearn.lasagne import NeuralNet
-# from nolearn.lasagne import visualize
-# from sklearn.metrics import classification_report
-# from sklearn.metrics import confusion_matrix
+
+from nolearn.lasagne import NeuralNet
+from nolearn.lasagne import visualize
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 
 import logging
 from theano.compat.six.moves import xrange
@@ -51,7 +56,7 @@ import buildNetworks
 
 def main ():
     # BN parameters
-    batch_size = 8
+    batch_size = 16 
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
@@ -68,7 +73,7 @@ def main ():
     print("num_epochs = " + str(num_epochs))
 
     # Decaying LR
-    LR_start = 0.002
+    LR_start = 0.001
     print("LR_start = " + str(LR_start))
     LR_fin = 0.0000003
     print("LR_fin = " + str(LR_fin))
@@ -95,13 +100,17 @@ def main ():
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
     # get the network structure
-    #cnn = buildNetworks.build_network_google(activation, alpha, epsilon, input) # 7176231 params
+    cnn = buildNetworks.build_network_google(activation, alpha, epsilon, input) # 7176231 params
     #cnn = buildNetworks.build_network_cifar10(activation, alpha, epsilon, input) # 123644839,
                                                 # without 2x FC1024: 23634855
 
     ## resnet50; replace cnn by cnn['prob'] everywhere             # 9074087 params
     #cnn = buildNetworks.build_network_resnet50(input)
 
+    print("Using Google network")
+    # print("Using CIFAR10 network")
+    #print("Using ResNet50 network")
+    
     # print het amount of network parameters
     print("The number of parameters of this network: ",lasagne.layers.count_params(cnn))
 
@@ -169,6 +178,7 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
     fnamesVolunteers = []#['Volunteer%i.pkl' % i for i in range(1,11)]  # 12 first volunteers
     fnames = fnamesLipspkrs + fnamesVolunteers
+
     datasets = {}
     for name in fnames:
         fname = os.path.join(datapath, name)
