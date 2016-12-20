@@ -85,8 +85,9 @@ def main ():
     print("shuffle_parts = " + str(shuffle_parts))
 
     print('Loading TCDTIMIT dataset...')
+    nbClasses = 39
     database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
-    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.8,0.1,0.1) #location, %train, %valid, %test
+    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.8,0.1,0.1, nbClasses) #location, %train, %valid, %test
 
     print("the number of training examples is: ", len(train_set.X))
     print("the number of valid examples is: ", len(valid_set.X))
@@ -100,12 +101,12 @@ def main ():
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
     # get the network structure
-    cnn = buildNetworks.build_network_google(activation, alpha, epsilon, input) # 7176231 params
-    #cnn = buildNetworks.build_network_cifar10(activation, alpha, epsilon, input) # 123644839,
+    cnn = buildNetworks.build_network_google(activation, alpha, epsilon, input, nbClasses) # 7176231 params
+    #cnn = buildNetworks.build_network_cifar10(activation, alpha, epsilon, input, nbClasses) # 123644839,
                                                 # without 2x FC1024: 23634855
 
     ## resnet50; replace cnn by cnn['prob'] everywhere             # 9074087 params
-    #cnn = buildNetworks.build_network_resnet50(input)
+    #cnn = buildNetworks.build_network_resnet50(input, nbClasses)
 
     print("Using Google network")
     # print("Using CIFAR10 network")
@@ -160,7 +161,7 @@ def unpickle(file):
     return dict
 
 
-def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8, validFraction=0.1, testFraction=0.1):
+def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8, validFraction=0.1, testFraction=0.1, nbClasses=39):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
@@ -317,9 +318,9 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     valid_set.y = np.hstack(valid_set.y)
     test_set.y = np.hstack(test_set.y)
     # Onehot the targets
-    train_set.y = np.float32(np.eye(39)[train_set.y])
-    valid_set.y = np.float32(np.eye(39)[valid_set.y])
-    test_set.y = np.float32(np.eye(39)[test_set.y])
+    train_set.y = np.float32(np.eye(nbClasses)[train_set.y])
+    valid_set.y = np.float32(np.eye(nbClasses)[valid_set.y])
+    test_set.y = np.float32(np.eye(nbClasses)[test_set.y])
     # for hinge loss
     train_set.y = 2 * train_set.y - 1.
     valid_set.y = 2 * valid_set.y - 1.

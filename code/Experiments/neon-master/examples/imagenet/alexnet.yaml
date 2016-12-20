@@ -1,0 +1,267 @@
+# ----------------------------------------------------------------------------
+# Copyright 2015 Nervana Systems Inc.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ----------------------------------------------------------------------------
+
+backend: gpu
+cost: CrossEntropyMulti
+epochs: 10
+batchsize: 128
+
+wt_init: &wt_init1
+    type: Gaussian
+    config:
+        scale: 0.01
+
+wt_init: &wt_init1b
+    type: Gaussian
+    config:
+        scale: 0.03
+
+b_init: &b_init0
+    type: Constant
+    config:
+        val: 0
+
+b_init: &b_init1
+    type: Constant
+    config:
+        val: 1
+
+b_init: &b_init7
+    type: Constant
+    config:
+        val: -7
+
+relu: &relu_act
+    type: Rectlin
+
+layers:
+-
+    type: Convolution
+    config:
+        name: conv1
+        fshape: [11, 11, 64]
+        strides: 4
+        padding: 3
+        init: *wt_init1
+-
+    type: Bias
+    config:
+        name: conv1_bias
+        init: *b_init0
+-
+    type: Activation
+    config:
+        name: conv1_relu
+        transform: *relu_act
+-
+    type: Pooling
+    config:
+        name: pool1
+        fshape: 3
+        strides: 2
+-
+    type: Convolution
+    config:
+        name: conv2
+        fshape: [5, 5, 192]
+        padding: 2
+        init: *wt_init1
+-
+    type: Bias
+    config:
+        name: conv2_bias
+        init: *b_init1
+-
+    type: Activation
+    config:
+        name: conv2_relu
+        transform: *relu_act
+-
+    type: Pooling
+    config:
+        name: pool2
+        fshape: 3
+        strides: 2
+-
+    type: Convolution
+    config:
+        name: conv3
+        fshape: [3, 3, 384]
+        padding: 1
+        init: *wt_init1b
+-
+    type: Bias
+    config:
+        name: conv3_bias
+        init: *b_init0
+-
+    type: Activation
+    config:
+        name: conv3_relu
+        transform: *relu_act
+-
+    type: Convolution
+    config:
+        name: conv4
+        fshape: [3, 3, 256]
+        padding: 1
+        init: *wt_init1b
+-
+    type: Bias
+    config:
+        name: conv4_bias
+        init: *b_init1
+-
+    type: Activation
+    config:
+        name: conv4_relu
+        transform: *relu_act
+-
+    type: Convolution
+    config:
+        name: conv5
+        fshape: [3, 3, 256]
+        padding: 1
+        init: *wt_init1b
+-
+    type: Bias
+    config:
+        name: conv5_bias
+        init: *b_init1
+-
+    type: Activation
+    config:
+        name: conv5_relu
+        transform: *relu_act
+-
+    type: Pooling
+    config:
+        name: pool5
+        fshape: 3
+        strides: 2
+-
+    type: Linear
+    config:
+        name: fc6
+        nout: 4096
+        init: *wt_init1
+-
+    type: Bias
+    config:
+        name: fc6_bias
+        init: *b_init1
+-
+    type: Activation
+    config:
+        name: fc6_relu
+        transform: *relu_act
+-
+    type: Dropout
+    config:
+        name: drop6
+        keep: 0.5
+-
+    type: Linear
+    config:
+        name: fc7
+        nout: 4096
+        init: *wt_init1
+-
+    type: Bias
+    config:
+        name: fc7_bias
+        init: *b_init1
+-
+    type: Activation
+    config:
+        name: fc7_relu
+        transform: *relu_act
+-
+    type: Dropout
+    config:
+        name: drop7
+        keep: 0.5
+-
+    type: Linear
+    config:
+        name: fc8
+        nout: 1000
+        init: *wt_init1
+-
+    type: Bias
+    config:
+        name: fc8_bias
+        init: *b_init7
+-
+    type: Activation
+    config:
+        name: fc8_relu
+        transform:
+            type: Softmax
+
+schedule: &sched1
+    type: Schedule
+    config:
+        step_config: [22, 44, 65]
+        change: 0.15874
+
+schedule: &sched2
+    type: Schedule
+    config:
+        step_config: 44
+        change: 0.1
+
+opt_gdm: &opt_gdm
+    type: GradientDescentMomentum
+    config:
+        learning_rate: 0.01
+        momentum_coef: 0.9
+        wdecay: 0.0005
+        schedule: *sched1
+
+opt_biases: &opt_biases
+    type: GradientDescentMomentum
+    config:
+        learning_rate: 0.02
+        momentum_coef: 0.9
+        schedule: *sched2
+
+optimizer:
+    type: MultiOptimizer
+    config:
+        optimizer_mapping:
+            default: *opt_gdm
+            Bias: *opt_biases
+
+dataset:
+    name: i1k
+    train_config:
+        shuffle_manifest: True
+        shuffle_every_epoch: True
+        image:
+            height: 224
+            width: 224
+            scale: [0.875, 0.875]
+            flip_enable: True
+            center: False
+        label:
+            binary: False
+    test_config:
+        image:
+            height: 224
+            width: 224
+            scale: [0.875, 0.875]
+        label:
+            binary: False
