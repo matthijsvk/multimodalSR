@@ -85,8 +85,8 @@ def main ():
     print("shuffle_parts = " + str(shuffle_parts))
 
     print('Loading TCDTIMIT dataset...')
-    nbClasses = 39
-    database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
+    nbClasses = 12
+    database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binaryViseme'))
     train_set, valid_set, test_set = load_dataset(database_binary_location, 0.8,0.1,0.1, nbClasses) #location, %train, %valid, %test
 
     print("the number of training examples is: ", len(train_set.X))
@@ -171,13 +171,13 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     # total Lipspeakers:  14500 + 13000 + 14000 = 42477
 
     dtype = 'uint8'
-    ntotal = 50000  # estimate, for initialization. takes some safty margin
+    ntotal = 150000  # estimate, for initialization. takes some safty margin
     img_shape = (1, 120, 120)
     img_size = np.prod(img_shape)
 
     # prepare data to load
-    fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
-    fnamesVolunteers = []#['Volunteer%i.pkl' % i for i in range(1,11)]  # 12 first volunteers
+    fnamesLipspkrs = []#['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
+    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1,31)]  # 12 first volunteers
     fnames = fnamesLipspkrs + fnamesVolunteers
 
     datasets = {}
