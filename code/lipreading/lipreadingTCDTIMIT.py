@@ -33,6 +33,7 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore",category=DeprecationWarning)
     import lasagne
     from lasagne import layers
+    from lasagne.layers import count_params
     from lasagne.updates import nesterov_momentum
 
 from nolearn.lasagne import NeuralNet
@@ -60,7 +61,7 @@ from buildNetworks import *
 
 def main ():
     # BN parameters
-    batch_size = 8
+    batch_size = 16 
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
@@ -77,7 +78,7 @@ def main ():
     print("num_epochs = " + str(num_epochs))
 
     # Decaying LR
-    LR_start = 0.002
+    LR_start = 0.001
     print("LR_start = " + str(LR_start))
     LR_fin = 0.0000003
     print("LR_fin = " + str(LR_fin))
@@ -90,7 +91,7 @@ def main ():
 
     print('Loading TCDTIMIT dataset...')
     database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
-    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.85,0.1,0.05) #location, %train, %valid, %test
+    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.8,0.1,0.1) #location, %train, %valid, %test
 
     print("the number of training examples is: ", len(train_set.X))
     print("the number of valid examples is: ", len(valid_set.X))
@@ -104,11 +105,18 @@ def main ():
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
     # get the network structure
-    cnn = build_network_google(activation, alpha, epsilon, input)
-    #cnn = build_network_cifar10(activation, alpha, epsilon, input)
+    #cnn = build_network_google(activation, alpha, epsilon, input)
+    cnn = build_network_cifar10(activation, alpha, epsilon, input)
 
     ## resnet50; replace cnn by cnn['prob'] everywhere
     #cnn = build_network_resnet50(input)
+     
+    print("Using CIFAR10 network")
+    #print("Using Google network")
+    #print("Using ResNet50 network")
+
+    print("The number of parameters of this network: ",lasagne.layers.count_params(cnn))
+
 
     # get output layer, for calculating loss etc
     train_output = lasagne.layers.get_output(cnn, deterministic=False)
@@ -170,9 +178,9 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     img_size = np.prod(img_shape)
 
     # prepare data to load
-    fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
-    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1,11)]  # 12 first volunteers
-    fnames = fnamesLipspkrs + fnamesVolunteers
+    #fnamesLipspeakers = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
+    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1,10)]  # 12 first volunteers
+    fnames = fnamesVolunteers
     datasets = {}
     for name in fnames:
         fname = os.path.join(datapath, name)
