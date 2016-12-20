@@ -116,7 +116,7 @@ def main ():
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
     # get the network structure
-    cnn = buildNetworks.build_network_google_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale) # 7176231 params
+    cnn = buildNetworks.build_network_cifar10_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale) # 7176231 params
 
     # print het amount of network parameters
     print("The number of parameters of this network: ",lasagne.layers.count_params(cnn))
