@@ -8,6 +8,11 @@ import numpy as np
 
 np.random.seed(1234)  # for reproducibility?
 
+import lasagne
+import lasagne.layers
+from lasagne.layers import count_params
+from lasagne.updates import nesterov_momentum
+
 os.environ["THEANO_FLAGS"] = "cuda.root=/usr/local/cuda,device=gpu,floatX=float32"
 # specifying the gpu to use
 import theano.sandbox.cuda
@@ -16,10 +21,7 @@ import theano
 import theano.tensor as T
 from theano import function, config, shared, sandbox
 
-import lasagne
-import lasagne.layers
-from lasagne.layers import count_params
-from lasagne.updates import nesterov_momentum
+
 
 # from http://blog.christianperone.com/2015/08/convolutional-neural-networks-and-feature-extraction-with-python/
 # import matplotlib
