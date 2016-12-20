@@ -1,44 +1,38 @@
 from __future__ import print_function
 
+import sys
+import os
+import time
 
 import numpy as np
+
 np.random.seed(1234)  # for reproducibility?
 
-import os
 os.environ["THEANO_FLAGS"] = "cuda.root=/usr/local/cuda,device=gpu,floatX=float32"
-import theano
-import theano.tensor as T
-import theano.tensor as T
-from theano import function, config, shared, sandbox
-import lasagne
-
 # specifying the gpu to use
 import theano.sandbox.cuda
 theano.sandbox.cuda.use('gpu1')
+import theano
+import theano.tensor as T
+from theano import function, config, shared, sandbox
+
+import lasagne
+import lasagne.layers
+from lasagne.layers import count_params
+from lasagne.updates import nesterov_momentum
 
 # from http://blog.christianperone.com/2015/08/convolutional-neural-networks-and-feature-extraction-with-python/
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
+# import matplotlib
+# import matplotlib.pyplot as plt
+# import matplotlib.cm as cm
 import cPickle as pickle
-from urllib import urlretrieve
-import cPickle as pickle
-import os
 import gzip
 import numpy as np
-import theano
-import warnings
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore",category=DeprecationWarning)
-    import lasagne
-    from lasagne import layers
-    from lasagne.updates import nesterov_momentum
-
-from nolearn.lasagne import NeuralNet
-from nolearn.lasagne import visualize
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
+# from nolearn.lasagne import NeuralNet
+# from nolearn.lasagne import visualize
+# from sklearn.metrics import classification_report
+# from sklearn.metrics import confusion_matrix
 
 import logging
 from theano.compat.six.moves import xrange
@@ -50,13 +44,10 @@ from pylearn2.utils import string_utils
 
 _logger = logging.getLogger(__name__)
 
-
-
 # User - created files
 import train_lipreadingTCDTIMIT # load training functions
-from datasetClass import CIFAR10 # load the binary dataset in proper format
-# from loadData import CIFAR10   # load the binary dataset in proper format
-from buildNetworks import *
+import datasetClass # load the binary dataset in proper format
+import buildNetworks
 
 def main ():
     # BN parameters
@@ -104,13 +95,17 @@ def main ():
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
     # get the network structure
-    cnn = build_network_google(activation, alpha, epsilon, input)
-    #cnn = build_network_cifar10(activation, alpha, epsilon, input)
+    #cnn = buildNetworks.build_network_google(activation, alpha, epsilon, input) # 7176231 params
+    #cnn = buildNetworks.build_network_cifar10(activation, alpha, epsilon, input) # 123644839,
+                                                # without 2x FC1024: 23634855
 
-    ## resnet50; replace cnn by cnn['prob'] everywhere
-    #cnn = build_network_resnet50(input)
+    ## resnet50; replace cnn by cnn['prob'] everywhere             # 9074087 params
+    #cnn = buildNetworks.build_network_resnet50(input)
 
-    
+    # print het amount of network parameters
+    print("The number of parameters of this network: ",lasagne.layers.count_params(cnn))
+
+
     # get output layer, for calculating loss etc
     train_output = lasagne.layers.get_output(cnn, deterministic=False)
 
@@ -129,7 +124,6 @@ def main ():
     # Compile a function performing a training step on a mini-batch (by giving the updates dictionary)
     # and returning the corresponding training loss:
     train_fn = theano.function([input, target, LR], loss, updates=updates)
-    print(train_fn)
 
     # Compile a second function computing the validation loss and accuracy:
     val_fn = theano.function([input, target], [test_loss, test_err])
@@ -271,9 +265,9 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     ytest = ytest - 1
 
     # now, make objects with these matrices
-    train_set = CIFAR10(xtrain, ytrain, img_shape)
-    valid_set = CIFAR10(xvalid, yvalid, img_shape)
-    test_set = CIFAR10(xtest, ytest, img_shape)
+    train_set = datasetClass.CIFAR10(xtrain, ytrain, img_shape)
+    valid_set = datasetClass.CIFAR10(xvalid, yvalid, img_shape)
+    test_set = datasetClass.CIFAR10(xtest, ytest, img_shape)
 
     # Inputs in the range [-1,+1]
     # def f1 (x):
@@ -322,51 +316,6 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     test_set.y = 2 * test_set.y - 1.
 
     return train_set, valid_set, test_set
-
-# build_network_resnet is in the
-def load_dataset_old (train_set_size):
-
-    # from https://www.cs.toronto.edu/~kriz/cifar.html
-    # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
-
-    # CIFAR10 files stored in /home/matthijs/Documents/Pylearn_datasets/cifar10/cifar-10-batches-py
-    # then processed with /home/matthijs/bin/pylearn2/pylearn2/datasets/cifar10.py
-
-    # our files are stored in /home/matthijs/TCDTIMIT/database_binary
-    # and processed with ./loadData.py
-
-    # Lipspeaker 1:                  14627 phonemes, apparently only 14530 extracted
-    # Lipspeaker 2:  28363 - 14627 = 13736 phonemes
-    # Lipspeaker 3:  42535 - 28363 = 14172 phonemes
-
-    # lipspeaker 1 : 14627 -> 11.5k train, 1.5k valid, 1.627k test
-    train_set = CIFAR10(which_set="train", start=0, stop=train_set_size)
-    valid_set = CIFAR10(which_set="train", start=train_set_size, stop=13000)
-    test_set = CIFAR10(which_set="test")
-
-
-    # bc01 format
-    # Inputs in the range [-1,+1]
-    # print("Inputs in the range [-1,+1]")
-    train_set.X = np.reshape(np.subtract(np.multiply(2. / 255., train_set.X), 1.), (-1, 1, 120, 120))
-    valid_set.X = np.reshape(np.subtract(np.multiply(2. / 255., valid_set.X), 1.), (-1, 1, 120, 120))
-    test_set.X = np.reshape(np.subtract(np.multiply(2. / 255., test_set.X), 1.), (-1, 1, 120, 120))
-    # flatten targets
-    train_set.y = np.hstack(train_set.y)
-    valid_set.y = np.hstack(valid_set.y)
-    test_set.y = np.hstack(test_set.y)
-    # Onehot the targets
-    train_set.y = np.float32(np.eye(39)[train_set.y])
-    valid_set.y = np.float32(np.eye(39)[valid_set.y])
-    test_set.y = np.float32(np.eye(39)[test_set.y])
-    # for hinge loss
-    train_set.y = 2 * train_set.y - 1.
-    valid_set.y = 2 * valid_set.y - 1.
-    test_set.y = 2 * test_set.y - 1.
-
-    return train_set, valid_set, test_set
-
-
 
 if __name__ == "__main__":
     main()

@@ -142,8 +142,3 @@ if __name__ == "__main__":
     mouthPath = detectMouth(args.input_image)  # expects npz model
     grayMouthPath = convertToGrayscale(mouthPath, mouthPath)
     resize_image(grayMouthPath, grayMouthPath)
-    
-    print()
-    
-    
-#

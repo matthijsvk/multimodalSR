@@ -41,7 +41,6 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 
 import logging
-from theano.compat.six.moves import xrange
 from pylearn2.datasets import cache, dense_design_matrix
 from pylearn2.expr.preprocessing import global_contrast_normalize
 from pylearn2.utils import contains_nan
