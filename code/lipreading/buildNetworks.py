@@ -277,6 +277,15 @@ def build_network_google (activation, alpha, epsilon, input):
     cnn = lasagne.layers.DenseLayer(
             cnn,
             nonlinearity=lasagne.nonlinearities.identity,
+            num_units=128)
+    
+    cnn = lasagne.layers.NonlinearityLayer(
+            cnn,
+            nonlinearity=activation)
+    
+    cnn = lasagne.layers.DenseLayer(
+            cnn,
+            nonlinearity=lasagne.nonlinearities.identity,
             num_units=39)
 
     # cnn = lasagne.layers.BatchNormLayer(
@@ -738,4 +747,4 @@ def build_network_cifar10_binary (activation, alpha, epsilon, input, binary, sto
     #         epsilon=epsilon,
     #         alpha=alpha)
     
-    return cnn)
+    return cnn
