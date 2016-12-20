@@ -145,11 +145,11 @@ class Conv2DLayer(lasagne.layers.Conv2DLayer):
         self._srng = RandomStreams(lasagne.random.get_rng().randint(1, 2147462579))
             
         if self.binary:
-            super(Conv2DLayer, self).__init__(incoming, num_filters, filter_size, W=lasagne.init.Uniform((-self.H,self.H)), **kwargs)   
+            super(lasagne.layers.Conv2DLayer, self).__init__(incoming, num_filters, filter_size, W=lasagne.init.Uniform((-self.H,self.H)), **kwargs)
             # add the binary tag to weights            
             self.params[self.W]=set(['binary'])
         else:
-            super(Conv2DLayer, self).__init__(incoming, num_filters, filter_size, **kwargs)    
+            super(lasagne.layers.Conv2DLayer, self).__init__(incoming, num_filters, filter_size, **kwargs)
     
     def convolve(self, input, deterministic=False, **kwargs):
         
@@ -157,7 +157,7 @@ class Conv2DLayer(lasagne.layers.Conv2DLayer):
         Wr = self.W
         self.W = self.Wb
             
-        rvalue = super(Conv2DLayer, self).convolve(input, **kwargs)
+        rvalue = super(lasagne.layers.Conv2DLayer, self).convolve(input, **kwargs)
         
         self.W = Wr
         
