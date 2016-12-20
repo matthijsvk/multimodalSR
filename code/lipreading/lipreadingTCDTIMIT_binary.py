@@ -1,6 +1,8 @@
 from __future__ import print_function
 
 import sys
+print(sys.path)
+
 import os
 import time
 
@@ -50,9 +52,10 @@ _logger = logging.getLogger(__name__)
 import train_lipreadingTCDTIMIT # load training functions
 import datasetClass # load the binary dataset in proper format
 import buildNetworks
-import binary_net
+# import binary_net
 
 def main ():
+    
     # BN parameters
     batch_size = 50
     print("batch_size = " + str(batch_size))
@@ -63,10 +66,10 @@ def main ():
     print("epsilon = " + str(epsilon))
 
     # BinaryOut
-    activation = binary_net.binary_tanh_unit
-    print("activation = binary_net.binary_tanh_unit")
-    # activation = binary_net.binary_sigmoid_unit
-    # print("activation = binary_net.binary_sigmoid_unit")
+    activation = binary_tanh_unit
+    print("activation = binary_tanh_unit")
+    # activation = binary_sigmoid_unit
+    # print("activation = binary_sigmoid_unit")
 
     # BinaryConnect
     binary = True
@@ -130,9 +133,9 @@ def main ():
     
         # W updates
         W = lasagne.layers.get_all_params(cnn, binary=True)
-        W_grads = binary_net.compute_grads(loss, cnn)
+        W_grads = compute_grads(loss, cnn)
         updates = lasagne.updates.adam(loss_or_grads=W_grads, params=W, learning_rate=LR)
-        updates = binary_net.clipping_scaling(updates, cnn)
+        updates = clipping_scaling(updates, cnn)
     
         # other parameters updates
         params = lasagne.layers.get_all_params(cnn, trainable=True, binary=False)
@@ -342,6 +345,78 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     test_set.y = 2 * test_set.y - 1.
 
     return train_set, valid_set, test_set
+
+
+############# BINARY NET  #######################3
+
+from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+
+from theano.scalar.basic import UnaryScalarOp, same_out_nocomplex
+from theano.tensor.elemwise import Elemwise
+
+
+# Our own rounding function, that does not set the gradient to 0 like Theano's
+class Round3(UnaryScalarOp):
+    def c_code (self, node, name, (x, ), (z, ), sub):
+        return "%(z)s = round(%(x)s);" % locals()
+    
+    def grad (self, inputs, gout):
+        (gz,) = gout
+        return gz,
+
+
+round3_scalar = Round3(same_out_nocomplex, name='round3')
+round3 = Elemwise(round3_scalar)
+
+
+def hard_sigmoid (x):
+    return T.clip((x + 1.) / 2., 0, 1)
+
+
+# The neurons' activations binarization function
+# It behaves like the sign function during forward propagation
+# And like:
+#   hard_tanh(x) = 2*hard_sigmoid(x)-1
+# during back propagation
+def binary_tanh_unit (x):
+    return 2. * round3(hard_sigmoid(x)) - 1.
+
+
+def binary_sigmoid_unit (x):
+    return round3(hard_sigmoid(x))
+
+
+
+# This function computes the gradient of the binary weights
+def compute_grads (loss, network):
+    layers = lasagne.layers.get_all_layers(network)
+    grads = []
+    
+    for layer in layers:
+        
+        params = layer.get_params(binary=True)
+        if params:
+            # print(params[0].name)
+            grads.append(theano.grad(loss, wrt=layer.Wb))
+    
+    return grads
+
+
+# This functions clips the weights after the parameter update
+def clipping_scaling (updates, network):
+    layers = lasagne.layers.get_all_layers(network)
+    updates = OrderedDict(updates)
+    
+    for layer in layers:
+        
+        params = layer.get_params(binary=True)
+        for param in params:
+            print("W_LR_scale = " + str(layer.W_LR_scale))
+            print("H = " + str(layer.H))
+            updates[param] = param + layer.W_LR_scale * (updates[param] - param)
+            updates[param] = T.clip(updates[param], -layer.H, layer.H)
+    
+    return updates
 
 if __name__ == "__main__":
     main()
