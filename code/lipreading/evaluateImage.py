@@ -22,6 +22,9 @@ from PIL import Image
 
 import buildNetworks
 
+nbClasses = 39
+
+
 parser = argparse.ArgumentParser(description="Getting top 5 classes of images")
 
 add_arg = parser.add_argument
@@ -50,7 +53,7 @@ def load_model (model_npz_file):
     print("activation = T.nnet.relu")
     input = T.tensor4('inputs')
     target = T.matrix('targets')
-    cnn = buildNetworks.build_network_resnet50(input)
+    cnn = buildNetworks.build_network_resnet50(input,nbClasses)
 
     with np.load('./results/ResNet50/allLipspeakers/allLipspeakers.npz') as f:
         param_values = [f['arr_%d' % i] for i in range(len(f.files))]
