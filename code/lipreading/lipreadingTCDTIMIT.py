@@ -32,6 +32,7 @@ from theano import function, config, shared, sandbox
 import cPickle as pickle
 import gzip
 import numpy as np
+import warnings
 
 
 from nolearn.lasagne import NeuralNet
