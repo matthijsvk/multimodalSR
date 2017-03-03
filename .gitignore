@@ -11,3 +11,4 @@ dlib-master/
 *.npz
 *.xml
 *.pyc
+testing/

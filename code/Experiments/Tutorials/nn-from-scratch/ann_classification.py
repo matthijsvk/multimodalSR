@@ -24,8 +24,7 @@ def generate_data():
         t = np.linspace(j * 4, (j + 1) * 4, N) + np.random.randn(N) * 0.2  # theta
         X[ix] = np.c_[r * np.sin(t), r * np.cos(t)]
         y[ix] = j
-    # np.random.seed(0)
-    # X, y = datasets.make_moons(200, noise=0.20)
+    X, y = datasets.make_moons(200, noise=0.20)
     return X, y
 
 
