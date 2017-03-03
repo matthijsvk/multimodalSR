@@ -115,8 +115,11 @@ def main ():
     target = T.matrix('targets')
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
+
     # get the network structure
-    cnn = buildNetworks.build_network_cifar10_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale) # 7176231 params
+    #cnn = buildNetworks.build_network_cifar10_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale) # 7176231 params
+    cnn = buildNetworks.build_network_google_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale) # 7176231 params
+
 
     # print het amount of network parameters
     print("The number of parameters of this network: ",lasagne.layers.count_params(cnn))
@@ -128,8 +131,9 @@ def main ():
     # squared hinge loss
     loss = T.mean(T.sqr(T.maximum(0., 1. - target * train_output)))
 
+
+
     if binary:
-    
         # W updates
         W = lasagne.layers.get_all_params(cnn, binary=True)
         W_grads = binary_net.compute_grads(loss, cnn)
@@ -144,6 +148,7 @@ def main ():
     else:
         params = lasagne.layers.get_all_params(cnn, trainable=True)
         updates = lasagne.updates.adam(loss_or_grads=loss, params=params, learning_rate=LR)
+
 
     test_output = lasagne.layers.get_output(cnn, deterministic=True)
     test_loss = T.mean(T.sqr(T.maximum(0., 1. - target * test_output)))
