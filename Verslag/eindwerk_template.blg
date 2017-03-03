@@ -1,0 +1,63 @@
+This is BibTeX, Version 0.99d (TeX Live 2015/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: eindwerk_template.aux
+A level-1 auxiliary file: titelpagina.aux
+A level-1 auxiliary file: copyright.aux
+A level-1 auxiliary file: voorwoord.aux
+A level-1 auxiliary file: abstract.aux
+A level-1 auxiliary file: symbolenlijst.aux
+A level-1 auxiliary file: inleiding.aux
+A level-1 auxiliary file: hoofdstuk2.aux
+The style file: IEEEtran_nl.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Database file #1: referenties.bib
+-- IEEEtran_nl.bst version 1.12.nl (2007/01/11) by Michael Shell.
+-- http://www.michaelshell.org/tex/ieeetran/bibtex/
+-- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
+
+Done.
+You've used 3 entries,
+            4039 wiz_defined-function locations,
+            832 strings with 7735 characters,
+and the built_in function-call counts, 1199 in all, are:
+= -- 80
+> -- 14
+< -- 2
++ -- 7
+- -- 3
+* -- 56
+:= -- 217
+add.period$ -- 6
+call.type$ -- 3
+change.case$ -- 2
+chr.to.int$ -- 0
+cite$ -- 3
+duplicate$ -- 90
+empty$ -- 129
+format.name$ -- 4
+if$ -- 252
+int.to.chr$ -- 0
+int.to.str$ -- 3
+missing$ -- 20
+newline$ -- 34
+num.names$ -- 2
+pop$ -- 58
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 2
+skip$ -- 94
+stack$ -- 0
+substring$ -- 2
+swap$ -- 52
+text.length$ -- 2
+text.prefix$ -- 0
+top$ -- 5
+type$ -- 3
+warning$ -- 0
+while$ -- 2
+width$ -- 4
+write$ -- 47
