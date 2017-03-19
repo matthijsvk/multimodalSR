@@ -120,10 +120,6 @@ def train (train_fn, val_fn,
             if save_path is None:
                 save_path = "./bestModel"
             np.savez(save_path, *lasagne.layers.get_all_param_values(model))
-            
-            #model = {'params': lasagne.layers.get_all_param_values(model)},
-            #print("Storing new best model in Pickle (pkl) file at ", save_path)
-            #pickle.dump(model, open(save_path, 'wb'), protocol=-1)
         
         epoch_duration = time.time() - start_time
         

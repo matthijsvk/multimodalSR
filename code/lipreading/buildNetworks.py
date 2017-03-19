@@ -195,13 +195,13 @@ def build_network_resnet50(input, nbClasses):
         net.update(sub_net)
     net['pool5'] = PoolLayer(net[parent_layer_name], pool_size=7, stride=1, pad=0,
                              mode='average_exc_pad', ignore_border=False)
-    net['fc1000'] = DenseLayer(net['pool5'], num_units=nbClasses, nonlinearity=None)
+    net['fc1000'] = DenseLayer(net['pool5'], num_units=nbClasses, nonlinearity=None)   # number output units = nbClasses (global variable)
     net['prob'] = NonlinearityLayer(net['fc1000'], nonlinearity=softmax)
 
     return net
 
-# network from google BBC paper
-def build_network_google (activation, alpha, epsilon, input,nbClasses):
+# network from Oxford & Google BBC paper
+def build_network_google (activation, alpha, epsilon, input, nbClasses):
     # input
     cnn = lasagne.layers.InputLayer(
             shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
@@ -285,7 +285,7 @@ def build_network_google (activation, alpha, epsilon, input,nbClasses):
     
     cnn = lasagne.layers.DenseLayer(
             cnn,
-            nonlinearity=lasagne.nonlinearities.identity,
+            nonlinearity=lasagne.nonlinearities.softmax,
             num_units=nbClasses)
 
     # cnn = lasagne.layers.BatchNormLayer(
@@ -440,7 +440,7 @@ def build_network_cifar10 (activation, alpha, epsilon, input, nbClasses):
     
     cnn = lasagne.layers.DenseLayer(
             cnn,
-            nonlinearity=lasagne.nonlinearities.identity,
+            nonlinearity=lasagne.nonlinearities.softmax,
             num_units=nbClasses)
     
     # cnn = lasagne.layers.BatchNormLayer(
@@ -452,6 +452,7 @@ def build_network_cifar10 (activation, alpha, epsilon, input, nbClasses):
 
 
 ################## BINARY NETWORKS ###################
+
 import time
 from collections import OrderedDict
 import numpy as np

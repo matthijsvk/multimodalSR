@@ -1,0 +1,106 @@
+Changelog
+Versie 0.7b
+datum: 15/03/2009
+    * Jaartal in de titelpagina  gecorrigeerd. (Met dank aan Wim Driessens
+	om het te melden)
+
+Changelog
+Versie 0.7a
+datum: 22/05/2008
+
+    * Twee snelle bugfixes: ongedaan maken van captions probleem uit vorige update, en fourier niet langer in \ifthenelse 
+
+Versie 0.7
+datum: 22/05/2008
+
+    * marges voor de energie template aangepast (Dank aan Thomas Wijnhoven voor het testen)
+    * copyright.tex is een beetje aangepast (typos)
+    * IEEEtran_nl toegevoegd om een Nederlandstalige bibliografie te verkrijgen
+    * captions zijn aangepast: 0.8 tekstbreedte en kleiner lettertype.
+    * oneside opmerking oneside toegevoegd aan website: nog niet ondersteund (getest), maar in principe eenvoudig mogelijk. 
+
+Versie 0.6a
+datum: 24/04/2008
+
+    * copyright.tex is een beetje aangepast (een extra enter erbij gezet om de engelstalige versie van copyright by K.U.Leuven op de juiste plaats te zetten). Met dank aan Benoit Willems.
+    * De README en changelog staan nu twee afzonderlijke bestanden. 
+
+Versie 0.6
+datum: 17/04/2008
+
+    * De energie template is veranderd. De anderhalve regelafstand blijft gelden, maar de marges zijn aangepast naar iets zinvollere default waarden. Enkel de file header_esat.tex is hiervoor aangepast.
+    * Het jaartal is iets dynamischer gemaakt, en als een variabele gedefinieerd in eindwerk_template.tex, dit dus ook aangepast in titelpagina.tex. Niet nodig om uw bestaande files te veranderen. 
+
+Versie 0.5c
+datum: 15/02/2008
+
+    * De bookmarks in het Nederlands bevatten "Lÿst van Figuren" en "Lÿst van Tabellen". Om dit op te lossen is er \def\listfigurename{Lijst van figuren}, \def\listtablename{Lijst van tabellen} en \def\lstlistlistingname{Lijst van codeblokken} toegevoegd aan eindwerk_template.tex. De laatste is wel in commentaar gezet. Deze oplossing werd door Tom Billiet doorgestuurd. 
+
+Versie 0.5b
+datum: 12/12/2007
+
+    * Titelpagina.tex aangepast om 2007-2008 als default jaar te krijgen (met dank aan Steven Bervoets).
+    * Copyright.tex en eindwerk_template.tex beperkt aangepast om de taalselectie eenvoudiger te maken ingeval van een engelstalige thesis (met dank aan Bram Van Eeckhout). 
+
+Versie 0.5a
+datum: 1/12/2007
+
+    * Titelpagina.tex aangepast om de plaatsing van sedes in orde te krijgen na het veranderen van de marges. (Met dank aan Joost Busschaert om het op te merken) 
+
+Versie 0.5
+datum: 1/12/2007
+
+    * Energie optie toegevoegd. Deze optie laat energie studenten toe om de thesis in latex te maken naar de vereisten van de optie energie. Het is echter eenvoudig om, vertrekkende van dezelfde files, een versie te maken met de voorkeur layout. (noot: een titelpagina is nog niet voorzien, maar daar wordt voor gezorgd later dit jaar).
+    * Een nieuwe fontoptie is toegevoegd (fourier). Deze font is niet default geënabled, maar wordt aangeraden. 
+
+Versie 0.4d
+datum: 14/05/2007
+
+    * Twee minor bugfixes:
+          o In header_esat.tex moest er nog een lengtemaat ingegeven worden bij de spatiëring van de table of contents zoals in 0.4c (niet geldig voor andere uploads)
+          o In eindwerk_template.tex de titels een beetje aangepast: Prof. Dr ==> Prof. dr. en begeleiders krijgen nu standaard een ir. titel. 
+
+Versie 0.4c
+datum: 13/05/2007
+
+    * In header_esat.tex heb ik het volgende toegevoegd op aanraden van Tom Billet:
+            %zorg ervoor dat TOC niet te breed wordt: %\setpnumwidth{2.5em} %\setrmarg{3em} Dit zou vooral nuttig zijn bij het gebruik van \pagenumbering{Roman}, want anders worden de cijfers te breed (XVII) en vallen uit de marge.
+    * Verplaatsen van de symbolenlijst na de inhoudsopgave en de lijst van figuren en tabellen (kleine aanpassing in eindwerk_template.tex), die wel nodig is om de thesis conform te maken met de regels.
+    * Ook nog een kleine aanpassing aan de spatiëring van de table of contents gedaan (in header_esat.tex). 
+
+Versie 0.4b
+datum: 8/05/2007
+
+    * Een kleine maar belangrijke bugfix: in eindwerk_template.tex moet er \pagestyle{plain} geplaatst worden direct na \pagenumbering{roman}. Dit zorgt ervoor dat uw inhoudsopgave ook genummerd wordt indien deze meer dan twee pagina's bevat. (bedankt Ratmir Gelagaev om het te melden). 
+
+Versie 0.4
+datum: 7/05/2007
+
+    * Nieuwe versie upload met bugfixes en enkele artistieke veranderingen
+    * Nieuwe copyright.tex (met extra email adres). Let op, als je deze gebruikt, moet je ook in header_esat.tex \usepackage[dutch,english]{babel} hebben staan!
+    * In header_esat.tex
+          o \setlrmargins{*}{*}{0.9}: verhouding buitenkantmarge/rugmarge. Verzet van 1.5 naar 0.9 vanaf versie 0.4
+          o \setlength{\cftbeforechapterskip}{-0.1\baselineskip}: iets meer ruimte bij inhoudstabel
+          o \usepackage{microtype} toegevoegd als default optie (mooiere weergave van de tekst) 
+    * In eindwerk_template.tex: Belangrijk: tussen \listoftables en \pagenumbering{arabic} moet een \cleardoublepage staan, zodat uw eerste hoofdstuk rechts begint (en hij de nummering en headers correct doet. 
+
+Versie 0.3
+datum: 24/04/2007
+
+    * Kleine veranderingen aan de site 
+
+Versie 0.2
+datum: 07/03/2007
+
+    * inputenc niet langer default gemaakt
+    * enkele kleine bugs eruit gehaald
+    * abstract.tex en symbolenlijst.tex toegevoegd
+    * lof en lot toegevoegd
+    * enkele kleinere aanpassingen voor een mooiere layout 
+
+Versie 0.1
+datum: 05/03/2007
+
+    * Eerste draft
+    * Website gemaakt 
+

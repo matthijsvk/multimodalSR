@@ -1,0 +1,65 @@
+ESAT thesis template voor LaTeX
+Laatste versie: 0.7b, 15/03/2009
+
+Op deze pagina vind je de (master) thesis template voor gebruik met LaTeX, toepasbaar voor hen die in het departement elektrotechniek van de KULeuven afstuderen alsook iedereen die de master energie volgt. Deze template is niet officieel, alhoewel het de bedoeling is hiervan op termijn de officiële template te maken. Iedereen is vrij deze files te gebruiken en aan te passen. Er is geen garantie op het correct functioneren van deze files. Van mensen die deze files gebruiken voor hun thesis op ESAT wordt gevraagd de aanpassingen aan opmaak tot een minimum te beperken.
+Meer over LaTeX
+
+Deze pagina is geen tutorial over LaTeX. Op deze pagina heb ik een aantal links verzameld die je op weg zouden moeten zetten.
+
+Op het ludit hebben ze ook een webpagina over LaTeX. Je kan deze bereiken door HIER te klikken. Deze template staat daar (nog) niet bij.
+Belangrijk voor ESAT'ers
+Op de esat webpagina http://homes.esat.kuleuven.be/~texmf/ staat de (La)TeX distributie zoals deze op esat geïnstalleerd is beschreven. Bovendien bevat deze ook nuttige tips en beschrijvingen van pakketten die geïnstalleerd zijn.
+Hulp gewenst
+
+Deze template is (nog) niet officieel. Voorts is deze template nog in een draft versie, stuur dus al uw opmerkingen maar door (mail naar Dirk Van Hertem). Dit wil zeggen alle opmerkingen over:
+
+    * opmaak
+    * voorstellen tot extra pakketten die in header_esat.tex moeten komen
+    * fouten/onduidelijkheden in deze pagina of in de files/README staan
+    * conflicten met nieuwere versies van pakketten/TeX distributies/...
+    * voorstellen tot verbeteringen van dit pakket 
+
+Minimale systeemvereisten
+
+De thesis template is gemaakt op een pc met debian (GNU/linux) unstable, en een up-to-date TeXlive distributie. Het zou echter geen problemen mogen opleveren deze template te gebruiken op eender welk platform met een recente TeX distributie geïnstalleerd, eventueel mits installatie van enkele extra latex pakketten. Onder windows kan je bijvoorbeeld MikTeX gebruiken. De template werkt ook op de ESAT linux machines (momenteel TeTeX 3.0). Het pakket tetex-extra is nodig om memoir te installeren onder debian/ubuntu (met dank aan Steven Beeckman).
+Nodige LaTeX pakketten
+
+    * memoir is het hoofdpakket dat gebruikt wordt in deze template. Indien je memoir niet geïnstalleerd hebt, kan je dat van deze website halen CTAN.
+    * De basispakketten graphicx, tabularx, hyperref, ifthen, geometry (enkel voor energie studenten) en babel worden verondersteld geïnstalleerd te zijn
+    * Voor de bibliografie wordt de IEEEtran_bst gebruikt. Dit pakket kan je hier downloaden mocht het nog niet in uw distributie zitten: IEEEtran_bst. Je kan dit pakket weer installeren met uw pakketbeheerder, handmatig op de juiste plaats zetten of gewoon in de directory waar uw thesisfile staat zetten.
+    * Zorg dat de hyphenation goed staat voor Nederlandse woorden (\usepackage[dutch]{babel} alleen is niet voldoende!). Zie volgende site voor meer informatiewww.tex.ac.uk/cgi-bin/texfaq2html?label=newlang. 
+
+Mogelijk probleem bij miktex 2.4
+
+Bij een aantal installaties onder windows met miktex 2.4 wordt een beperkte installatie gedaan, en bij het ontbreken van een pakket wordt dit automatisch gedownload en geïnstalleerd. Miktex 2.4 is echter niet langer de meest recente versie, en het blijkt dat deze updates niet langer automatisch gebeuren. Mogelijke oplossingen:
+
+    * Upgrade miktex naar de laatste versie
+    * Installeer memoir (haal het van CTAN) en zet het in uw thesis directory of op de correcte plaats... 
+
+Mogelijke problemen:
+
+Het algorithm pakket heeft problemen met memoir. Er zou wel een oplossing voor zijn, die beschreven is in de manual, maar er zijn alternatieven voor pseudocode. (Met dank aan Marijn Spillebeen om dit te melden). Dit probleem zou ook op te lossen zijn door in de preamble volgende code toe te voegen: \let\newfloat\undefined \usepackage{algorithmic} \usepackage{algorithm} (met dank aan Gert Schrijvers).
+
+Het subfigure pakket is outdated. Indien je subfigures wil invoegen, gebruik dan subfig.
+Files
+
+Je kan alle files downloaden in deze zipfile: eindwerktemplate_0.7b.zip
+
+Dit bestand bevat de volgende bronbestanden:
+
+    * README: deze pagina in txt formaat
+    * eindwerk_template.tex: Hoofdfile. Vanboven in deze file zet je de variabelen (naam, thesistitel en dergelijke meer). In deze file worden ook de verschillende delen ingevoegd met het \include{} commando.
+    * figuren/sedes.pdf en figuren/sedes.eps: is het kulteken (die madam op haar stoel). Als je liever LaTeX gebruikt in plaats van pdfLaTeX, dan wordt sedes.eps ingevoegd ipv de pdf maar voor de rest is dat hetzelfde (je hoeft niets te veranderen).
+    * titelpagina.tex: opmaak voor de titel, maar daar moet je niets voor doen, gewoon vanaf blijven tenzij nodig (bijvoorbeeld als er twee personen aan de thesis werken of indien er twee promotoren zijn)
+    * header_esat.tex: is een file met alle opties en \usepackages in die nodig zijn voor de file zoals hij nu is, misschien dat je er nog een aantal dingen aan wil toevoegen (of een aantal pakketten wil in commentaar zetten). Bekijk deze file eens, het zou een heleboel vragen kunnen oplossen. Bovendien is er in deze file ook een variable "energie" die je true of false moet zetten, naargelang je de opmaak wel of niet moet hebben volgens die layout. In geval van twijfel moet deze op false staan.
+    * voorwoord.tex, inleiding.tex, abstract.tex, symbolenlijst.tex en hoofdstuk2.tex: voor elk hoofdstuk gebruik je een andere *.tex file, die je daarna include in de eindwerk_template.tex file. Als voorbeeld zijn hier vijf files gegeven met wat random tekst in.
+    * referenties.bib: de file met uw bibliografie in. Gebruik een editor die bibtex kent, en dan is zoiets zeer gemakkelijk. Let erop dat IEEEtran een aantal extra velden en types toelaat.
+    * copyright.tex: Dit blad moet vanwege de KUL in uw thesis zitten (vanvoor)
+    * figuren: om de orde te behouden is er een directory figuren waar je, je raadt het nooit, alle figuren kan inzetten (zie \graphicspath{figuren/} in header_esat.tex).
+    * IEEEtran_nl.bst: Bibliografie stijl zoals IEEEtran, maar dan met nederlandse woorden. Gebruik deze voor uw Nederlandse tekst, niet voor een eventueele Engelstalige thesis of paper die je erbij hangt! Vanonder in eindwerk_template kan je zien hoe je deze of de originele kiest. 
+
+Hoe werkt het
+
+Gebruik pdflatex op de hoofdfile (eindwerk_template.tex), dan krijg je rechtstreeks een pdf file. Indien je pstricks wil gebruiken, gebruik dan LaTeX. Voor alle andere gevallen raad ik pdfLaTeX aan. De grootste verschillen in gebruik zijn de standaard output (dvi formaat of pdf formaat) en dat LaTeX enkel met eps figuren werkt, terwijl pdfLaTeX enkel met pdf, png en jpg werkt.
+Enkelzijdig
+Blijkbaar mogen mag je uw thesis ook indienen in enkelzijdige prints. Pas echter op, je moet dan de eerste regel \documentclass[a4paper,11pt,twoside,openany,fleqn]{memoir} veranderen in \documentclass[a4paper,11pt,oneside,openany,fleqn]{memoir}. Merk op dat dit qua marges zeker niet ondersteund is door mij, dus misschien moet je daar nog wel mee prullen (in een volgende versie zou dat wel zo moeten zijn, maar test dat eerst voordat je dit print!). Ik zou aanraden gewoon tweezijdig te printen, zodat er geen extra boom moet omgehakt worden voor uw thesis. 
