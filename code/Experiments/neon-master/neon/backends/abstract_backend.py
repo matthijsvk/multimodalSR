@@ -1066,7 +1066,7 @@ class AbstractBackend(with_metaclass(Backend_ABC_Meta, object)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def mean(self, a, axis=None, partial=None, out=None, keepdims=True):
+    def mean(self, a: object, axis: object = None, partial: object = None, out: object = None, keepdims: object = True) -> object:
         """
         Calculates the arithmetic mean of the elements along the specified
         axes.

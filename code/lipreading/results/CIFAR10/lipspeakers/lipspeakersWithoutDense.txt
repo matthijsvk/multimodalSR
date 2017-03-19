@@ -1,9 +1,0 @@
-oEpoch 11 of 40 took 315.864086866s
-  LR:                            0.000131607401295
-  training loss:                 0.045826742178
-  validation loss:               0.0923609189181
-  validation error rate:         57.4337121212%
-  best epoch:                    11
-  best validation error rate:    57.4337121212%
-  test loss:                     0.0910999078699
-  test error rate:               58.6174242424%
