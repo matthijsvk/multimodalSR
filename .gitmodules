@@ -1,0 +1,15 @@
+[submodule "code/audioSR/KGP-ASR"]
+	path = code/audioSR/KGP-ASR
+	url = https://github.com/KGPML/KGP-ASR
+[submodule "code/audioSR/phoneme_ctc"]
+	path = code/audioSR/phoneme_ctc
+	url = https://github.com/tbornt/phoneme_ctc
+[submodule "code/audioSR/phoneme_recognition"]
+	path = code/audioSR/phoneme_recognition
+	url = https://github.com/joergfranke/phoneme_recognition
+[submodule "code/audioSR/recnet"]
+	path = code/audioSR/recnet
+	url = https://github.com/joergfranke/recnet.git
+[submodule "code/audioSR/timit-lstm"]
+	path = code/audioSR/timit-lstm
+	url = https://github.com/solidaqua/timit-lstm
