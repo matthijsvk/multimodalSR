@@ -1,0 +1,13 @@
+dill
+klepto==0.1.2
+numpy
+pox
+wheel
+python-speech-features
+scikit-learn
+scipy
+six
+sklearn
+Theano==0.8.2
+scikits.audiolab
+matplotlib

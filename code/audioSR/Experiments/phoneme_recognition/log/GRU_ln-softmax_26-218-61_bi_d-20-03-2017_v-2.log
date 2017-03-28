@@ -1,0 +1,137 @@
+#mini batch handler: data check completed
+###
+####### RecNet - Recurrent Neural Network Framework ########
+###
+# Start Datetime: 2017-03-20 14:50:51.946108
+###
+# Basic Informations
+output_type: both
+output_location: log/
+model_location: model_save/
+load_model: False
+model_name: GRU_ln-softmax_26-218-61_bi_d-20-03-2017_v-2
+###
+# Data Information
+batch_size: 10
+data_location: data_set/
+train_data_name: timit_train_xy_mfcc12-26win25-10.klepto
+valid_data_name: timit_valid_xy_mfcc12-26win25-10.klepto
+test_data_name: None
+train_set_len: 4150
+valid_set_len: 470
+test_set_len: 0
+x_size: 26
+y_size: 61
+checked_data: {'test': False, 'train': True, 'valid': True}
+mini_batch_location: mini_batch/
+train_batch_quantity: 415
+valid_batch_quantity: 47
+###
+# Network Structure
+net_size: [26, 218, 61]
+hidden_layer: 1
+net_unit_type: ['input', 'GRU_ln', 'softmax']
+net_act_type: ['-', 'tanh', '-']
+net_arch: ['-', 'bi', 'ff']
+weight_numb: 104919
+identity_func: False
+###
+# Optimization Parameters
+batch_size: 10
+random_seed: 211
+epochs: 20
+optimization: adadelta
+learn_rate: 1
+momentum_rate: 1
+decay_rate: 1
+use_dropout: False
+dropout_level: 0
+regularization: False
+reg_factor: 0
+noisy_input: False
+loss_function: cross_entropy
+CTC: False
+bound_weight: 0
+###
+ #-- Build model --#
+ #-- Compile train function --#
+ #-- Compile valid function --#
+ #-- Compilation complete --#
+Start training
+#mini batch handler: create new valid mini batches
+------------------------------------------
+0 Epoch, Training run
+#mini batch handler: create new train mini batches
+counter:   0  time:  7.14sec  error: 4.1903
+counter:  50  time: 54.12sec  error: 1.7227
+counter: 100  time: 52.93sec  error: 1.5705
+counter: 150  time: 54.03sec  error: 1.3854
+counter: 200  time: 59.26sec  error: 1.4110
+counter: 250  time: 56.47sec  error: 1.3949
+counter: 300  time: 58.82sec  error: 1.3459
+counter: 350  time: 56.14sec  error: 1.2921
+counter: 400  time: 53.32sec  error: 1.2713
+###########################################
+## epoch validation at 0/414
+## cross entropy theano  : 1.2177
+## cross entropy sklearn : 0.8394
+## correct classified    : 0.7441
+## ce improve      : nan
+###########################################
+Save model: model_save/GRU_ln-softmax_26-218-61_bi_d-20-03-2017_v-2.prm
+###########################################
+Insample Error: 0.151009779005
+Epoch training duration: 479.509662867sec
+------------------------------------------
+1 Epoch, Training run
+#mini batch handler: delete old train mini batches
+#mini batch handler: create new train mini batches
+counter:   0  time:  4.65sec  error: 1.1365
+counter:  50  time: 54.01sec  error: 1.2256
+counter: 100  time: 50.30sec  error: 1.2117
+counter: 150  time: 51.76sec  error: 1.0788
+counter: 200  time: 52.03sec  error: 0.7603
+counter: 250  time: 61.20sec  error: 1.2484
+counter: 300  time: 64.05sec  error: 1.0287
+counter: 350  time: 62.81sec  error: 1.1312
+counter: 400  time: 67.42sec  error: 0.9486
+###########################################
+## epoch validation at 1/414
+## cross entropy theano  : 1.0884
+## cross entropy sklearn : 0.7497
+## correct classified    : 0.7678
+## ce improve      : -0.129308
+###########################################
+Save model: model_save/GRU_ln-softmax_26-218-61_bi_d-20-03-2017_v-2.prm
+###########################################
+Insample Error: 0.112498432642
+Epoch training duration: 502.902942181sec
+------------------------------------------
+2 Epoch, Training run
+#mini batch handler: delete old train mini batches
+#mini batch handler: create new train mini batches
+counter:   0  time:  5.10sec  error: 1.1097
+counter:  50  time: 60.93sec  error: 0.8561
+counter: 100  time: 63.90sec  error: 1.0693
+counter: 150  time: 59.36sec  error: 1.0843
+counter: 200  time: 60.43sec  error: 0.9826
+counter: 250  time: 58.50sec  error: 0.9623
+counter: 300  time: 60.60sec  error: 0.9303
+counter: 350  time: 58.83sec  error: 0.9337
+counter: 400  time: 56.04sec  error: 1.1548
+###########################################
+## epoch validation at 2/414
+## cross entropy theano  : 1.0121
+## cross entropy sklearn : 0.6977
+## correct classified    : 0.7826
+## ce improve      : -0.102835
+###########################################
+Save model: model_save/GRU_ln-softmax_26-218-61_bi_d-20-03-2017_v-2.prm
+###########################################
+Insample Error: 0.101960914106
+Epoch training duration: 510.835561991sec
+------------------------------------------
+3 Epoch, Training run
+#mini batch handler: delete old train mini batches
+#mini batch handler: create new train mini batches
+counter:   0  time:  5.33sec  error: 1.0349

@@ -1,0 +1,2 @@
+# list of terms actions that the user can perform e.g. "dial", "turn-on"
+# (one term per line)

@@ -1,0 +1,9 @@
+click==6.6
+Keras==1.0.1
+librosa
+matplotlib==1.4.3
+numpy
+PyAudio==0.2.9
+redis==2.10.5
+scikit-learn==0.17.1
+scipy

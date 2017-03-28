@@ -115,7 +115,6 @@ def train (train_fn, val_fn,
             
             best_val_err = val_err
             best_epoch = epoch + 1
-            
             test_err, test_loss = val_epoch(X_test, y_test)
             
             if save_path is not None:

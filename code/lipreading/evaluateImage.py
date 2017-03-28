@@ -22,16 +22,16 @@ from PIL import Image
 
 import buildNetworks
 
-nbClasses = 39
+nbClassesPhonemes = 39
+nbClassesVisemes = 12
 
 
-parser = argparse.ArgumentParser(description="Getting top 5 classes of images")
-
+parser = argparse.ArgumentParser(description="Getting top results for this image...")
 add_arg = parser.add_argument
-
-add_arg("-i", "--input_image", help="Input image")
-add_arg("-m", "--model_file", help="Model pickle file")
-
+add_arg("-i", "--input-image", help="Input image to be evaluated")
+add_arg("-n", "--network-type", help="Type of network to be used", default=1)
+add_arg("-p", "--phoneme-trained", help="Network outputting phonemes (1) or visemes (0)", default=0)
+#add_arg("-m", "--model-file", help="Model pickle file that contains trained network parameters")
 args = parser.parse_args()
 
 # this imported file contains build_model(), which constructs the network structure that you van fill using the pkl file
@@ -39,10 +39,12 @@ args = parser.parse_args()
 #   which populates the network from caffe, gets the classes and the mean image, and stores those in a pkl file
 from lipreadingTCDTIMIT import *
 
-def load_model (model_npz_file):
-    if not os.path.exists(model_npz_file): print(
-    "This npz file does not exist! Please run 'lipreadingTCDTIMIT' first to generate it.")
 
+#  build the model structure, fill in the stored parameters from a trained network with this structure
+#  networkType:  1 = CIFAR10, 2 = GoogleNet, 3 = ResNet50
+#  phonemeViseme:  1 = phoneme-trained, 0 = viseme-trained (meaning outputs are visemes)
+def load_model (phonemeViseme, networkType):
+    # network parameters
     alpha = .1
     print("alpha = " + str(alpha))
     epsilon = 1e-4
@@ -51,17 +53,40 @@ def load_model (model_npz_file):
     # activation
     activation = T.nnet.relu
     print("activation = T.nnet.relu")
-    input = T.tensor4('inputs')
-    target = T.matrix('targets')
-    cnn = buildNetworks.build_network_resnet50(input,nbClasses)
+    inputs = T.tensor4('inputs')
+    targets = T.matrix('targets')
 
-    with np.load('./results/ResNet50/allLipspeakers/allLipspeakers.npz') as f:
-        param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+    if phonemeViseme ==1: #use phoneme-trained network
+        if networkType == 1:  # CIFAR10
+            cnn = buildNetworks.build_network_cifar10(activation, alpha, epsilon, inputs, nbClassesPhonemes) # nbClassesPhonemes = 39 (global variable)
+            with np.load('./results/Phoneme_trained/CIFAR10/allLipspeakers/allLipspeakers.npz') as f:
+                param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+                lasagne.layers.set_all_param_values(cnn, param_values)
 
-    lasagne.layers.set_all_param_values(cnn['prob'], param_values)
+        elif networkType == 2: #GoogleNet
+            cnn = buildNetworks.build_network_google(activation, alpha, epsilon, inputs, nbClassesPhonemes)
+            with np.load('./results/Phoneme_trained/GoogleNet/allLipspeakers/allLipspeakers.npz') as f:
+                param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+                lasagne.layers.set_all_param_values(cnn, param_values)
+
+        elif networkType == 3: #ResNet50
+            cnn = buildNetworks.build_network_resnet50(inputs, nbClassesPhonemes)
+            with np.load('./results/Phoneme_trained/ResNet50/allLipspeakers/allLipspeakers.npz') as f:
+                param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+                lasagne.layers.set_all_param_values(cnn['prob'], param_values)
+        else:
+            print('ERROR: given network type unknown.')
+
+    else:  #use viseme-trained network
+        cnn = buildNetworks.build_network_google(activation, alpha, epsilon, inputs, nbClassesVisemes)  # nbClassesVisemes = 13 (global variable)
+        with np.load('./results/Viseme_trained/GoogleNet/allLipspeakers.npz') as f:
+            param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+            lasagne.layers.set_all_param_values(cnn, param_values)
+
     return cnn
 
-
+# scale to [0-2], then substract 1 to center around 0 (so now all values are in [-1,1] area)
+# then reshape to make the image fit the network input size
 def prep_image (fname):
     im = np.array(Image.open(fname), dtype=np.uint8).flatten()
     im = np.subtract(np.multiply(2. / 255., im), 1.)
@@ -69,30 +94,60 @@ def prep_image (fname):
 
     return im.astype('float32')
 
+# functions that evaluate the network
+#  networkType:  1 = CIFAR10, 2 = GoogleNet, 3 = ResNet50
+def get_net_fun (phonemeViseme, networkType, numberShown=5):
+    print("Loading model...")
+    net = load_model(phonemeViseme, networkType)
 
-def get_net_fun (npz_model):
-    net = load_model(npz_model)
+    inputs = T.tensor4('inputs')
+    target = T.tensor4('targets')
+    k = 5 #get top-5 accuracy
 
-    input = T.tensor4('inputs')
-    # get_class_prob = theano.function([input], lasagne.layers.get_output(cnn, deterministic=True))
-    get_class_prob = theano.function([net['input'].input_var],
-                                     lasagne.layers.get_output(net['prob'], deterministic=True))
+    print("Compiling Theano evaluation functions...")
+    if (networkType == 3): #ResNets needs a different way of evaluating
+        prediction = lasagne.layers.get_output(net['prob'], deterministic=True)
+        get_class_prob = theano.function([net['input'].input_var], prediction)
+
+    else:
+        prediction = lasagne.layers.get_output(net, deterministic=True)
+        get_class_prob = theano.function([inputs, target], prediction)
+
+    # top 1 accuracy
+    print("Printing prediction...")
+    print(prediction)
+    print("Calulating accuracy...")
+    accuracy = T.mean(T.eq(T.argmax(prediction, axis=1), target), dtype=theano.config.floatX)
+    # Top k accuracy
+    accuracy_k = T.mean(T.any(T.eq(T.argsort(prediction, axis=1)[:, -k:], target.dimshuffle(0, 'x')), axis=1),
+                        dtype=theano.config.floatX)
+    print("Compilation done.")
+
     def print_top5 (im_path):
+        print("Preprocessing image...")
         im = prep_image(im_path)
+        print("Image preprocessed.")
+
+        print("Evaluating image...")
         prob = get_class_prob(im)[0]
         print(prob)
         phonemeNumberMap = getPhonemeNumberMap()
         pred = []
-        for i in range(0,len(prob)):
+
+        if (numberShown > len(prob) or numberShown < 1): #sanity check
+            numberShown = len(prob)
+
+        for i in range(0,numberShown): #print network output probabilities
             p = prob[i]
             prob_phoneme = phonemeNumberMap[str(i+1)]
             pred.append([prob_phoneme, p])
-            # print(p, " ", prob_phoneme)
         pred = sorted(pred, key=lambda t: t[1], reverse=True)
         for p in pred:
             print(p)
 
-    return get_class_prob, print_top5
+        print("All done.")
+
+    return get_class_prob, print_top5, accuracy, accuracy_k
 
 def getPhonemeNumberMap (phonemeMap="./phonemeLabelConversion.txt"):
     phonemeNumberMap = {}
@@ -125,7 +180,10 @@ def test_lasagne_ImageNet (classes, image_urls, mean_values, net):
 
 if __name__ == "__main__":
     print("Compiling functions...")
-    get_prob, print_top5 = get_net_fun(args.model_file)  # expects npz model
+    get_prob, print_top5, accuracy, accuracy_k = get_net_fun(1, 3, 10)  # argument = phonemeViseme, networkType, npz model, numberResultsShown
+    print("the network had ", accuracy, " top 1 accuracy")
+    print("the network had ", accuracy_k, " top 5 accuracy")
+
     t0 = time.clock()
     print_top5(args.input_image)
     t1 = time.clock()

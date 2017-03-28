@@ -57,7 +57,7 @@ import buildNetworks
 
 def main ():
     # BN parameters
-    batch_size = 16 
+    batch_size = 8
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
@@ -87,6 +87,7 @@ def main ():
 
     print('Loading TCDTIMIT dataset...')
     nbClasses = 12
+    # database in binary format (pkl files)
     database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binaryViseme'))
     train_set, valid_set, test_set = load_dataset(database_binary_location, 0.8,0.1,0.1, nbClasses) #location, %train, %valid, %test
 
@@ -161,7 +162,6 @@ def unpickle(file):
     fo.close()
     return dict
 
-
 def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8, validFraction=0.1, testFraction=0.1, nbClasses=39):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
@@ -178,7 +178,7 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
 
     # prepare data to load
     fnamesLipspkrs = []#['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
-    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1,31)]  # 12 first volunteers
+    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1,5)]  # some volunteers
     fnames = fnamesLipspkrs + fnamesVolunteers
 
     datasets = {}

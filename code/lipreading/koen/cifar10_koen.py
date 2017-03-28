@@ -247,6 +247,8 @@ if __name__ == "__main__":
             cnn,
             epsilon=epsilon,
             alpha=alpha)
+
+    import pdb; pdb.set_trace()
     
     print(cnn.output_shape)
     
