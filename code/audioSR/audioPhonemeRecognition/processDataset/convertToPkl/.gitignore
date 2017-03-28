@@ -1,0 +1,12 @@
+# Don't commit training data i.e. wav files
+volumes/**/*.wav
+
+# Redis storage
+*.rdb
+
+__pycache__
+*.pyc
+
+*.wav
+
+.DS_Store

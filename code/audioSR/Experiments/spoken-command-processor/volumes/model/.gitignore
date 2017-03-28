@@ -1,0 +1,5 @@
+# General Numpy data
+speech2phonemes/mfcc_means.npy
+
+# Weights (Keras)
+*.h5

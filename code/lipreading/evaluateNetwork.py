@@ -67,7 +67,7 @@ def evaluateNetwork (X, y, model_npz_file):
     phonemeToViseme = getPhonemeToVisemeMap()
     phonemeNumberMap = getPhonemeNumberMap()  #bidirectional map phoneme-number
     for i in range(len(y)):
-        y[i] = phonemeToViseme{phonemeNumberMap{y[i]}}  #viseme of the phonemen belonging to the y-number
+        y[i] = phonemeToViseme{phonemeNumberMap{y[i]}}  #viseme of the phoneme belonging to the y-number
         
     input = T.tensor4('inputs')
     target = T.matrix('targets')

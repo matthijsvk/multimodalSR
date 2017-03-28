@@ -1,0 +1,59 @@
+#mini batch handler: data check completed
+###
+####### RecNet - Recurrent Neural Network Framework ########
+###
+# Start Datetime: 2017-03-20 15:36:18.958062
+###
+# Basic Informations
+output_type: both
+output_location: log/
+model_location: model_save/
+load_model: True
+model_name: GRU_ln-softmax_26-218-61_bi_d-20-03-2017_v-5
+###
+# Data Information
+batch_size: 5
+data_location: data_set/
+train_data_name: None
+valid_data_name: None
+test_data_name: timit_test_xy_mfcc12-26win25-10.klepto
+train_set_len: 0
+valid_set_len: 0
+test_set_len: 1680
+x_size: 26
+y_size: 61
+checked_data: {'test': True, 'train': False, 'valid': False}
+mini_batch_location: mini_batch/
+test_batch_quantity: 336
+###
+# Network Structure
+net_size: [26, 218, 61]
+hidden_layer: 1
+net_unit_type: ['input', 'GRU_ln', 'softmax']
+net_act_type: ['-', 'tanh', '-']
+net_arch: ['-', 'bi', 'ff']
+weight_numb: 104919
+identity_func: False
+###
+# Optimization Parameters
+batch_size: 5
+random_seed: 211
+epochs: 20
+optimization: adadelta
+learn_rate: 1
+momentum_rate: 1
+decay_rate: 1
+use_dropout: False
+dropout_level: 0
+regularization: False
+reg_factor: 0
+noisy_input: False
+loss_function: cross_entropy
+CTC: False
+bound_weight: 0
+###
+ #-- Build model --#
+ #-- Compile forward function --#
+ #-- Compilation complete --#
+#mini batch handler: delete old test mini batches
+#mini batch handler: create new test mini batches
