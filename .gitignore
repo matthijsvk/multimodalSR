@@ -9,6 +9,8 @@ protobuf-master/
 dlib-master/
 *.pkl
 *.npz
+*.npy
 *.xml
 *.pyc
 testing/
+*.klepto
