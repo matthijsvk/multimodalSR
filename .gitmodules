@@ -16,3 +16,6 @@
 [submodule "code/audioSR/spoken-command-processor"]
 	path = code/audioSR/spoken-command-processor
 	url = git@github.com:dtjchen/spoken-command-processor.git
+[submodule "code/dataset/TIMIT_Crawler"]
+	path = code/dataset/TIMIT_Crawler
+	url = git@github.com:15101538237ren/TIMIT_Crawler.git
