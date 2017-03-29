@@ -1,16 +1,14 @@
 import argparse
 import csv
-import os, sys
+import os
 import subprocess
-import time
-from phoneme_set import phoneme_set_39, phoneme_set_61_39
+import sys
+
 from tqdm import tqdm
 
-from helpFunctions import *
 from helpFunctions import resample
-
-from scipy.io import wavfile
-import resampy
+from helpFunctions.writeToTxt import writeToTxt
+from phoneme_set import phoneme_set_39, phoneme_set_61_39
 
 
 # example usage: python transform.py phonemes -i /home/matthijs/TCDTIMIT/TIMIT/original/TIMIT/ -o /home/matthijs/TCDTIMIT/TIMIT/processed
@@ -23,21 +21,24 @@ def load_wavPhn(rootDir):
     phns = loadPhns(rootDir)
     return wavs, phns
 
+
 def loadWavs(rootDir):
     wav_files = []
     for dirpath, dirs, files in os.walk(rootDir):
         for f in files:
-            if ( f.lower().endswith(".wav")):
+            if (f.lower().endswith(".wav")):
                 wav_files.append(os.path.join(dirpath, f))
     return wav_files
+
 
 def loadPhns(rootDir):
     phn_files = []
     for dirpath, dirs, files in os.walk(rootDir):
         for f in files:
-            if ( f.lower().endswith(".phn")):
-                phn_files.append(os.path.join(dirpath,f))
+            if (f.lower().endswith(".phn")):
+                phn_files.append(os.path.join(dirpath, f))
     return phn_files
+
 
 # generates for example: dstDir/TIMIT/TRAIN/DR2/MTAT1/SX59.PHN'
 # from srcPath = someDir/TIMIT/TRAIN/DR2/MTAT1/SX239.PHN')
@@ -72,7 +73,7 @@ def transformWav(wav_file, dstPath):
                    '-quiet',
                    '-vo', 'null',
                    '-vc', 'dummy',
-                   '-ao', 'pcm:waveheader:file='+dstPath,
+                   '-ao', 'pcm:waveheader:file=' + dstPath,
                    wav_file]
 
         # actually run the command, only show stderror on terminal, close the processes (don't wait for user input)
@@ -84,6 +85,7 @@ def transformWav(wav_file, dstPath):
         return 1
     else:
         return 0
+
 
 # generate new .phn file with mapped phonemes (from 61, to 39 -> see dictionary in phoneme_set.py)
 def transformPhn(phn_file, dstPath):
@@ -99,14 +101,14 @@ def transformPhn(phn_file, dstPath):
             for row in phn_reader:
                 start, stop, label = row[0], row[1], row[2]
 
-                if label not in phoneme_set_39.keys():#map from 61 to 39 phonems using dict
+                if label not in phoneme_set_39.keys():  # map from 61 to 39 phonems using dict
                     label = phoneme_set_61_39.get(label)
 
-                classNumber = label #phoneme_set_39[label] - 1 # get class number
-                phn_labels.append([start,' ',stop,' ',classNumber])
+                classNumber = label  # phoneme_set_39[label] - 1 # get class number
+                phn_labels.append([start, stop, classNumber])
 
-        #print phn_labels
-        #print phn_labels
+        # print phn_labels
+        # print phn_labels
         writeToTxt(phn_labels, dstPath)
 
 
@@ -121,7 +123,7 @@ def transformWavs(args):
     if not os.path.exists(dstDir):
         os.makedirs(dstDir)
 
-    resampled =[]
+    resampled = []
     # transform: fix headers and resample. Use 2 seperate loops to prevent having to wait for the fixed file to be written
     #               therefore also don't wait until completion in transformWav (the Popen.wait(p) line)
     print("FIXING WAV HEADERS AND COPYING TO ", dstDir, "...")
@@ -132,7 +134,7 @@ def transformWavs(args):
 
     print("RESAMPLING TO 16kHz...")
     for dstPath in tqdm(resampled, total=len(resampled)):
-        resample.resampleWAV(dstPath, dstPath, out_fr=16000.0, q=1.0) #resample to 16 kHz from 48kHz
+        resample.resampleWAV(dstPath, dstPath, out_fr=16000.0, q=1.0)  # resample to 16 kHz from 48kHz
 
         ## TODO USING resampy library: about 4x faster, but sometimes weird crashes...
         # in_fr, in_data = wavfile.read(dstPath)
@@ -156,7 +158,7 @@ def transformPhns(args):
     if not os.path.exists(dstDir):
         os.makedirs(dstDir)
 
-    for srcPath in tqdm(srcPhns, total = len(srcPhns)):
+    for srcPath in tqdm(srcPhns, total=len(srcPhns)):
         dstPath = getDestPath(srcPath, dstDir)
         # print("reading from: ", srcPath)
         # print("writing to: ", dstPath)
@@ -171,6 +173,7 @@ def readPhonemeDict(filePath):
             (key, val) = line.split()
             d[int(key)] = val
     return d
+
 
 def checkDirs(args):
     if 'dstDir' in args and not os.path.exists(args.dstDir):
@@ -188,20 +191,20 @@ def prepare_parser():
     phn_parser = sub_parsers.add_parser('phonemes')
     phn_parser.set_defaults(func=transformPhns)
     phn_parser.add_argument('-i', '--srcDir',
-                                  help="the directory storing source data",
-                                  required=True)
+                            help="the directory storing source data",
+                            required=True)
     phn_parser.add_argument('-o', '--dstDir',
-                                  help="the directory store output data",
-                                  required=True)
+                            help="the directory store output data",
+                            required=True)
     ## TRANSFORM ##
     wav_parser = sub_parsers.add_parser('wavs')
     wav_parser.set_defaults(func=transformWavs)
     wav_parser.add_argument('-i', '--srcDir',
-                                  help="the directory storing source data",
-                                  required=True)
+                            help="the directory storing source data",
+                            required=True)
     wav_parser.add_argument('-o', '--dstDir',
-                                  help="the directory store output data",
-                                  required=True)
+                            help="the directory store output data",
+                            required=True)
     return parser
 
 

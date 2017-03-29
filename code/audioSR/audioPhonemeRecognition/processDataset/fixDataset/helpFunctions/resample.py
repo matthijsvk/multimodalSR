@@ -113,13 +113,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import sys
-import numpy as np
 import time as tm
-from scipy.io import wavfile
-from shutil import copyfile
-from fractions import Fraction
 from decimal import Decimal
-from numpy.fft import fft
+from fractions import Fraction
+from shutil import copyfile
+
+import numpy as np
+from scipy.io import wavfile
 
 # import matplotlib.pyplot as plt #Uncomment to plot
 
@@ -456,5 +456,6 @@ def resampleWAV(inFile, outFile="output.wav", out_fr=16000.0, q=0.0):
 
         # Print Results
         duration = float(tm.time() - start_time)
-        print("File", outPath, " was successfully written. Resampled from ",in_fr,"to",out_fr, "in", duration," seconds" )
+        print(
+        "File", outPath, " was successfully written. Resampled from ", in_fr, "to", out_fr, "in", duration, " seconds")
     return 0

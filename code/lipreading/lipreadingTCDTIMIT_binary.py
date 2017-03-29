@@ -1,10 +1,10 @@
 from __future__ import print_function
 
 import sys
+
 print(sys.path)
 
 import os
-import time
 
 import numpy as np
 
@@ -12,25 +12,19 @@ np.random.seed(1234)  # for reproducibility?
 
 import lasagne
 import lasagne.layers
-from lasagne.layers import count_params
-from lasagne.updates import nesterov_momentum
 
 os.environ["THEANO_FLAGS"] = "cuda.root=/usr/local/cuda,device=gpu,floatX=float32"
 # specifying the gpu to use
 import theano.sandbox.cuda
+
 theano.sandbox.cuda.use('gpu1')
 import theano
 import theano.tensor as T
-from theano import function, config, shared, sandbox
-
-
 
 # from http://blog.christianperone.com/2015/08/convolutional-neural-networks-and-feature-extraction-with-python/
 # import matplotlib
 # import matplotlib.pyplot as plt
 # import matplotlib.cm as cm
-import cPickle as pickle
-import gzip
 import numpy as np
 
 # from nolearn.lasagne import NeuralNet
@@ -39,25 +33,20 @@ import numpy as np
 # from sklearn.metrics import confusion_matrix
 
 import logging
-from theano.compat.six.moves import xrange
-from pylearn2.datasets import cache, dense_design_matrix
-from pylearn2.expr.preprocessing import global_contrast_normalize
-from pylearn2.utils import contains_nan
-from pylearn2.utils import serial
-from pylearn2.utils import string_utils
+from pylearn2.datasets import cache
 from collections import OrderedDict
-
 
 _logger = logging.getLogger(__name__)
 
 # User - created files
-import train_lipreadingTCDTIMIT # load training functions
-import datasetClass # load the binary dataset in proper format
+import train_lipreadingTCDTIMIT  # load training functions
+import datasetClass  # load the binary dataset in proper format
 import buildNetworks
+
+
 # import binary_net
 
-def main ():
-    
+def main():
     # BN parameters
     batch_size = 50
     print("batch_size = " + str(batch_size))
@@ -86,7 +75,6 @@ def main ():
     W_LR_scale = "Glorot"  # "Glorot" means we are using the coefficients from Glorot's paper
     print("W_LR_scale = " + str(W_LR_scale))
 
-
     # Training parameters
     num_epochs = 500
     print("num_epochs = " + str(num_epochs))
@@ -105,7 +93,8 @@ def main ():
 
     print('Loading TCDTIMIT dataset...')
     database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
-    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.8,0.1,0.1) #location, %train, %valid, %test
+    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.8, 0.1,
+                                                  0.1)  # location, %train, %valid, %test
 
     print("the number of training examples is: ", len(train_set.X))
     print("the number of valid examples is: ", len(valid_set.X))
@@ -118,15 +107,13 @@ def main ():
     target = T.matrix('targets')
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
-
     # get the network structure
-    #cnn = buildNetworks.build_network_cifar10_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale) # 7176231 params
-    cnn = buildNetworks.build_network_google_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale) # 7176231 params
-
+    # cnn = buildNetworks.build_network_cifar10_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale) # 7176231 params
+    cnn = buildNetworks.build_network_google_binary(activation, alpha, epsilon, input, binary, stochastic, H,
+                                                    W_LR_scale)  # 7176231 params
 
     # print het amount of network parameters
-    print("The number of parameters of this network: ",lasagne.layers.count_params(cnn))
-
+    print("The number of parameters of this network: ", lasagne.layers.count_params(cnn))
 
     # get output layer, for calculating loss etc
     train_output = lasagne.layers.get_output(cnn, deterministic=False)
@@ -134,24 +121,21 @@ def main ():
     # squared hinge loss
     loss = T.mean(T.sqr(T.maximum(0., 1. - target * train_output)))
 
-
-
     if binary:
         # W updates
         W = lasagne.layers.get_all_params(cnn, binary=True)
         W_grads = compute_grads(loss, cnn)
         updates = lasagne.updates.adam(loss_or_grads=W_grads, params=W, learning_rate=LR)
         updates = clipping_scaling(updates, cnn)
-    
+
         # other parameters updates
         params = lasagne.layers.get_all_params(cnn, trainable=True, binary=False)
         updates = OrderedDict(
-            updates.items() + lasagne.updates.adam(loss_or_grads=loss, params=params, learning_rate=LR).items())
+                updates.items() + lasagne.updates.adam(loss_or_grads=loss, params=params, learning_rate=LR).items())
 
     else:
         params = lasagne.layers.get_all_params(cnn, trainable=True)
         updates = lasagne.updates.adam(loss_or_grads=loss, params=params, learning_rate=LR)
-
 
     test_output = lasagne.layers.get_output(cnn, deterministic=True)
     test_loss = T.mean(T.sqr(T.maximum(0., 1. - target * test_output)))
@@ -187,7 +171,8 @@ def unpickle(file):
     return dict
 
 
-def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8, validFraction=0.1, testFraction=0.1):
+def load_dataset(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8,
+                 validFraction=0.1, testFraction=0.1):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
@@ -202,8 +187,8 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     img_size = np.prod(img_shape)
 
     # prepare data to load
-    fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
-    fnamesVolunteers = []#['Volunteer%i.pkl' % i for i in range(1,11)]  # 12 first volunteers
+    fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1, 4)]  # all 3 lipsteakers
+    fnamesVolunteers = []  # ['Volunteer%i.pkl' % i for i in range(1,11)]  # 12 first volunteers
     fnames = fnamesLipspkrs + fnamesVolunteers
     datasets = {}
     for name in fnames:
@@ -261,7 +246,6 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
         trainLoaded += thisTrain
         validLoaded += thisValid
         testLoaded += thisTest
-
 
         if (trainLoaded + validLoaded + testLoaded) >= ntotal:
             print("loaded too many?")
@@ -356,18 +340,16 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
 
 ############# BINARY NET  #######################3
 
-from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
-
 from theano.scalar.basic import UnaryScalarOp, same_out_nocomplex
 from theano.tensor.elemwise import Elemwise
 
 
 # Our own rounding function, that does not set the gradient to 0 like Theano's
 class Round3(UnaryScalarOp):
-    def c_code (self, node, name, (x, ), (z, ), sub):
+    def c_code(self, node, name, (x, ), (z, ), sub):
         return "%(z)s = round(%(x)s);" % locals()
-    
-    def grad (self, inputs, gout):
+
+    def grad(self, inputs, gout):
         (gz,) = gout
         return gz,
 
@@ -376,7 +358,7 @@ round3_scalar = Round3(same_out_nocomplex, name='round3')
 round3 = Elemwise(round3_scalar)
 
 
-def hard_sigmoid (x):
+def hard_sigmoid(x):
     return T.clip((x + 1.) / 2., 0, 1)
 
 
@@ -385,45 +367,45 @@ def hard_sigmoid (x):
 # And like:
 #   hard_tanh(x) = 2*hard_sigmoid(x)-1
 # during back propagation
-def binary_tanh_unit (x):
+def binary_tanh_unit(x):
     return 2. * round3(hard_sigmoid(x)) - 1.
 
 
-def binary_sigmoid_unit (x):
+def binary_sigmoid_unit(x):
     return round3(hard_sigmoid(x))
 
 
-
 # This function computes the gradient of the binary weights
-def compute_grads (loss, network):
+def compute_grads(loss, network):
     layers = lasagne.layers.get_all_layers(network)
     grads = []
-    
+
     for layer in layers:
-        
+
         params = layer.get_params(binary=True)
         if params:
             # print(params[0].name)
             grads.append(theano.grad(loss, wrt=layer.Wb))
-    
+
     return grads
 
 
 # This functions clips the weights after the parameter update
-def clipping_scaling (updates, network):
+def clipping_scaling(updates, network):
     layers = lasagne.layers.get_all_layers(network)
     updates = OrderedDict(updates)
-    
+
     for layer in layers:
-        
+
         params = layer.get_params(binary=True)
         for param in params:
             print("W_LR_scale = " + str(layer.W_LR_scale))
             print("H = " + str(layer.H))
             updates[param] = param + layer.W_LR_scale * (updates[param] - param)
             updates[param] = T.clip(updates[param], -layer.H, layer.H)
-    
+
     return updates
+
 
 if __name__ == "__main__":
     main()

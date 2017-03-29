@@ -1,8 +1,6 @@
 from __future__ import print_function
 
-import sys
 import os
-import time
 
 import numpy as np
 
@@ -11,51 +9,35 @@ np.random.seed(1234)  # for reproducibility?
 import warnings
 
 with warnings.catch_warnings():
-    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     import lasagne
-    from lasagne import layers
-    from lasagne.layers import count_params
-    from lasagne.updates import nesterov_momentum
-    
+
 os.environ["THEANO_FLAGS"] = "cuda.root=/usr/local/cuda,device=gpu,floatX=float32"
 # specifying the gpu to use
 import theano.sandbox.cuda
+
 theano.sandbox.cuda.use('gpu1')
 import theano
 import theano.tensor as T
-from theano import function, config, shared, sandbox
 
 # from http://blog.christianperone.com/2015/08/convolutional-neural-networks-and-feature-extraction-with-python/
 # import matplotlib
 # import matplotlib.pyplot as plt
 # import matplotlib.cm as cm
-import cPickle as pickle
-import gzip
 import numpy as np
-import warnings
-
-
-from nolearn.lasagne import NeuralNet
-from nolearn.lasagne import visualize
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
 
 import logging
-from theano.compat.six.moves import xrange
-from pylearn2.datasets import cache, dense_design_matrix
-from pylearn2.expr.preprocessing import global_contrast_normalize
-from pylearn2.utils import contains_nan
-from pylearn2.utils import serial
-from pylearn2.utils import string_utils
+from pylearn2.datasets import cache
 
 _logger = logging.getLogger(__name__)
 
 # User - created files
-import train_lipreadingTCDTIMIT # load training functions
-import datasetClass # load the binary dataset in proper format
+import train_lipreadingTCDTIMIT  # load training functions
+import datasetClass  # load the binary dataset in proper format
 import buildNetworks
 
-def main ():
+
+def main():
     # BN parameters
     batch_size = 8
     print("batch_size = " + str(batch_size))
@@ -89,7 +71,8 @@ def main ():
     nbClasses = 12
     # database in binary format (pkl files)
     database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binaryViseme'))
-    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.8,0.1,0.1, nbClasses) #location, %train, %valid, %test
+    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.8, 0.1, 0.1,
+                                                  nbClasses)  # location, %train, %valid, %test
 
     print("the number of training examples is: ", len(train_set.X))
     print("the number of valid examples is: ", len(valid_set.X))
@@ -103,20 +86,19 @@ def main ():
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
     # get the network structure
-    cnn = buildNetworks.build_network_google(activation, alpha, epsilon, input, nbClasses) # 7176231 params
-    #cnn = buildNetworks.build_network_cifar10(activation, alpha, epsilon, input, nbClasses) # 123644839,
-                                                # without 2x FC1024: 23634855
+    cnn = buildNetworks.build_network_google(activation, alpha, epsilon, input, nbClasses)  # 7176231 params
+    # cnn = buildNetworks.build_network_cifar10(activation, alpha, epsilon, input, nbClasses) # 123644839,
+    # without 2x FC1024: 23634855
 
     ## resnet50; replace cnn by cnn['prob'] everywhere             # 9074087 params
-    #cnn = buildNetworks.build_network_resnet50(input, nbClasses)
+    # cnn = buildNetworks.build_network_resnet50(input, nbClasses)
 
     print("Using Google network")
     # print("Using CIFAR10 network")
-    #print("Using ResNet50 network")
-    
-    # print het amount of network parameters
-    print("The number of parameters of this network: ",lasagne.layers.count_params(cnn))
+    # print("Using ResNet50 network")
 
+    # print het amount of network parameters
+    print("The number of parameters of this network: ", lasagne.layers.count_params(cnn))
 
     # get output layer, for calculating loss etc
     train_output = lasagne.layers.get_output(cnn, deterministic=False)
@@ -162,7 +144,9 @@ def unpickle(file):
     fo.close()
     return dict
 
-def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8, validFraction=0.1, testFraction=0.1, nbClasses=39):
+
+def load_dataset(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8,
+                 validFraction=0.1, testFraction=0.1, nbClasses=39):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
@@ -177,8 +161,8 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     img_size = np.prod(img_shape)
 
     # prepare data to load
-    fnamesLipspkrs = []#['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
-    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1,5)]  # some volunteers
+    fnamesLipspkrs = []  # ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
+    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1, 5)]  # some volunteers
     fnames = fnamesLipspkrs + fnamesVolunteers
 
     datasets = {}
@@ -237,7 +221,6 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
         trainLoaded += thisTrain
         validLoaded += thisValid
         testLoaded += thisTest
-
 
         if (trainLoaded + validLoaded + testLoaded) >= ntotal:
             print("loaded too many?")
@@ -328,6 +311,7 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     test_set.y = 2 * test_set.y - 1.
 
     return train_set, valid_set, test_set
+
 
 if __name__ == "__main__":
     main()

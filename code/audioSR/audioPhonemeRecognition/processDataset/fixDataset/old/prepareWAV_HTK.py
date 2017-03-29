@@ -31,7 +31,7 @@ def getWavMFCCLocations(baseDir):
     for root, directories, filenames in os.walk(baseDir):
         for directory in directories:
             # delete empty directories
-            dirPath = os.path.join(root,directory)
+            dirPath = os.path.join(root, directory)
             try:
                 os.rmdir(dirPath)
             except OSError as ex:
@@ -52,7 +52,7 @@ def getWavMFCCLocations(baseDir):
                 # Create directory structure if needed
                 if not os.path.exists(newPath):
                     os.makedirs(newPath)
-                pathMFCC = newPath + os.sep + os.path.splitext(os.path.basename(path))[0] + ".mfc" #change extension
+                pathMFCC = newPath + os.sep + os.path.splitext(os.path.basename(path))[0] + ".mfc"  # change extension
 
                 wavAndMFCC.append(path + " " + pathMFCC)
 
@@ -62,8 +62,8 @@ def getWavMFCCLocations(baseDir):
     return dirs, wavs, wavAndMFCC
 
 
-
-def prepareWAV_HTK(baseDir = os.path.expanduser('~/TCDTIMIT/TIMIT/TIMIT'), fileStoreDir = os.path.expanduser('~/TCDTIMIT/TIMIT/TIMIT') ):
+def prepareWAV_HTK(baseDir=os.path.expanduser('~/TCDTIMIT/TIMIT/TIMIT'),
+                   fileStoreDir=os.path.expanduser('~/TCDTIMIT/TIMIT/TIMIT')):
     print "Searching for WAVs in: ", baseDir
 
     dirs, wavs, wavAndMFCC = getWavMFCCLocations(baseDir)
@@ -126,9 +126,9 @@ if __name__ == '__main__':
     fileStoreDir = baseDir  # os.path.dirname(baseDir) # store one level above.
 
     nbArgs = len(sys.argv)
-    if (nbArgs ==1):
+    if (nbArgs == 1):
         prepareWAV_HTK(sys.argv[1])
-    elif (nbArgs==2):
+    elif (nbArgs == 2):
         prepareWAV_HTK(sys.argv[1], sys.argv[2])
     else:
         print "ERROR, too many arguments"

@@ -113,14 +113,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import sys
-import numpy as np
 import time as tm
-from scipy.io import wavfile
-from shutil import copyfile
-from fractions import Fraction
 from decimal import Decimal
-from numpy.fft import fft
-#import matplotlib.pyplot as plt #Uncomment to plot
+from fractions import Fraction
+from shutil import copyfile
+
+import numpy as np
+from scipy.io import wavfile
+
+# import matplotlib.pyplot as plt #Uncomment to plot
 
 
 '''
@@ -135,19 +136,21 @@ L: Upsampling Factor
 cpp: Coeficients per Phase
 return hh: h flipped and transposed following the descritpion
 '''
+
+
 def flipTranspose(h, L, cpp):
-    
     # Get the impulse response size
     N = len(h)
-    
+
     # Init the output to 0
     hh = np.zeros(N)
-    
+
     # Flip and Transpose:
     for i in range(L):
-        hh[cpp - 1 + i*cpp:-N - 1 + i*cpp:-1] = h[i:cpp*L:L]
-                    
+        hh[cpp - 1 + i * cpp:-N - 1 + i * cpp:-1] = h[i:cpp * L:L]
+
     return hh
+
 
 '''
 h = upSampleFilterDownSample(x, h, L, M)
@@ -165,78 +168,79 @@ L: Upsampling Factor
 M: Downsampling Factor
 returns y: output signal (x upsampled, filtered, and downsampled)
 '''
-def upSampleFilterDownSample(x, h, L, M, printing = False):
-    
+
+
+def upSampleFilterDownSample(x, h, L, M, printing=False):
     # Number of samples to convert
     N = len(x)
-    
+
     # Compute the number of coefficients per phase
     cpp = len(h) / L
-    
+
     # Flip and Transpose the impulse response
     h = flipTranspose(h, L, cpp)
-    
-    #Check number of channels
+
+    # Check number of channels
     if (np.shape(np.shape(x)) == (2,)):
         nchan = np.shape(x)[1]
-        y = np.zeros(int((np.ceil(N*L/float(M)), nchan)))
+        y = np.zeros(int((np.ceil(N * L / float(M)), nchan)))
     else:
         nchan = 1
-        y = np.zeros(int(np.ceil(N*L/float(M))))
-    
+        y = np.zeros(int(np.ceil(N * L / float(M))))
+
     # Init the output index
     y_i = 0
-    
+
     # Init the phase index
     phase_i = 0
-    
+
     # Init the main loop index
     i = 0
-    
+
     # Main Loop
     while i < N:
-        
+
         # Print % completed
         if (printing and (i % 30000 == 0)):
-            print("%.2f %% completed" % float(100*i/float(len(x))))
+            print("%.2f %% completed" % float(100 * i / float(len(x))))
 
         # Compute the filter index
-        h_i = phase_i*cpp
-        
+        h_i = phase_i * cpp
+
         # Compute the input index
         x_i = i - cpp + 1;
-        
+
         # Update impulse index if needed (offset)
         if x_i < 0:
             h_i -= x_i
             x_i = 0
-        
+
         # Compute the current output sample
         rang = i - x_i + 1
         if nchan == 1:
             y[y_i] = np.sum(x[x_i:x_i + rang] * h[h_i:h_i + rang])
         else:
             for c in range(nchan):
-                y[y_i,c] = np.sum(x[x_i:x_i + rang,c] * h[h_i:h_i + rang])     
-        
-        # Add the downsampling factor to the phase index
+                y[y_i, c] = np.sum(x[x_i:x_i + rang, c] * h[h_i:h_i + rang])
+
+                # Add the downsampling factor to the phase index
         phase_i += M
-        
+
         # Compute the increment for the index of x with the new phase
         x_incr = phase_i / int(L)
-        
+
         # Update phase index
         phase_i %= L
-        
+
         # Update the main loop index
         i += x_incr
-        
+
         # Update the output index
         y_i += 1
-        
+
     return y
-    
-    
+
+
 '''
 h = impulse(M, L)
 ...
@@ -244,15 +248,17 @@ M: Impulse Response Size
 T: Sampling Period
 returns h: The impulse response
 '''
+
+
 def impulse(M, T):
-    
     # Create time array
-    n = np.arange(-(M-1)/2, (M-1)/2 + 1)
-    
+    n = np.arange(-(M - 1) / 2, (M - 1) / 2 + 1)
+
     # Compute the impulse response using the sinc function
-    h = (1/T)*np.sinc((1/T)*n)
-        
+    h = (1 / T) * np.sinc((1 / T) * n)
+
     return h
+
 
 '''
 b = bessel(x)
@@ -263,8 +269,11 @@ approximation using the Maclaurin series, as described in [1]
 x: Input sample
 b: Zero-order modified Bessel function of the first kind
 '''
+
+
 def bessel(x):
-    return np.power(np.exp(x),2);
+    return np.power(np.exp(x), 2);
+
 
 '''
 k = kaiser(M, beta)
@@ -276,20 +285,22 @@ M: Number of samples of the window
 beta: Beta parameter of the Kaiser Window
 k: array(M,1) containing the Kaiser window with the specified beta
 '''
+
+
 def kaiser(M, beta):
-    
     # Init Kaiser Window
     k = np.zeros(M)
-    
+
     # Compute each sample of the Kaiser Window
     i = 0
-    for n in np.arange(-(M-1)/2,(M-1)/2 + 1):
-        samp = beta*np.sqrt(1-np.power((n/(M/2.0)),2))
-        samp = bessel(samp)/float(bessel(beta))
+    for n in np.arange(-(M - 1) / 2, (M - 1) / 2 + 1):
+        samp = beta * np.sqrt(1 - np.power((n / (M / 2.0)), 2))
+        samp = bessel(samp) / float(bessel(beta))
         k[i] = samp
         i = i + 1
-    
+
     return k
+
 
 '''
 h = designFIR(N, L, M)
@@ -303,30 +314,31 @@ L: Upsampling Factor
 M: Downsampling Factor
 returns h: Impulse Response of the FIR
 '''
+
+
 def designFIR(N, L, M):
-    
     # Get the impulse response with the right Sampling Period
     h0 = impulse(N, float(M))
-    
+
     # Compute a Kaiser Window
-    alpha = 2.5 # Alpha factor for the Kaiser Window
-    k = kaiser(N, alpha*np.pi)
-    
+    alpha = 2.5  # Alpha factor for the Kaiser Window
+    k = kaiser(N, alpha * np.pi)
+
     # Window the impulse response with the Kaiser window
     h = h0 * k
-    
+
     # Filter Gain
     h = h * L
-    
+
     # Reduce window by removing almost 0 values to improve filtering
     for i in range(len(h)):
         if abs(h[i]) > 1e-3:
-            for j in range(i,0,-1):
+            for j in range(i, 0, -1):
                 if abs(h[j]) < 1e-7:
-                    h = h[j:len(h)-j]
+                    h = h[j:len(h) - j]
                     break
             break
-    
+
     '''
     # For plotting purposes:
     N = len(h)
@@ -363,14 +375,17 @@ def designFIR(N, L, M):
     plt.title('Amplitude Response using a Rect Window');
     plt.show()
     '''
-    
+
     return h
+
 
 '''
 dieWithUsage()
 ...
 Desc: Stops program and prints usage
 '''
+
+
 def dieWithUsage():
     usage = """
     USAGE: $>python resample.py -i input.wav [-o output.wav -q (0.0-1.0]]
@@ -383,7 +398,8 @@ def dieWithUsage():
     """
     print usage
     sys.exit(1)
-    
+
+
 '''
 Main
 ...
@@ -391,6 +407,8 @@ Desc: Reads the input wave file, designs the filter,
 upsamples, filters, and downsamples the input, and
 finally writes it to the output wave file.
 '''
+
+
 def resampleWAV(inFile, outFile="output.wav", out_fr=16000.0, q=0.0):
     # Parse arguments
     inPath, outPath, out_fr, q = inFile, outFile, out_fr, q
@@ -398,10 +416,10 @@ def resampleWAV(inFile, outFile="output.wav", out_fr=16000.0, q=0.0):
     # Read input wave
     in_fr, in_data = wavfile.read(inPath)
     in_nbits = in_data.dtype
-    
+
     # Time it
     start_time = tm.time()
-    
+
     # Set output wave parameters
     out_nbits = in_nbits
 
@@ -425,12 +443,12 @@ def resampleWAV(inFile, outFile="output.wav", out_fr=16000.0, q=0.0):
         print("Resampling from ", in_fr, "Hz to ", out_fr, "Hz")
 
         L = frac.denominator  # Upsampling Factor
-        M = frac.numerator    # Downsampling Factor
-        Nz = int(25*q)  # Max Number of Zero Crossings (depending on quality)
-        h = designFIR(Nz*L, L, M)
+        M = frac.numerator  # Downsampling Factor
+        Nz = int(25 * q)  # Max Number of Zero Crossings (depending on quality)
+        h = designFIR(Nz * L, L, M)
 
         # Upsample, Filter, and Downsample
-        out_data = upSampleFilterDownSample(in_data, h, L, M, printing = False)  #control progression output
+        out_data = upSampleFilterDownSample(in_data, h, L, M, printing=False)  # control progression output
 
         # Make sure the output is 16 bits
         out_data = out_data.astype(out_nbits)

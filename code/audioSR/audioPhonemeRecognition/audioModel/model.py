@@ -1,12 +1,12 @@
+import math
+
+import lasagne
+import numpy as np
 import theano
 import theano.tensor as T
-import lasagne
-import parmesan
 from base import Model
-import numpy as np
 from ml.lasagne_extensions.stochastic_recurrent_layer import StochsticRecurrentLayer
 from parmesan.layers import ListIndexLayer
-import math
 
 
 def kl_normal2_normal2(mean1, log_var1, mean2, log_var2):
@@ -328,13 +328,15 @@ class SRNN_timit(Model):
             lasagne.layers.get_output([self.d_layer, self.z_layer, self.mean_q_layer, self.log_var_q_layer,
                                        self.mean_prior_layer, self.log_var_prior_layer,
                                        self.mean_gauss_output_layer, self.log_var_gauss_output_layer],
-                                      inputs={self.input_layer_u: self.u_sym,
-                                              self.input_layer_x: self.x_sym,
-                                              self.input_layer_d_tm1: self.d_init_sh,
-                                              self.input_layer_z_tm1: self.z_init_sh,
-                                              self.input_layer_mean_prior_tm1: self.mean_prior_init_sh,
-                                              self.input_layer_log_var_prior_tm1: self.log_var_prior_init_sh,
-                                              self.input_layer_mask: self.sym_mask},
+                                      inputs={
+                                          self.input_layer_u:                 self.u_sym,
+                                          self.input_layer_x:                 self.x_sym,
+                                          self.input_layer_d_tm1:             self.d_init_sh,
+                                          self.input_layer_z_tm1:             self.z_init_sh,
+                                          self.input_layer_mean_prior_tm1:    self.mean_prior_init_sh,
+                                          self.input_layer_log_var_prior_tm1: self.log_var_prior_init_sh,
+                                          self.input_layer_mask:              self.sym_mask
+                                      },
                                       deterministic=False)
 
         temperature_KL_sym = T.scalar('temperature_KL')
@@ -437,13 +439,15 @@ class SRNN_timit(Model):
             lasagne.layers.get_output([self.d_layer, self.z_layer, self.mean_q_layer, self.log_var_q_layer,
                                        self.mean_prior_layer, self.log_var_prior_layer,
                                        self.mean_gauss_output_layer, self.log_var_gauss_output_layer],
-                                      inputs={self.input_layer_u: self.u_sym,
-                                              self.input_layer_x: self.x_sym,
-                                              self.input_layer_d_tm1: self.d_init_sh,
-                                              self.input_layer_z_tm1: self.z_init_sh,
-                                              self.input_layer_mean_prior_tm1: self.mean_prior_init_sh,
-                                              self.input_layer_log_var_prior_tm1: self.log_var_prior_init_sh,
-                                              self.input_layer_mask: self.sym_mask},
+                                      inputs={
+                                          self.input_layer_u:                 self.u_sym,
+                                          self.input_layer_x:                 self.x_sym,
+                                          self.input_layer_d_tm1:             self.d_init_sh,
+                                          self.input_layer_z_tm1:             self.z_init_sh,
+                                          self.input_layer_mean_prior_tm1:    self.mean_prior_init_sh,
+                                          self.input_layer_log_var_prior_tm1: self.log_var_prior_init_sh,
+                                          self.input_layer_mask:              self.sym_mask
+                                      },
                                       deterministic=True)
 
         lower_bound_eval = elbo_h_gaussian_x_gaussian(d_eval, z_eval,
@@ -466,10 +470,10 @@ class SRNN_timit(Model):
         Resets the hidden states to their default values.
         """
         self.d_init_sh.set_value(
-            np.zeros((n_data_points, settings.latent_size_d), dtype=theano.config.floatX))
+                np.zeros((n_data_points, settings.latent_size_d), dtype=theano.config.floatX))
         self.z_init_sh.set_value(
-            np.zeros((n_data_points, settings.latent_size_z), dtype=theano.config.floatX))
+                np.zeros((n_data_points, settings.latent_size_z), dtype=theano.config.floatX))
         self.mean_prior_init_sh.set_value(
-            np.zeros((n_data_points, settings.latent_size_z), dtype=theano.config.floatX))
+                np.zeros((n_data_points, settings.latent_size_z), dtype=theano.config.floatX))
         self.log_var_prior_init_sh.set_value(
-            np.zeros((n_data_points, settings.latent_size_z), dtype=theano.config.floatX))
+                np.zeros((n_data_points, settings.latent_size_z), dtype=theano.config.floatX))

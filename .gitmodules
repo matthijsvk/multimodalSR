@@ -19,3 +19,15 @@
 [submodule "code/dataset/TIMIT_Crawler"]
 	path = code/dataset/TIMIT_Crawler
 	url = git@github.com:15101538237ren/TIMIT_Crawler.git
+[submodule "code/Experiments/lasagne_ctc"]
+	path = code/Experiments/lasagne_ctc
+	url = git@github.com:jinserk/lasagne_ctc.git
+[submodule "code/Experiments/ascii_ctc"]
+	path = code/Experiments/ascii_ctc
+	url = git@github.com:justiceamoh/ascii_ctc.git
+[submodule "code/audioSR/Experiments/ascii_ctc"]
+	path = code/audioSR/Experiments/ascii_ctc
+	url = git@github.com:justiceamoh/ascii_ctc.git
+[submodule "code/audioSR/Experiments/TIMIT"]
+	path = code/audioSR/Experiments/TIMIT
+	url = https://github.com/Faur/TIMIT
