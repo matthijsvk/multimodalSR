@@ -7,7 +7,6 @@ from . import dataset, utils
 
 
 def train(summarize=False, data_limit=None):
-    print('test1')
     X_train, y_train = dataset.Speech2Phonemes().load_train_data(limit=data_limit)
 
     print("length of training data: ", len(X_train))

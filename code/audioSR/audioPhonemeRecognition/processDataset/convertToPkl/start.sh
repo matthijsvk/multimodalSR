@@ -18,9 +18,9 @@ PHONE_LIST_PATH="$PROJECT_ROOT/volumes/config/timit_phones.txt"
 export PHONE_LIST_PATH
 
 # Paths to training and testing portions of the dataset
-TIMIT_TRAINING_PATH="/home/matthijs/TCDTIMIT/TIMIT/fixed/TIMIT/TRAIN/"
+TIMIT_TRAINING_PATH="/home/matthijs/TCDTIMIT/TIMIT/processed/TIMIT/TRAIN"
 export TIMIT_TRAINING_PATH
-TIMIT_TESTING_PATH="/home/matthijs/TCDTIMIT/TIMIT/fixed/TIMIT/TEST/"
+TIMIT_TESTING_PATH="/home/matthijs/TCDTIMIT/TIMIT/processed/TIMIT/TEST"
 export TIMIT_TESTING_PATH
 
 if [ -z "$TIMIT_TRAINING_PATH" ] || [ -z "$TIMIT_TESTING_PATH" ]; then

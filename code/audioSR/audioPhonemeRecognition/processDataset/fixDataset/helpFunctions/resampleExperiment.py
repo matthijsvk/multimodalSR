@@ -33,6 +33,3 @@ wavToPng("sa1.wav")
 # print a.numerator
 # print a.denominator
 # print(type(a.numerator))
-
-
-

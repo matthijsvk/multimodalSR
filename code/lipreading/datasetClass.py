@@ -1,23 +1,17 @@
 from __future__ import print_function
 
-import os
 import logging
-import pickle
 
 import numpy as np
-from theano.compat.six.moves import xrange
-
-from pylearn2.datasets import cache, dense_design_matrix
+from pylearn2.datasets import dense_design_matrix
 from pylearn2.expr.preprocessing import global_contrast_normalize
 from pylearn2.utils import contains_nan
-from pylearn2.utils import serial
-from pylearn2.utils import string_utils
+from theano.compat.six.moves import xrange
 
 _logger = logging.getLogger(__name__)
 
 
 class CIFAR10(dense_design_matrix.DenseDesignMatrix):
-
     """
     .. todo::
 
@@ -41,7 +35,7 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
 
     def __init__(self, X, y, img_shape, center=False, rescale=False, gcn=None,
                  start=None, stop=None, axes=('b', 0, 1, 'c'),
-                 toronto_prepro = False, preprocessor = None):
+                 toronto_prepro=False, preprocessor=None):
 
         self.axes = axes
 
@@ -58,7 +52,7 @@ class CIFAR10(dense_design_matrix.DenseDesignMatrix):
         # print("memory consumption (MB) of given matrix: ", X.nbytes/1000000)
         X = np.cast['float32'](X)
         # print("memory consumption (MB) after cast to float: ", X.nbytes/1000000)
-        
+
         if isinstance(y, list):
             y = np.asarray(y).astype(dtype)
 

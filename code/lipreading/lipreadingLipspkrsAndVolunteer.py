@@ -1,66 +1,39 @@
 from __future__ import print_function
 
-
 import numpy as np
+
 np.random.seed(1234)  # for reproducibility?
 
 import os
+
 os.environ["THEANO_FLAGS"] = "cuda.root=/usr/local/cuda,device=gpu,floatX=float32"
 
 import warnings
 
 with warnings.catch_warnings():
-    warnings.filterwarnings("ignore",category=DeprecationWarning)
-    import lasagne
-    from lasagne import layers
-    from lasagne.updates import nesterov_momentum
-    
-import theano
-import theano.tensor as T
-import theano.tensor as T
-from theano import function, config, shared, sandbox
-import lasagne
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # specifying the gpu to use
 import theano.sandbox.cuda
+
 theano.sandbox.cuda.use('gpu1')
 
 # from http://blog.christianperone.com/2015/08/convolutional-neural-networks-and-feature-extraction-with-python/
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import cPickle as pickle
-from urllib import urlretrieve
-import cPickle as pickle
 import os
-import gzip
-import numpy as np
-import theano
-
-
-from nolearn.lasagne import NeuralNet
-from nolearn.lasagne import visualize
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
 
 import logging
-from pylearn2.datasets import cache, dense_design_matrix
-from pylearn2.expr.preprocessing import global_contrast_normalize
-from pylearn2.utils import contains_nan
-from pylearn2.utils import serial
-from pylearn2.utils import string_utils
+from pylearn2.datasets import cache
 
 _logger = logging.getLogger(__name__)
 
-
-
 # User - created files
-import train_lipreadingTCDTIMIT # load training functions
-from datasetClass import CIFAR10 # load the binary dataset in proper format
+import train_lipreadingTCDTIMIT  # load training functions
+from datasetClass import CIFAR10  # load the binary dataset in proper format
 # from loadData import CIFAR10   # load the binary dataset in proper format
 from buildNetworks import *
 
-def main ():
+
+def main():
     # BN parameters
     batch_size = 32
     print("batch_size = " + str(batch_size))
@@ -92,7 +65,8 @@ def main ():
 
     print('Loading TCDTIMIT dataset...')
     database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
-    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.85,0.1,0.05) #location, %train, %valid, %test
+    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.85, 0.1,
+                                                  0.05)  # location, %train, %valid, %test
 
     print("the number of training examples is: ", len(train_set.X))
     print("the number of valid examples is: ", len(valid_set.X))
@@ -107,12 +81,12 @@ def main ():
 
     # get the network structure
     cnn = build_network_google(activation, alpha, epsilon, input)
-    #cnn = build_network_cifar10(activation, alpha, epsilon, input)
+    # cnn = build_network_cifar10(activation, alpha, epsilon, input)
 
     ## resnet50; replace cnn by cnn['prob'] everywhere
-    #cnn = build_network_resnet50(input)
-    
-    
+    # cnn = build_network_resnet50(input)
+
+
     # load params from earlier training:
     with np.load('./results/allLipspeakers/allLipspeakers.npz') as f:
         param_values = [f['arr_%d' % i] for i in range(len(f.files))]
@@ -163,7 +137,8 @@ def unpickle(file):
     return dict
 
 
-def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8, validFraction=0.1, testFraction=0.1):
+def load_dataset(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8,
+                 validFraction=0.1, testFraction=0.1):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
@@ -179,9 +154,9 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
 
     ### Load train and validation data ###
     # prepare data to load, only train on lipspkrs
-    fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
-    #fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1,11)]  # 10 first volunteers
-    fnames = fnamesLipspkrs #fnamesVolunteers
+    fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1, 4)]  # all 3 lipsteakers
+    # fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1,11)]  # 10 first volunteers
+    fnames = fnamesLipspkrs  # fnamesVolunteers
     datasets = {}
     for name in fnames:
         fname = os.path.join(datapath, name)
@@ -199,7 +174,7 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     yvalid = np.zeros((lenx, 1), dtype=dtype)
 
     # memory issues: print size
-    memTot = xtrain.nbytes + xvalid.nbytes  + ytrain.nbytes + yvalid.nbytes
+    memTot = xtrain.nbytes + xvalid.nbytes + ytrain.nbytes + yvalid.nbytes
     # print("Empty matrices, memory required: ", memTot / 1000000, " MB")
 
     # now load train data
@@ -240,18 +215,16 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
     print("Total loaded till now: ", trainLoaded + validLoaded, " out of ", ntotal)
     print("nbTrainLoaded: ", trainLoaded)
     print("nbValidLoaded: ", validLoaded)
-    
-    
-    
+
     ###  Now, load the test data  ###
 
     # prepare data to load
-    #fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1, 4)]  # all 3 lipsteakers
+    # fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1, 4)]  # all 3 lipsteakers
     fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1, 11)]  # 12 first volunteers
     fnames = fnamesVolunteers
 
     # remove 10 worst speakers: 2, 57, 47, 42, 54, 46, 29, 52, 34, 45
-    
+
     datasets = {}
     for name in fnames:
         fname = os.path.join(datapath, name)
@@ -270,33 +243,30 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
 
     for i, fname in enumerate(fnames):
         print("nbTestLoaded: ", testLoaded)
-    
+
         print('loading file %s' % datasets[fname])
         data = unpickle(datasets[fname])
-    
+
         thisN = data['data'].shape[0]
         print("This dataset contains ", thisN, " images")
-    
+
         thisTrain = int(trainFraction * thisN)
         thisValid = int(validFraction * thisN)
         thisTest = thisN - thisTrain - thisValid  # compensates for rounding
         print("now loading : nbTrain, nbValid, nbTest")
         print("              ", thisTrain, thisValid, thisTest)
-    
+
         xtest[testLoaded:testLoaded + thisTest, :] = data['data'][thisTrain + thisValid:thisN]
         ytest[testLoaded:testLoaded + thisTest, 0] = data['labels'][thisTrain + thisValid:thisN]
-    
+
         testLoaded += thisTest
-    
+
         if (testLoaded) >= lenxtest:
             print("loaded too many?")
             break
 
     ntest = testLoaded
     print("nbTestLoaded: ", testLoaded)
-
-
-
 
     # remove unneeded rows
     xtrain = xtrain[0:trainLoaded]
@@ -376,9 +346,9 @@ def load_dataset (datapath = os.path.join(os.path.expanduser('~/TCDTIMIT/databas
 
     return train_set, valid_set, test_set
 
-# build_network_resnet is in the
-def load_dataset_old (train_set_size):
 
+# build_network_resnet is in the
+def load_dataset_old(train_set_size):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
@@ -396,7 +366,6 @@ def load_dataset_old (train_set_size):
     train_set = CIFAR10(which_set="train", start=0, stop=train_set_size)
     valid_set = CIFAR10(which_set="train", start=train_set_size, stop=13000)
     test_set = CIFAR10(which_set="test")
-
 
     # bc01 format
     # Inputs in the range [-1,+1]
@@ -418,7 +387,6 @@ def load_dataset_old (train_set_size):
     test_set.y = 2 * test_set.y - 1.
 
     return train_set, valid_set, test_set
-
 
 
 if __name__ == "__main__":

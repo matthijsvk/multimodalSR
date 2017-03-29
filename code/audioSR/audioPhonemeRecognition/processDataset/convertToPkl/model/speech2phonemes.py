@@ -3,7 +3,7 @@ from keras.layers import Activation, Dense
 from keras.models import Sequential, model_from_json
 from keras.optimizers import Adam
 
-import dataset, utils
+import dataset
 
 
 def train(summarize=False, data_limit=None):
@@ -21,8 +21,6 @@ def train(summarize=False, data_limit=None):
     # of shape (*, hidden_num)
     hidden_num = 256
 
-
-
     print("1")
 
     # Architecture of the model
@@ -34,7 +32,7 @@ def train(summarize=False, data_limit=None):
     print("2b")
     model.add(Activation('sigmoid'))
     print("2c")
-    #model.add(Dropout(0.25))
+    # model.add(Dropout(0.25))
     print("2d")
     model.add(Dense(output_dim=output_dim))
     model.add(Activation('softmax'))
@@ -44,11 +42,11 @@ def train(summarize=False, data_limit=None):
     model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.001))
 
     stats = model.fit(X_train, y_train_onehot,
-        shuffle=True,
-        batch_size=256,
-        nb_epoch=200,
-        verbose=1
-    )
+                      shuffle=True,
+                      batch_size=256,
+                      nb_epoch=200,
+                      verbose=1
+                      )
 
     print("4")
 
@@ -66,25 +64,28 @@ def train(summarize=False, data_limit=None):
         plt.title('Loss function for %d samples' % X_train.shape[0])
         plt.show()
 
+
 def test(data_limit=None):
     model = load_model()
     X_test, y_test = dataset.Speech2Phonemes().load_test_data()
 
     out = model.predict_classes(X_test,
-        batch_size=256,
-        verbose=0
-    )
+                                batch_size=256,
+                                verbose=0
+                                )
 
     acc = sum(out == y_test) * 1.0 / len(out)
     print('Accuracy using %d testing samples: %f' % (X_test.shape[0], acc))
+
 
 def predict(X_test):
     model = load_model()
 
     return model.predict_classes(X_test,
-        batch_size=256,
-        verbose=0
-    )
+                                 batch_size=256,
+                                 verbose=0
+                                 )
+
 
 def save_model(model):
     reader = dataset.Speech2Phonemes()
@@ -93,9 +94,10 @@ def save_model(model):
         archf.write(model.to_json())
 
     model.save_weights(
-        filepath=reader.params('speech2phonemes_weights', 'h5'),
-        overwrite=True
+            filepath=reader.params('speech2phonemes_weights', 'h5'),
+            overwrite=True
     )
+
 
 def load_model():
     reader = dataset.Speech2Phonemes()
@@ -106,6 +108,7 @@ def load_model():
 
         model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.001))
         return model
+
 
 if __name__ == "__main__":
     train()

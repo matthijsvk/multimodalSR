@@ -19,6 +19,7 @@ encounter in the test should be present in training so that the "labels"
 corresponds.
 """
 
+
 def process(folder):
     folder = folder.rstrip('/')
     countPhonemes = {}
@@ -66,4 +67,4 @@ if __name__ == '__main__':
             print(foldername)
         process(foldername)
     else:
-        process('.') # default
+        process('.')  # default

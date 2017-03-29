@@ -2,10 +2,11 @@
 ##############  FFT ##################
 ######################################
 # generates PNG with time and frequency spectrum of the wav file
-from pylab import plot, show, title, xlabel, ylabel, subplot, savefig
-from scipy import fft, arange, ifft
-from numpy import sin, linspace, pi
-from scipy.io.wavfile import read, write
+from numpy import linspace
+from pylab import plot, savefig, show, subplot, xlabel, ylabel
+from scipy import arange, fft
+from scipy.io.wavfile import read
+
 
 def plotSpectru(y, Fs):
     n = len(y)  # lungime semnal
@@ -38,5 +39,6 @@ def wavToPng(filename):
 
     savefig(filename + 'brol.png', bbox_inches='tight')
     show()
+
 
 wavToPng('sa1.wav')

@@ -1,5 +1,5 @@
-import os, sys, cPickle, json, signal
-import time
+import os
+import sys
 
 # source: https://github.com/syhw/timit_tools/blob/master/src/substitute_phones.py
 
@@ -22,11 +22,12 @@ respectively by !ENTER and !EXIT.
 The optional --startend_sil argument will replace starting and ending phones by 'sil'
 """
 
-from phoneme_set import phoneme_set_61_39, phoneme_set_39
+from phoneme_set import phoneme_set_61_39
+
 
 def process(folder,
-        sentences=False, # should we apply !ENTER/!EXIT for start/end?
-        startend_sil=False): # should we substitute start and end w/ sil
+            sentences=False,  # should we apply !ENTER/!EXIT for start/end?
+            startend_sil=False):  # should we substitute start and end w/ sil
     foldings = phoneme_set_61_39
     c_before = {}
     c_after = {}
@@ -37,12 +38,12 @@ def process(folder,
             fullname = d.rstrip('/') + '/' + fname
             phones_before = []
             phones_after = []
-            os.rename(fullname, fullname+'~')
-            fr = open(fullname+'~', 'r')
+            os.rename(fullname, fullname + '~')
+            fr = open(fullname + '~', 'r')
             fw = open(fullname, 'w')
             text_buffer = []
             for line in fr:
-                phones_before.append(line.split()[-1]) # phone last elt of line
+                phones_before.append(line.split()[-1])  # phone last elt of line
                 tmpline = line
                 tmpline = tmpline.replace('-', '')
                 tmp = tmpline.split()
@@ -71,7 +72,7 @@ def process(folder,
                 phones_after.append(buffer_line[-1])
                 fw.write(' '.join(buffer_line) + '\n')
             fw.close()
-            os.remove(fullname+'~')
+            os.remove(fullname + '~')
 
             for tmp_phn in phones_before:
                 c_before[tmp_phn] = c_before.get(tmp_phn, 0) + 1
@@ -102,4 +103,3 @@ if __name__ == '__main__':
         process(foldername, sentences, startend_sil)
     else:
         print doc
-
