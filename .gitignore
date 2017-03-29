@@ -8,3 +8,9 @@ protobuf-master/
 dlib-master/
 *.pyc
 testing/
+*.klepto
+*.npy
+*.npz
+*.pkl
+*.mp4
+*.dat
