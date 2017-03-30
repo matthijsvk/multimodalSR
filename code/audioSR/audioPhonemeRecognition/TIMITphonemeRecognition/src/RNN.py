@@ -14,12 +14,12 @@ comput_confusion = False
 # TODO: ATM this is not implemented
 
 
-dataRootPath = "/home/matthijs/TCDTIMIT/TIMIT/fixedWav/TIMIT/"
-train_source_path = os.path.join(dataRootPath, 'TRAIN')
-test_source_path = os.path.join(dataRootPath, 'TEST')
-data_path = os.path.join(dataRootPath, 'std_preprocess_26_ch.pkl')
+dataRootPath = "/home/matthijs/TCDTIMIT/TIMIT/binary/speech2phonemes26Mels/"
+data_path = dataRootPath + "std_preprocess_26_ch.pkl"
+# train_data_path = os.path.join(dataRootPath, 'trainData.pkl')
+# test_data_path = os.path.join(dataRootPath, 'testData.pkl')
 
-output_path = "/home/matthijs/TCDTIMIT/TIMIT/fixedWav/results"
+output_path = "/home/matthijs/TCDTIMIT/TIMIT/binary/results"
 model_load = os.path.join(output_path, 'best_model.npz')
 model_save = os.path.join(output_path, 'best_model')
 
@@ -34,13 +34,28 @@ MOMENTUM = 0.9
 WEIGHT_INIT = 0.1
 batch_size = 1
 
-INPUT_SIZE=26  #num of features to use
+frac_train = 0.7
+
+INPUT_SIZE=26  #num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 
 ##### IMPORTIN DATA #####
-print('\tdata source: ' + data_path)
+print('\tdata source: ' + dataRootPath)
 print('\tmodel target: ' + model_save + '.npz')
+
 dataset = load_dataset(data_path)
 X_train, y_train, X_val, y_val, X_test, y_test = dataset
+
+# X_tr, y_tr, y_tr_onehot= load_dataset(train_data_path,'train')
+# X_test, y_test, y_test_onehot = load_dataset(test_data_path,'test')
+#
+# n_train = int(len(X_tr)*frac_train)
+# X_train = X_tr[0:n_train]
+# X_val = X_tr[n_train:]
+#
+# y_train = y_tr[0:n_train]
+# y_val = y_tr[n_train:]
+#
+# dataset = [X_train, y_train, X_val, y_val, X_test, y_test]
 
 ##### BUIDING MODEL #####
 print(' * Building network ...')

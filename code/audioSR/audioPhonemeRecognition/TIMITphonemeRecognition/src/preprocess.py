@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 ##### SCRIPT META VARIABLES #####
 VERBOSE = False
-DEBUG = True
+DEBUG = False
 debug_size = 5
 # Convert only a reduced dataset
 visualize = False
@@ -32,10 +32,12 @@ test_size = 1344
 
 data_type = 'float32'
 
-rootPath = "/home/matthijs/TCDTIMIT/TIMIT/fixedWav/TIMIT/"
+rootPath = "/home/matthijs/TCDTIMIT/TIMIT/fixed/TIMIT/"
 train_source_path = os.path.join(rootPath, 'TRAIN')
 test_source_path = os.path.join(rootPath, 'TEST')
-target_path = os.path.join(rootPath, 'std_preprocess_26_ch')
+
+outputDir = "/home/matthijs/TCDTIMIT/TIMIT/binary/speech2phonemes26Mels/"
+target_path = os.path.join(outputDir, 'std_preprocess_26_ch')
 
 ##### SETUP #####
 if VERBOSE:
@@ -137,6 +139,8 @@ def preprocess_dataset(source_path, VERBOSE=False, visualize=False):
     i = 0
     X = []
     Y = []
+    from phoneme_set import phoneme_set_39
+    phoneme_classes = phoneme_set_39
 
     for dirName, subdirList, fileList in os.walk(source_path):
         for fname in tqdm(fileList,total=len(fileList)):
@@ -161,7 +165,7 @@ def preprocess_dataset(source_path, VERBOSE=False, visualize=False):
                 start_time = int(start_time)
                 end_time = int(end_time)
 
-                phoneme_num = find_phoneme(phoneme)
+                phoneme_num = phoneme_classes[phoneme] #phoneme_num = find_phoneme(phoneme)
                 end_ind = np.round((end_time) / total_duration * total_frames)
                 y_val[start_ind:end_ind] = phoneme_num
 
@@ -286,8 +290,7 @@ if visualize == True:
     plt.show()
 
 print('Saving data ...')
-storePath = target_path + '.pkl'
-with open(target_path + '.pkl', 'wb') as cPickle_file:
+with open(target_path+'.pkl', 'wb') as cPickle_file:
     cPickle.dump(
             [X_train, y_train, X_val, y_val, X_test, y_test],
             cPickle_file,

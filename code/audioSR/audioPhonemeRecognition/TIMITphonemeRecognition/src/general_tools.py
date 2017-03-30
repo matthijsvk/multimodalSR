@@ -23,3 +23,13 @@ def load_dataset(file_path):
     if not y_test:
         print('WARNING: y_test is empty')
     return X_train, y_train, X_val, y_val, X_test, y_test
+
+
+# def load_dataset(file_path, type):
+#     with open(file_path, 'rb') as cPickle_file:
+#         data = cPickle.load(cPickle_file)
+#         X = data['X_' + type]
+#         y = data['y_' + type]
+#         y_onehot = data['y_' + type + '_onehot']
+#
+#     return X, y, y_onehot
