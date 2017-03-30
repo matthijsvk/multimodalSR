@@ -32,7 +32,7 @@ def wavfile_to_mfccs(wavfile):
     """
     sampling_rate, frames = scipy.io.wavfile.read(wavfile)
 
-    segment_duration_ms = 20
+    segment_duration_ms = 25
     n_fft = int((segment_duration_ms / 1000.) * sampling_rate)
 
     hop_duration_ms = 10
