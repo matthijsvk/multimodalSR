@@ -1,43 +1,54 @@
+import cPickle
+import glob
+import logging
+import math
 import os
+import sys
 import timeit;
-import wave
-
-program_start_time = timeit.default_timer()
-import random;
-
-random.seed(int(timeit.default_timer()))
 
 import numpy as np
 import scipy.io.wavfile as wav
-import matplotlib.pyplot as plt
-
-from general_tools import *
-import python_speech_features
 from tqdm import tqdm
 
-# https://github.com/jameslyons/python_speech_features
+program_start_time = timeit.default_timer()
+import random
 
+random.seed(int(timeit.default_timer()))
+
+import general_tools
+import python_speech_features
+from phoneme_set import phoneme_set_61, phoneme_set_39
+
+# https://github.com/jameslyons/python_speech_features
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 ##### SCRIPT META VARIABLES #####
-VERBOSE = False
+VERBOSE = True
 DEBUG = False
-debug_size = 5
-# Convert only a reduced dataset
+debug_size = 50
 visualize = False
 
 ##### SCRIPT VARIABLES #####
-train_size = 3696
-val_size = 184
-test_size = 1344
 
-data_type = 'float32'
+FRAC_TRAIN = 0.9
 
-rootPath = "/home/matthijs/TCDTIMIT/TIMIT/fixed/TIMIT/"
+nbPhonemes = 39
+phoneme_classes = phoneme_set_39
+
+rootPath = "/home/matthijs/TCDTIMIT/TIMIT/fixed" + str(nbPhonemes) + "/TIMIT/"
 train_source_path = os.path.join(rootPath, 'TRAIN')
 test_source_path = os.path.join(rootPath, 'TEST')
 
-outputDir = "/home/matthijs/TCDTIMIT/TIMIT/binary/speech2phonemes26Mels/"
-target_path = os.path.join(outputDir, 'std_preprocess_26_ch')
+outputDir = "/home/matthijs/TCDTIMIT/TIMIT/binary_list" + str(nbPhonemes) + "/speech2phonemes26Mels/"
+target = os.path.join(outputDir, 'std_preprocess_26_ch')
+target_path = target + '.pkl'
+if not os.path.exists(outputDir):
+    os.makedirs(outputDir)
+
+# already exists, ask if overwrite
+if (os.path.exists(target_path)):
+    if (not general_tools.query_yes_no(target_path + " exists. Overwrite?", "no")):
+        raise Exception("Not Overwriting")
 
 ##### SETUP #####
 if VERBOSE:
@@ -47,15 +58,9 @@ else:
 
 if DEBUG:
     print('DEBUG mode: \tACTIVE, only a small dataset will be preprocessed')
-    target_path += '_DEBUG'
+    target_path = target + '_DEBUG.pkl'
 else:
     print('DEBUG mode: \tDEACTIVE')
-
-phonemes = ["b", "bcl", "d", "dcl", "g", "gcl", "p", "pcl", "t", "tcl", "k", "kcl", "dx", "q", "jh", "ch", "s", "sh",
-            "z", "zh",
-            "f", "th", "v", "dh", "m", "n", "ng", "em", "en", "eng", "nx", "l", "r", "w", "y",
-            "hh", "hv", "el", "iy", "ih", "eh", "ey", "ae", "aa", "aw", "ay", "ah", "ao", "oy",
-            "ow", "uh", "uw", "ux", "er", "ax", "ix", "axr", "ax-h", "pau", "epi", "h#"]
 
 
 # 61 different phonemes
@@ -65,15 +70,6 @@ def get_total_duration(file):
     for line in reversed(list(open(file))):
         [_, val, _] = line.split()
         return int(val)
-
-
-def find_phoneme(phoneme_idx):
-    for i in range(len(phonemes)):
-        if phoneme_idx == phonemes[i]:
-            return i
-    print("PHONEME NOT FOUND, NaN CREATED!")
-    print("\t" + phoneme_idx + " wasn't found!")
-    return -1
 
 
 def create_mfcc(method, filename):
@@ -134,82 +130,80 @@ def set_type(X, type):
     return X
 
 
-def preprocess_dataset(source_path, VERBOSE=False, visualize=False):
+def preprocess_dataset(source_path, VERBOSE=False, visualize=False, ):
     """Preprocess data, ignoring compressed files and files starting with 'SA'"""
-    i = 0
     X = []
     Y = []
-    from phoneme_set import phoneme_set_39
-    phoneme_classes = phoneme_set_39
 
-    for dirName, subdirList, fileList in os.walk(source_path):
-        for fname in tqdm(fileList,total=len(fileList)):
-            if not fname.endswith('.PHN') or (fname.startswith("SA")):
-                continue
+    # source_path should be TRAIN/ or TEST/
+    wav_files = sorted(glob.glob(source_path + '/*/*/*.WAV'))
+    label_files = sorted(glob.glob(source_path + '/*/*/*.PHN'))
+    # import pdb; pdb.set_trace()
+    logging.debug("Found %d WAV files" % len(wav_files))
+    logging.debug("Found %d PHN files" % len(label_files))
+    assert len(wav_files) == len(label_files) != 0
 
-            phn_fname = dirName + '/' + fname
-            wav_fname = dirName + '/' + fname[0:-4] + '.WAV'
+    for i in tqdm(range(len(wav_files))):
+        phn_name = str(label_files[i])
+        wav_name = str(wav_files[i])
 
-            total_duration = get_total_duration(phn_fname)
-            fr = open(phn_fname)
+        if (wav_name.startswith("SA")):
+            continue
 
-            X_val, total_frames = create_mfcc('DUMMY', wav_fname)
-            total_frames = int(total_frames)
+        total_duration = get_total_duration(phn_name)
+        fr = open(phn_name)
 
-            X.append(X_val)
+        X_val, total_frames = create_mfcc('DUMMY', wav_name)
+        total_frames = int(total_frames)
 
-            y_val = np.zeros(total_frames) - 1
-            start_ind = 0
-            for line in fr:
-                [start_time, end_time, phoneme] = line.rstrip('\n').split()
-                start_time = int(start_time)
-                end_time = int(end_time)
+        X.append(X_val)
 
-                phoneme_num = phoneme_classes[phoneme] #phoneme_num = find_phoneme(phoneme)
-                end_ind = np.round((end_time) / total_duration * total_frames)
-                y_val[start_ind:end_ind] = phoneme_num
+        y_val = np.zeros(total_frames) - 1
+        start_ind = 0
+        for line in fr:
+            [start_time, end_time, phoneme] = line.rstrip('\n').split()
+            start_time = int(start_time)
+            end_time = int(end_time)
 
-                start_ind = end_ind
-            fr.close()
+            phoneme_num = phoneme_classes[phoneme]
+            end_ind = np.round((end_time) / total_duration * total_frames)
+            y_val[start_ind:end_ind] = phoneme_num
 
-            if -1 in y_val:
-                print('WARNING: -1 detected in TARGET')
-                print(y_val)
+            start_ind = end_ind
+        fr.close()
 
-            Y.append(y_val.astype('int32'))
+        if -1 in y_val:
+            print('WARNING: -1 detected in TARGET')
+            print(y_val)
 
-            i += 1
-            if VERBOSE:
-                print("")
-                print('({}) create_target_vector: {}'.format(i, phn_fname[:-4]))
-                print('type(X_val): \t\t {}'.format(type(X_val)))
-                print('X_val.shape: \t\t {}'.format(X_val.shape))
-                print('type(X_val[0][0]):\t {}'.format(type(X_val[0][0])))
+        Y.append(y_val.astype('int32'))
 
-        if i >= debug_size and DEBUG:
+        if VERBOSE:
+            print("")
+            print('({}) create_target_vector: {}'.format(i, phn_name[:-4]))
+            print('type(X_val): \t\t {}'.format(type(X_val)))
+            print('X_val.shape: \t\t {}'.format(X_val.shape))
+            print('type(X_val[0][0]):\t {}'.format(type(X_val[0][0])))
+
+        if DEBUG and i >= debug_size:
             break
     print("")
     return X, Y
 
 
 ##### PREPROCESSING #####
-print("")
-print('Creating Validation index ...')
-val_idx = random.sample(range(0, train_size), val_size)
-val_idx = [int(i) for i in val_idx]
-# ensure that the validation set isn't empty
-if DEBUG:
-    val_idx[0] = 0
-    val_idx[1] = 1
 
 print('Preprocessing data ...')
-print('  This will take a while')
+print('  Training data..')
 X_train_all, y_train_all = preprocess_dataset(train_source_path,
-                                                 VERBOSE=False, visualize=False)
+                                              VERBOSE=False, visualize=False)
+print('  Test data..')
 X_test, y_test = preprocess_dataset(test_source_path,
-                                               VERBOSE=False, visualize=visualize)
+                                    VERBOSE=False, visualize=visualize)
 # figs = list(map(plt.figure, plt.get_fignums()))
 
+assert len(X_train_all) == len(y_train_all)
+assert len(X_test) == len(y_test)
 print(' Loading data complete.')
 
 if VERBOSE:
@@ -220,10 +214,25 @@ if VERBOSE:
     print('type(X_train_all[0][0]): {}'.format(type(X_train_all[0][0])))
     print('type(X_train_all[0][0][0]): {}'.format(type(X_train_all[0][0][0])))
 
+print("")
+print('Creating Validation index ...')
+test_size = len(X_test)
+total_size = len(X_train_all)
+train_size = int(math.ceil(total_size * FRAC_TRAIN))
+
+val_size = total_size - train_size
+val_idx = random.sample(range(0, total_size), val_size)
+val_idx = [int(i) for i in val_idx]
+
+# ensure that the validation set isn't empty
+if DEBUG:
+    val_idx[0] = 0
+    val_idx[1] = 1
+
 print('Separating validation and training set ...')
-X_train = [];
+X_train = []
 X_val = []
-y_train = [];
+y_train = []
 y_val = []
 for i in range(len(X_train_all)):
     if i in val_idx:
@@ -263,34 +272,34 @@ X_train = normalize(X_train, mean_val, std_val)
 X_val = normalize(X_val, mean_val, std_val)
 X_test = normalize(X_test, mean_val, std_val)
 
+# make sure we're working with float32
+data_type = 'float32'
 X_train = set_type(X_train, data_type)
 X_val = set_type(X_val, data_type)
 X_test = set_type(X_test, data_type)
 
-if visualize == True:
-    for i in range(debug_size):
-        plt.figure(i)
-        plt.subplot(4, 1, 4)
+# Convert to numpy arrays
+# X_train = np.array(X_train)
+# X_val = np.array(X_val)
+# X_test = np.array(X_test)
+#
+# y_train = np.array(y_train)
+# y_val = np.array(y_val)
+# y_test = np.array(y_test)
 
-        plt.imshow(X_test[i].T, interpolation='nearest', aspect='auto')
-        # plt.axis('off')
-        # plt.title('Preprocessed data')
-
-        plt.ylabel('Normalized data')
-        plt.tick_params(
-                axis='both',  # changes apply to the axis
-                which='both',  # both major and minor ticks are affected
-                bottom='off',  # ticks along the bottom
-                top='off',  # ticks along the top
-                right='off',  # ticks along the right
-                left='off',  # ticks along the left
-                labelbottom='off',  # labels along the bottom
-                labelleft='off')  # labels along the top
-
-    plt.show()
+if VERBOSE:
+    print("")
+    print('X train')
+    print(type(X_train), X_train.shape)
+    print(type(X_train[0]), X_train[0].shape)
+    print(type(X_train[0][0]), X_train[0][0].shape)
+    print('y train')
+    print(type(y_train), y_train.shape)
+    print(type(y_train[0]), y_train[0].shape)
+    print(type(y_train[0][0]), y_train[0][0].shape)
 
 print('Saving data ...')
-with open(target_path+'.pkl', 'wb') as cPickle_file:
+with open(target_path, 'wb') as cPickle_file:
     cPickle.dump(
             [X_train, y_train, X_val, y_val, X_test, y_test],
             cPickle_file,
@@ -300,6 +309,3 @@ print('Preprocessing complete!')
 print("")
 
 print('Total time: {:.3f}'.format(timeit.default_timer() - program_start_time))
-
-
-
