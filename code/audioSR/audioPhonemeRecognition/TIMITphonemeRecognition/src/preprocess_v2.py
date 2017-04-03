@@ -1,6 +1,5 @@
 import cPickle
 import glob
-import logging
 import math
 import os
 import sys
@@ -12,15 +11,16 @@ from tqdm import tqdm
 
 program_start_time = timeit.default_timer()
 import random
-
 random.seed(int(timeit.default_timer()))
 
 import general_tools
 import python_speech_features
 from phoneme_set import phoneme_set_61, phoneme_set_39
 
-# https://github.com/jameslyons/python_speech_features
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+import logging, colorFormatting
+logging.setLoggerClass(colorFormatting.ColoredLogger)
+logger = logging.getLogger('PrepData')
+logger.setLevel(logging.DEBUG)
 
 ##### SCRIPT META VARIABLES #####
 VERBOSE = True
@@ -32,9 +32,13 @@ visualize = False
 
 FRAC_TRAIN = 0.9
 
+
+# TODO MODIFY THESE PARAMETERS for other nbPhonemes. Save location is updated automatically.
 nbPhonemes = 39
 phoneme_classes = phoneme_set_39
 
+
+## DATA LOCATIONS ##
 rootPath = "/home/matthijs/TCDTIMIT/TIMIT/fixed" + str(nbPhonemes) + "/TIMIT/"
 train_source_path = os.path.join(rootPath, 'TRAIN')
 test_source_path = os.path.join(rootPath, 'TEST')
@@ -50,21 +54,21 @@ if (os.path.exists(target_path)):
     if (not general_tools.query_yes_no(target_path + " exists. Overwrite?", "no")):
         raise Exception("Not Overwriting")
 
-##### SETUP #####
+
+### SETUP ###
 if VERBOSE:
-    print('VERBOSE mode: \tACTIVE')
+    logger.info('VERBOSE mode: \tACTIVE')
 else:
-    print('VERBOSE mode: \tDEACTIVE')
+    logger.info('VERBOSE mode: \tDEACTIVE')
 
 if DEBUG:
-    print('DEBUG mode: \tACTIVE, only a small dataset will be preprocessed')
+    logger.info('DEBUG mode: \tACTIVE, only a small dataset will be preprocessed')
     target_path = target + '_DEBUG.pkl'
 else:
-    print('DEBUG mode: \tDEACTIVE')
+    logger.info('DEBUG mode: \tDEACTIVE')
 
 
-# 61 different phonemes
-
+## Functions ##
 def get_total_duration(file):
     """Get the length of the phoneme file, i.e. the 'time stamp' of the last phoneme"""
     for line in reversed(list(open(file))):
@@ -139,8 +143,8 @@ def preprocess_dataset(source_path, VERBOSE=False, visualize=False, ):
     wav_files = sorted(glob.glob(source_path + '/*/*/*.WAV'))
     label_files = sorted(glob.glob(source_path + '/*/*/*.PHN'))
     # import pdb; pdb.set_trace()
-    logging.debug("Found %d WAV files" % len(wav_files))
-    logging.debug("Found %d PHN files" % len(label_files))
+    logger.debug("Found %d WAV files" % len(wav_files))
+    logger.debug("Found %d PHN files" % len(label_files))
     assert len(wav_files) == len(label_files) != 0
 
     for i in tqdm(range(len(wav_files))):
@@ -173,49 +177,45 @@ def preprocess_dataset(source_path, VERBOSE=False, visualize=False, ):
         fr.close()
 
         if -1 in y_val:
-            print('WARNING: -1 detected in TARGET')
-            print(y_val)
+            logger.warning('WARNING: -1 detected in TARGET: %s', y_val)
 
         Y.append(y_val.astype('int32'))
 
         if VERBOSE:
-            print("")
-            print('({}) create_target_vector: {}'.format(i, phn_name[:-4]))
-            print('type(X_val): \t\t {}'.format(type(X_val)))
-            print('X_val.shape: \t\t {}'.format(X_val.shape))
-            print('type(X_val[0][0]):\t {}'.format(type(X_val[0][0])))
+            logger.debug('({}) create_target_vector: {}'.format(i, phn_name[:-4]))
+            logger.debug('type(X_val): \t\t {}'.format(type(X_val)))
+            logger.debug('X_val.shape: \t\t {}'.format(X_val.shape))
+            logger.debug('type(X_val[0][0]):\t {}'.format(type(X_val[0][0])))
 
         if DEBUG and i >= debug_size:
             break
-    print("")
     return X, Y
 
 
 ##### PREPROCESSING #####
 
-print('Preprocessing data ...')
-print('  Training data..')
+logger.info('Preprocessing data ...')
+logger.info('  Training data: %s ', train_source_path)
 X_train_all, y_train_all = preprocess_dataset(train_source_path,
                                               VERBOSE=False, visualize=False)
-print('  Test data..')
+logger.info('  Test data: %s', test_source_path)
 X_test, y_test = preprocess_dataset(test_source_path,
                                     VERBOSE=False, visualize=visualize)
 # figs = list(map(plt.figure, plt.get_fignums()))
 
 assert len(X_train_all) == len(y_train_all)
 assert len(X_test) == len(y_test)
-print(' Loading data complete.')
+logger.info(' Loading data complete.')
 
 if VERBOSE:
-    print("")
     print('Type and shape/len of X_train_all')
     print('type(X_train_all): {}'.format(type(X_train_all)))
     print('type(X_train_all[0]): {}'.format(type(X_train_all[0])))
     print('type(X_train_all[0][0]): {}'.format(type(X_train_all[0][0])))
     print('type(X_train_all[0][0][0]): {}'.format(type(X_train_all[0][0][0])))
 
-print("")
-print('Creating Validation index ...')
+
+logger.info('Creating Validation index ...')
 test_size = len(X_test)
 total_size = len(X_train_all)
 train_size = int(math.ceil(total_size * FRAC_TRAIN))
@@ -229,7 +229,7 @@ if DEBUG:
     val_idx[0] = 0
     val_idx[1] = 1
 
-print('Separating validation and training set ...')
+logger.info('Separating validation and training set ...')
 X_train = []
 X_val = []
 y_train = []
@@ -243,28 +243,19 @@ for i in range(len(X_train_all)):
         y_train.append(y_train_all[i])
 
 if VERBOSE:
-    print("")
     print('Length of train, val, test')
-    print(len(X_train))
-    print(len(y_train))
+    print("train X: ", len(X_train))
+    print("train y: ",len(y_train))
 
-    print(len(X_val))
-    print(len(y_val))
+    print("val X: ",len(X_val))
+    print("val y: ",len(y_val))
 
-    print(len(X_test))
-    print(len(y_test))
+    print("test X: ",len(X_test))
+    print("test y: ",len(y_test))
 
-if VERBOSE:
-    print("")
-    print('Type of train')
-    print(type(X_train))
-    print(type(y_train))
-    print(type(X_train[0]), X_train[0].shape)
-    print(type(y_train[0]), y_train[0].shape)
 
-print("")
-print('Normalizing data ...')
-print('    Each channel mean=0, sd=1 ...')
+logger.info('Normalizing data ...')
+logger.info('    Each channel mean=0, sd=1 ...')
 
 mean_val, std_val, _ = calc_norm_param(X_train)
 
@@ -273,10 +264,15 @@ X_val = normalize(X_val, mean_val, std_val)
 X_test = normalize(X_test, mean_val, std_val)
 
 # make sure we're working with float32
-data_type = 'float32'
-X_train = set_type(X_train, data_type)
-X_val = set_type(X_val, data_type)
-X_test = set_type(X_test, data_type)
+X_data_type = 'float32'
+X_train = set_type(X_train, X_data_type)
+X_val = set_type(X_val, X_data_type)
+X_test = set_type(X_test, X_data_type)
+
+y_data_type = 'int32'
+y_train = set_type(y_train, y_data_type)
+y_val = set_type(y_val, y_data_type)
+y_test = set_type(y_test, y_data_type)
 
 # Convert to numpy arrays
 # X_train = np.array(X_train)
@@ -288,24 +284,22 @@ X_test = set_type(X_test, data_type)
 # y_test = np.array(y_test)
 
 if VERBOSE:
-    print("")
     print('X train')
-    print(type(X_train), X_train.shape)
+    print(type(X_train), len(X_train))
     print(type(X_train[0]), X_train[0].shape)
     print(type(X_train[0][0]), X_train[0][0].shape)
     print('y train')
-    print(type(y_train), y_train.shape)
+    print(type(y_train), len(y_train))
     print(type(y_train[0]), y_train[0].shape)
     print(type(y_train[0][0]), y_train[0][0].shape)
 
-print('Saving data ...')
+logger.info('Saving data to %s', target_path)
 with open(target_path, 'wb') as cPickle_file:
     cPickle.dump(
             [X_train, y_train, X_val, y_val, X_test, y_test],
             cPickle_file,
             protocol=cPickle.HIGHEST_PROTOCOL)
 
-print('Preprocessing complete!')
-print("")
+logger.info('Preprocessing complete!')
 
-print('Total time: {:.3f}'.format(timeit.default_timer() - program_start_time))
+logger.info('Total time: {:.3f}'.format(timeit.default_timer() - program_start_time))

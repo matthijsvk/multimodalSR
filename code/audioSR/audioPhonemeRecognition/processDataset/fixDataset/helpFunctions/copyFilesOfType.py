@@ -99,13 +99,13 @@ def copyFilesOfType(srcDir, destDir, extension, interactive=False):
     dest = []
     for root, dirs, files in os.walk(srcDir):
         for file_ in files:
-            print(file_)
+            #print(file_)
             if file_.lower().endswith(extension):
                 srcPath = os.path.join(root, file_)
                 relSrcPath = relpath(srcDir, srcPath).lstrip("../")
                 # print(relSrcPath)
                 destPath = os.path.join(dstDir, relSrcPath)
-                # print("copying from : %s to \t\t %s" % (srcPath, destPath))
+                print("copying from : %s to \t\t %s" % (srcPath, destPath))
                 src.append(srcPath)
                 dest.append(destPath)
 
@@ -131,4 +131,4 @@ if __name__ == '__main__':
         type = sys.argv[3]
         copyFilesOfType(srcDir, dstDir, type, interactive=True)
 
-        # example usage: python3 copyFilesOfType.py ~/Documents/Dropbox/_MyDocs/_ku_leuven/Master_2/Thesis/convNets/code /media/matthijs/TOSHIBA_EXT/TCDTIMIT/zzzNPZmodels ".npz"
+# example usage: python copyFilesOfType.py ~/Documents/Dropbox/_MyDocs/_ku_leuven/Master_2/Thesis/convNets/code /media/matthijs/TOSHIBA_EXT/TCDTIMIT/zzzNPZmodels ".npz"

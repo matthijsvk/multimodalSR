@@ -3,7 +3,7 @@
 import numpy as np
 import os
 import soundfile as sf
-from features import mfcc
+from python_speech_features import mfcc
 import pickle
 import sys
 import theano
@@ -12,23 +12,6 @@ import pdb
 #TODO: NORMALIZE AND INCORPORATE DELTA AND DELTA-DELTA FEATURES
 #==============================================================
 
-# from features import logfbank
-
-# class MFCC_input():
-# 	def __init__(self,sequence = None):
-# 		self.sequence = sequence
-# 	def get_sequence(self):
-# 		return self.sequence
-# 	def get_sequence_length(self):
-# 		return self.sequence.shape[0]
-
-# class character_output():
-# 	def __init__(self,sequence = None):
-# 		self.sequence = sequence
-# 	def get_sequence(self):
-# 		return self.sequence
-# 	def getget_sequence_length(self):
-# 		return len(self.sequence)
 
 TIMIT_main_dir = '/home/anirban/Desktop/TimeForAnUpgrade/DeepLearningWithPython/TIMITDataPrepared/TIMIT/timit'
 
@@ -78,12 +61,11 @@ def get_data(rootdir = TIMIT_main_dir):
 				#Concatenating mfcc, delta and delta-delta features
 				full_input = np.concatenate((mfcc_feat,delta_feat,deltadelta_feat), axis=1)
 
-				inputs.append(np.asarray(full_input, dtype=theano.config.floatX))#Rakeshvar wants one frame along each column but i am using Lasagne
+				inputs.append(np.asarray(full_input, dtype=theano.config.floatX))
 
 				text_file_name = wav_file_name[:-4] + '.txt'
 				target_data_file = open(text_file_name)
 				target_data = str(target_data_file.read()).lower().translate(None, '!:,".;?')
-				# target_data = str(target_data_file.read()).lower().translate(str.maketrans('','', '!:,".;?'))
 				target_data = target_data[8:-1]#No '.' in lexfree dictionary
 				targets.append(target_data)
 	return inputs, targets
@@ -170,7 +152,6 @@ def prepare_TIMIT_for_CTC(dataset='train', savedir = os.getcwd()):
 	# print sample_target
 	out_file_name = savedir + '/TIMIT_data_prepared_for_CTC.pkl'
 	with open(out_file_name, 'wb') as f:
-		# pickle.dump({'x':inputs, 'y_indices': targets_as_alphabet_indices, 'y_char': targets, 'y_onehot': targets_one_hot, 'chars': list_of_alphabets}, f, protocol=3)
 		pickle.dump({'x':X,
 			'inputs': inputs, 
 			'mask': input_mask.astype(theano.config.floatX), \
@@ -209,14 +190,8 @@ def prepare_TIMIT_for_CLM(dataset='train', savedir = os.getcwd()):
 	# inputs = X[:,:-1,:]
 	# outputs = Y[:,1:]
 	inputs1 = []
-	outputs1 = [
-]
+	outputs1 = []
 	for example_id in range(len(t)):
-	# 	# example_inputs = t[example_id][:-1]
-	# 	# example_outputs = t[example_id][1:]
-	# 	# inputs.append(example_inputs)
-	# 	# outputs.append(example_outputs)
-
 		example_inputs1 = t1[example_id][:-1]
 		example_outputs1 = t1[example_id][1:]
 		inputs1.append(example_inputs1)
@@ -224,26 +199,12 @@ def prepare_TIMIT_for_CLM(dataset='train', savedir = os.getcwd()):
 
 	out_file_name = savedir + '/TIMIT_data_prepared_for_CLM.pkl'
 	with open(out_file_name, 'wb') as f:
-		# pickle.dump({'x':inputs, 'x_indices':inputs1, 'y': outputs, 'y_indices':outputs1}, f, protocol=3)
-		# pickle.dump({'x':inputs.astype(theano.config.floatX), 'mask':input_mask.astype(theano.config.floatX), 'x_indices':inputs1, 'y': outputs, 'y_indices':outputs1}, f, protocol=3)
-		pickle.dump({'x':X.astype(theano.config.floatX), 'mask':input_mask.astype(theano.config.floatX), 'y': Y.astype(np.int32), 'x_list': inputs1, 'y_list': outputs1}, f, protocol=2)
-	# inputs = [ [ [ t[example][char] ] for char in range(0, len(t[example])-1)] for example in range(len(t))]
-	# outputs = [ [ [ t[example][char] ] for char in range(1, len(t[example]))] for example in range(len(t))]
-	# return inputs, outputs#, inputs1, outputs1
+		pickle.dump({'x':X.astype(theano.config.floatX),
+					 'mask':input_mask.astype(theano.config.floatX),
+					 'y': Y.astype(np.int32),
+					 'x_list': inputs1,
+					 'y_list': outputs1}, f, protocol=2)
 
-# def prepare_TIMIT_for_CLM_temp(dataset='train', savedir = os.getcwd()):
-# 	rootdir = TIMIT_main_dir + '/' + dataset
-# 	t = get_TIMIT_targets_as_alphabet_indices(rootdir)
-# 	inputs = []
-# 	outputs = []
-# 	for example_id in range(len(t)):
-# 		example_inputs = t[example_id][:-1]
-# 		example_outputs = t[example_id][1:]
-# 		inputs.append(example_inputs)
-# 		outputs.append(example_outputs)
-# 	# inputs = [ [ [ t[example][char] ] for char in range(0, len(t[example])-1)] for example in range(len(t))]
-# 	# outputs = [ [ [ t[example][char] ] for char in range(1, len(t[example]))] for example in range(len(t))]
-# 	return inputs, outputs
 
 if __name__=='__main__':
 	if len(sys.argv) > 1:
