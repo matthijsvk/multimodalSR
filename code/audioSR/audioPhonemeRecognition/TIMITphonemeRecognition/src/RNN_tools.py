@@ -8,7 +8,9 @@ import lasagne.layers as L
 import numpy as np
 import theano
 import theano.tensor as T
+
 from tqdm import tqdm
+import math
 
 from general_tools import *
 
@@ -54,8 +56,8 @@ class NeuralNetwork:
 
     # [[Train], [val], [test]]
 
-    def build_RNN(self, batch_size=2, num_features=26, n_hidden=275, num_output_units=61,
-                  weight_init=0.1, activation_fn=lasagne.nonlinearities.rectify,
+    def build_RNN(self, batch_size=1, num_features=26, n_hidden=275, num_output_units=61,
+                  weight_init=0.1, activation_fn=lasagne.nonlinearities.sigmoid,
                   seed=int(time.time()), debug=False):
         np.random.seed(seed)
         # seed np for weight initialization
@@ -64,16 +66,29 @@ class NeuralNetwork:
         #l_in = L.InputLayer(shape=(None, None, num_features))      #compile for variable batch size; slower
         # (batch_size, max_time_steps, n_features_1, n_features_2, ...)
         # Only stochastic gradient descent
+
+        # This input will be used to provide the network with masks.
+        # Masks are expected to be matrices of shape (n_batch, n_time_steps);
+        # both of these dimensions are variable for us so we will use
+        # an input shape of (None, None)
+        l_mask = lasagne.layers.InputLayer(shape=(None, None))  # See http://colinraffel.com/talks/hammer2015recurrent.pdf
+
         if debug:
-            get_l_in = theano.function([l_in.input_var], L.get_output(l_in))
-            l_in_val = get_l_in(self.X)
+            print('  output size: ', end='\t');
+            print(self.Y.shape)
+            print(self.Y[0].shape, type(self.Y[0]), type(self.Y[0][0]), self.Y[0])
+
+            print('  input size:', end='\t');
+            print(self.X[0].shape)
+            print(self.X[0][0].shape,type(self.X[0][0]), type(self.X[0][0][0]), self.X[0][0])
+
+            #get_l_in = theano.function([l_in.input_var], L.get_output(l_in))
+            get_l_in = L.get_output(l_in)
+            l_in_val = get_l_in.eval({l_in.input_var: self.X})
+            #l_in_val = get_l_in(self.X)
             print(get_l_in)
             print(l_in_val)
-            print('output size: ', end='\t');
-            print(self.Y.shape)
-            print('input size:', end='\t');
-            print(self.X[0].shape)
-            print('l_in size:', end='\t');
+            print('  l_in size:', end='\t');
             print(l_in_val.shape)
 
         l_rnn = L.recurrent.RecurrentLayer(
@@ -84,17 +99,70 @@ class NeuralNetwork:
                 b=lasagne.init.Constant(0.),
                 hid_init=lasagne.init.Constant(0.),
                 learn_init=False)
+
+        # ## LSTM stuff
+        # # All gates have initializers for the input-to-gate and hidden state-to-gate
+        # # weight matrices, the cell-to-gate weight vector, the bias vector, and the nonlinearity.
+        # # The convention is that gates use the standard sigmoid nonlinearity,
+        # # which is the default for the Gate class.
+        # gate_parameters = lasagne.layers.recurrent.Gate(
+        #         W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
+        #         b=lasagne.init.Constant(0.))
+        # cell_parameters = lasagne.layers.recurrent.Gate(
+        #         W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
+        #         # Setting W_cell to None denotes that no cell connection will be used.
+        #         W_cell=None, b=lasagne.init.Constant(0.),
+        #         # By convention, the cell nonlinearity is tanh in an LSTM.
+        #         nonlinearity=lasagne.nonlinearities.tanh)
+        # # Our LSTM will have 10 hidden/cell units
+        # N_HIDDEN = 10
+        # l_lstm = lasagne.layers.recurrent.LSTMLayer(
+        #         l_in, N_HIDDEN,
+        #         # We need to specify a separate input for masks
+        #         mask_input=l_mask,
+        #         # Here, we supply the gate parameters for each gate
+        #         ingate=gate_parameters, forgetgate=gate_parameters,
+        #         cell=cell_parameters, outgate=gate_parameters,
+        #         # We'll learn the initialization and use gradient clipping
+        #         learn_init=True, grad_clipping=100.)
+
+        # Bidirectional: add reverse layer
+        # # The "backwards" layer is the same as the first,
+        # # except that the backwards argument is set to True.
+        # l_lstm_back = lasagne.layers.recurrent.LSTMLayer(
+        #         l_in, N_HIDDEN, ingate=gate_parameters,
+        #         mask_input=l_mask, forgetgate=gate_parameters,
+        #         cell=cell_parameters, outgate=gate_parameters,
+        #         learn_init=True, grad_clipping=100., backwards=True)
+
+        # # We'll combine the forward and backward layer output by summing.
+        # # Merge layers take in lists of layers to merge as input.
+        # l_sum = lasagne.layers.ElemwiseSumLayer([l_lstm, l_lstm_back])
+        # # The output of l_msum will be of shape (n_batch, n_time_steps, num_features).
+
+        # # # Now we need to go from RNN to Feedforward -> different shape expected -> reshape
+        # # First, retrieve symbolic variables for the input shape
+        # n_batch, n_time_steps, n_features = l_in.input_var.shape
+        # # Now, squash the n_batch and n_time_steps dimensions
+        # l_reshape = lasagne.layers.ReshapeLayer(l_sum, (-1, N_HIDDEN))
+        # # Now, we can apply feed-forward layers as usual.
+        # # We want the network to predict a single value, the sum, so we'll use a single unit.
+        # l_dense = lasagne.layers.DenseLayer(
+        #         l_reshape, num_units=1, nonlinearity=lasagne.nonlinearities.tanh)
+        # # Now, the shape will be n_batch*n_timesteps, 1. We can then reshape to
+        # # n_batch, n_timesteps to get a single value for each timstep from each sequence
+        # l_out = lasagne.layers.ReshapeLayer(l_dense, (n_batch, n_time_steps))
         if debug:
             get_l_rnn = theano.function([l_in.input_var], L.get_output(l_rnn))
             l_rnn_val = get_l_rnn(self.X)
-            print('l_rnn size:', end='\t');
+            print('  l_rnn size:', end='\t');
             print(l_rnn_val.shape)
 
         l_reshape = L.ReshapeLayer(l_rnn, (-1, n_hidden))
         if debug:
             get_l_reshape = theano.function([l_in.input_var], L.get_output(l_reshape))
             l_reshape_val = get_l_reshape(self.X)
-            print('l_reshape size:', end='\t');
+            print('  l_reshape size:', end='\t')
             print(l_reshape_val.shape)
 
         l_out = L.DenseLayer(l_reshape, num_units=num_output_units,
@@ -105,8 +173,8 @@ class NeuralNetwork:
     def __init__(self, architecture, dataset, **kwargs):
         if architecture == 'RNN':
             X_train, y_train, X_val, y_val, X_test, y_test = dataset
-            self.X = X_test[0]
-            self.Y = y_test[0]
+            self.X = X_train
+            self.Y = y_train
             self.build_RNN(**kwargs)
         else:
             print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
@@ -131,7 +199,7 @@ class NeuralNetwork:
                 param_values = [param_values[i].astype('float32') for i in range(len(param_values))]
                 lasagne.layers.set_all_param_values(self.network, param_values)
             except IOError as e:
-                print(os.strerror(e.errno))
+                #print(os.strerror(e.errno))
                 print('Model: {} not found. No weights loaded'.format(model_name))
         else:
             print('You must build the network before loading the weights.')
@@ -142,32 +210,37 @@ class NeuralNetwork:
         np.savez(model_name, *L.get_all_param_values(self.network))
 
     def build_functions(self, LEARNING_RATE=1e-5, MOMENTUM=0.9, debug=False):
-        target_var = T.ivector('targets')
 
-        # Get the first layer of the network
-        l_in = L.get_all_layers(self.network)[0]
+        target_var = T.ivector('targets')
 
         network_output = L.get_output(self.network)
 
         # Retrieve all trainable parameters from the network
         all_params = L.get_all_params(self.network, trainable=True)
 
-        # loss = T.mean(lasagne.objectives.categorical_crossentropy(network_output, target_var))
-        loss = T.sum(lasagne.objectives.categorical_crossentropy(network_output, target_var))
-
-        # use Stochastic Gradient Descent with nesterov momentum to update parameters
-        updates = lasagne.updates.momentum(loss, all_params,
-                                           learning_rate=LEARNING_RATE,
-                                           momentum=MOMENTUM)
+        # cost = T.mean(lasagne.objectives.categorical_crossentropy(network_output, target_var))
+        cost = T.sum(lasagne.objectives.categorical_crossentropy(network_output, target_var))
 
         # Function to determine the number of correct classifications
         accuracy = T.mean(T.eq(T.argmax(network_output, axis=1), target_var),
                           dtype=theano.config.floatX)
 
+        # use Stochastic Gradient Descent with nesterov momentum to update parameters
+        # updates = lasagne.updates.momentum(cost, all_params,
+        #                                    learning_rate=LEARNING_RATE,
+        #                                    momentum=MOMENTUM)
+        updates = lasagne.updates.adam(cost, all_params)
+
+        # Get the first layer of the network
+        l_in = L.get_all_layers(self.network)[0]
+
         # Function to get the output of the network
         output_fn = theano.function([l_in.input_var], network_output, name='output_fn')
         if debug:
             print(self.X.shape)
+            x = self.X.shape[0]; y = self.X[0].shape[0]; z = self.X[0].shape[1]
+            print(x,y,z)
+            self.X = np.reshape(self.X, (x,y,z))
             print(l_in.input_var.type)
             l_out_val = output_fn(self.X)
             print('l_out size:', end='\t');
@@ -182,15 +255,16 @@ class NeuralNetwork:
             print(argmax_fn(self.X)[0].shape)
 
         # Function implementing one step of gradient descent
-        train_fn = theano.function([l_in.input_var, target_var], [loss, accuracy],
+        train_fn = theano.function([l_in.input_var, target_var], [cost, accuracy],
                                    updates=updates, name='train_fn')
 
-        # Function calculating the loss and accuracy
-        validate_fn = theano.function([l_in.input_var, target_var], [loss, accuracy],
+        # Function calculating the cost and accuracy
+        validate_fn = theano.function([l_in.input_var, target_var], [cost, accuracy],
                                       name='validate_fn')
+
         if debug:
             print(type(train_fn(self.X, self.Y)))
-            print('loss: {:.3f}'.format( float(train_fn(self.X, self.Y))))
+            print('cost: {:.3f}'.format( float(train_fn(self.X, self.Y))))
             print('accuracy: {:.3f}'.format( float(validate_fn(self.X, self.Y)[1]) ))
 
         self.training_fn = output_fn, argmax_fn, train_fn, validate_fn
@@ -233,29 +307,15 @@ class NeuralNetwork:
         output_fn, argmax_fn, train_fn, validate_fn = self.training_fn
 
         if debug:
-            print('X_train', end='\t\t')
-            print(type(X_train), end='\t');
-            print(len(X_train))
-            print('X_train[0]', end='\t')
-            print(type(X_train[0]), end='\t');
-            print(X_train[0].shape)
-            print('X_train[0][0]', end='\t')
-            print(type(X_train[0][0]), end='\t');
-            print(X_train[0][0].shape)
-            print('X_train[0][0][0]', end='\t')
-            print(type(X_train[0][0][0]), end='\t');
-            print(X_train[0][0][0].shape)
-
-            print('y_train', end='\t\t')
-            print(type(y_train), end='\t');
-            print(len(X_train))
-            print('y_train[0]', end='\t')
-            print(type(y_train[0]), end='\t');
-            print(y_train[0].shape)
-            print('y_train[0][0]', end='\t')
-            print(type(y_train[0][0]), end='\t');
-            print(y_train[0][0].shape)
-            print()
+            print('X_train')
+            print(type(X_train), len(X_train))
+            print('X_train[0]', type(X_train[0]), X_train[0].shape)
+            print('X_train[0][0]', type(X_train[0][0]), X_train[0][0].shape)
+            print('X_train[0][0][0]', type(X_train[0][0][0]), X_train[0][0][0].shape)
+            print('y_train')
+            print('y_train', type(y_train), len(y_train))
+            print('y_train[0]', type(y_train[0]), y_train[0].shape)
+            print('y_train[0][0]', type(y_train[0][0]), y_train[0][0].shape)
 
         # Initiate some vectors used for tracking performance
         train_error = np.zeros([num_epochs])
@@ -276,7 +336,6 @@ class NeuralNetwork:
             self.curr_epoch += 1
             epoch_time = time.time()
 
-            import math
             # Full pass over the training set
             for inputs, targets in tqdm(iterate_minibatches(X_train, y_train, batch_size, shuffle=True), total=math.ceil(len(X_train)/batch_size)):
                 for i in range(len(inputs)):
@@ -331,23 +390,23 @@ class NeuralNetwork:
             else:
                 print()
 
-            print("  New best model found!", end=" ")
+            print("  New best model found!")
             if save_name is not None:
                 print("Model saved as " + save_name + '.npz')
                 self.save_model(save_name + '.npz')
             else:
                 print()
 
-            print("  training loss:\t{:.6f}".format(
-                    train_error[epoch] / train_batches[epoch]), end='\t')
+            print("  training cost:\t{:.6f}".format(
+                    train_error[epoch] / train_batches[epoch]))
             print("train error:\t\t{:.6f} %".format(train_epoch_error))
 
-            print("  validation loss:\t{:.6f}".format(
-                    validation_error[epoch] / validation_batches[epoch]), end='\t')
+            print("  validation cost:\t{:.6f}".format(
+                    validation_error[epoch] / validation_batches[epoch]))
             print("validation error:\t{:.6f} %".format(val_epoch_error))
 
-            print("  test loss:\t\t{:.6f}".format(
-                    test_error[epoch] / test_batches[epoch]), end='\t')
+            print("  test cost:\t\t{:.6f}".format(
+                    test_error[epoch] / test_batches[epoch]))
             print("test error:\t\t{:.6f} %".format(test_epoch_error))
 
             if compute_confusion:

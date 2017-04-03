@@ -67,7 +67,7 @@ target_mask = T.vector('target_mask',dtype=theano.config.floatX)
 network_output = lasagne.layers.get_output(l_dense)
 
 #Calculating the cross-entropy loss
-# cost = T.mean(lasagne.objectives.categorical_crossentropy(network_output, target_values))
+cost = T.mean(lasagne.objectives.categorical_crossentropy(network_output, target_values))
 cost_pointwise = lasagne.objectives.categorical_crossentropy(network_output, target_values)
 cost = (cost_pointwise*target_mask).sum()
 # cost.reshape([n_batch, n_time_steps, n_features])
@@ -75,8 +75,6 @@ cost = (cost_pointwise*target_mask).sum()
 all_params = lasagne.layers.get_all_params(l_dense)
 
 updates = lasagne.updates.adam(cost, all_params)
-
-
 
 train = theano.function(inputs=[l_in.input_var, target_values, l_mask.input_var, target_mask],	outputs=[cost],	updates=updates)
 
