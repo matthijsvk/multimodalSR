@@ -12,30 +12,32 @@ from tqdm import tqdm
 program_start_time = timeit.default_timer()
 import random
 random.seed(int(timeit.default_timer()))
+import pdb
 
 import general_tools
 import python_speech_features
-from phoneme_set import phoneme_set_61, phoneme_set_39
+from phoneme_set import phoneme_set_61, phoneme_set_39, phoneme_set_39_list, phoneme_set_61_list
 
-import logging, colorFormatting
+import logging, colorFormatting  # debug < info < warn < error < critical  # from https://docs.python.org/3/howto/logging-cookbook.html
 logging.setLoggerClass(colorFormatting.ColoredLogger)
 logger = logging.getLogger('PrepData')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 ##### SCRIPT META VARIABLES #####
 VERBOSE = True
 DEBUG = False
 debug_size = 50
-visualize = False
 
 ##### SCRIPT VARIABLES #####
 
 FRAC_TRAIN = 0.9
 
-
 # TODO MODIFY THESE PARAMETERS for other nbPhonemes. Save location is updated automatically.
 nbPhonemes = 39
-phoneme_classes = phoneme_set_39
+
+phoneme_set_list = phoneme_set_39_list  #import list of phonemes, convert to dictionary with number mappings (see phoneme_set.py)
+values = [i for i in range(0, len(phoneme_set_list))]
+phoneme_classes = dict(zip(phoneme_set_list, values))
 
 
 ## DATA LOCATIONS ##
@@ -134,7 +136,7 @@ def set_type(X, type):
     return X
 
 
-def preprocess_dataset(source_path, VERBOSE=False, visualize=False, ):
+def preprocess_dataset(source_path, verbose=False):
     """Preprocess data, ignoring compressed files and files starting with 'SA'"""
     X = []
     Y = []
@@ -162,30 +164,46 @@ def preprocess_dataset(source_path, VERBOSE=False, visualize=False, ):
 
         X.append(X_val)
 
-        y_val = np.zeros(total_frames) - 1
-        start_ind = 0
+        # some .PHN files don't start at 0. Default phoneme = silence (expected at the end of phoneme_set_list)
+        y_val = np.zeros(total_frames) - phoneme_classes[phoneme_set_list[-1]]
+        #start_ind = 0
         for line in fr:
             [start_time, end_time, phoneme] = line.rstrip('\n').split()
             start_time = int(start_time)
+            start_ind = int(np.round(start_time *  (total_frames / float(total_duration))))
             end_time = int(end_time)
+            end_ind = int(np.round(end_time * (total_frames / float(total_duration))))
 
             phoneme_num = phoneme_classes[phoneme]
-            end_ind = np.round((end_time) / total_duration * total_frames)
+            #check that phoneme is found in dict
+            if (phoneme_num ==-1):
+                logger.debug("In file: %s, phoneme not found: %s", phn_name, phoneme)
+                pdb.set_trace()
             y_val[start_ind:end_ind] = phoneme_num
 
-            start_ind = end_ind
+            logger.debug('%s', (total_frames / float(total_duration)))
+            logger.debug('TIME  start: %s end: %s, phoneme: %s, class: %s', start_time, end_time, phoneme, phoneme_num)
+            logger.debug('FRAME start: %s end: %s, phoneme: %s, class: %s', start_ind, end_ind, phoneme, phoneme_num)
         fr.close()
 
         if -1 in y_val:
+            logger.warning("%s", phn_name)
             logger.warning('WARNING: -1 detected in TARGET: %s', y_val)
+            pdb.set_trace()
 
         Y.append(y_val.astype('int32'))
 
-        if VERBOSE:
-            logger.debug('({}) create_target_vector: {}'.format(i, phn_name[:-4]))
-            logger.debug('type(X_val): \t\t {}'.format(type(X_val)))
-            logger.debug('X_val.shape: \t\t {}'.format(X_val.shape))
-            logger.debug('type(X_val[0][0]):\t {}'.format(type(X_val[0][0])))
+        if verbose:
+            logger.debug('(%s) create_target_vector: %s', i, phn_name[:-4])
+            logger.debug('type(X_val): \t\t %s',type(X_val))
+            logger.debug('X_val.shape: \t\t %s',X_val.shape)
+            logger.debug('type(X_val[0][0]):\t %s',type(X_val[0][0]))
+
+            logger.debug('type(y_val): \t\t %s',type(y_val))
+            logger.debug('y_val.shape: \t\t %s',y_val.shape)
+            logger.debug('type(y_val[0]):\t %s',type(y_val[0]))
+            logger.debug('y_val: \t\t %s',(y_val))
+
 
         if DEBUG and i >= debug_size:
             break
@@ -197,10 +215,10 @@ def preprocess_dataset(source_path, VERBOSE=False, visualize=False, ):
 logger.info('Preprocessing data ...')
 logger.info('  Training data: %s ', train_source_path)
 X_train_all, y_train_all = preprocess_dataset(train_source_path,
-                                              VERBOSE=False, visualize=False)
+                                              verbose=VERBOSE)
 logger.info('  Test data: %s', test_source_path)
 X_test, y_test = preprocess_dataset(test_source_path,
-                                    VERBOSE=False, visualize=visualize)
+                                    verbose=VERBOSE)
 # figs = list(map(plt.figure, plt.get_fignums()))
 
 assert len(X_train_all) == len(y_train_all)

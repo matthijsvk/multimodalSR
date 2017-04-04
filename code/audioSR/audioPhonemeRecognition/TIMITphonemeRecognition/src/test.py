@@ -154,39 +154,71 @@ import numpy as np
 
 
 # LOGGING stuff
-import logging
+# import logging
+#
+# logger = logging.getLogger('simple_example')
+# logger.setLevel(logging.DEBUG)
+# # create file handler which logs even debug messages
+# fh = logging.FileHandler('spam.log')
+# fh.setLevel(logging.DEBUG)
+# # create console handler with a higher log level
+# ch = logging.StreamHandler()
+# ch.setLevel(logging.ERROR)
+# # create formatter and add it to the handlers
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# ch.setFormatter(formatter)
+# fh.setFormatter(formatter)
+# # add the handlers to logger
+# logger.addHandler(ch)
+# logger.addHandler(fh)
+#
+# # 'application' code
+# logger.debug('debug message')
+# logger.info('info message')
+# logger.warn('warn message')
+# logger.error('error message')
+# logger.critical('critical message')
+#
+# # from https://docs.python.org/3/howto/logging-cookbook.html
+# import logging, colorFormatting  # debug < info < warn < error < critical
+#
+# # You need to change the default format in colorFormatting.py (at the bottom) to CRITICAL
+# # otherwise it will print all Python/ Theano debug messages as well
+# logging.setLoggerClass(colorFormatting.ColoredLogger)
+# logger_RNN = logging.getLogger('RNN')
+# logger_RNN.setLevel(logging.DEBUG)
 
-logger = logging.getLogger('simple_example')
-logger.setLevel(logging.DEBUG)
-# create file handler which logs even debug messages
-fh = logging.FileHandler('spam.log')
-fh.setLevel(logging.DEBUG)
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-fh.setFormatter(formatter)
-# add the handlers to logger
-logger.addHandler(ch)
-logger.addHandler(fh)
 
-# 'application' code
-logger.debug('debug message')
-logger.info('info message')
-logger.warn('warn message')
-logger.error('error message')
-logger.critical('critical message')
 
-# from https://docs.python.org/3/howto/logging-cookbook.html
-import logging, colorFormatting  # debug < info < warn < error < critical
+a = [38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
+ 38, 38, 36, 36, 36, 36, 36, 36, 36, 36, 36, 1, 1, 1, 1, 1, 1,
+ 1, 1, 37, 37, 37, 37, 37, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+ 2, 2, 2, 2, 38, 38, 22, 22, 22, 22, 22, 22, 22, 1, 1, 1, 1,
+ 1, 1, 1, 1, 38, 38, 38, 38, 38, 38, 25, 4, 4, 4, 4, 4, 4,
+ 4, 4, 4, 4, 4, 4, 4, 38, 38, 38, 38, 38, 38, 38, 30, 30, 30,
+ 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 5, 5, 5, 5, 5, 5,
+ 5, 5, 5, 5, 5, 5, 5, 5, 38, 38, 38, 38, 38, 19, 19, 19, 19,
+ 19, 19, 19, 19, 19, 38, 38, 27, 27, 14, 14, 14, 14, 14, 14, 1, 1,
+ 1, 1, 1, 1, 1, 1, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 1,
+ 1, 1, 1, 1, 1, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 7, 7,
+ 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 36, 36, 36, 36, 36, 36,
+ 36, 36, 36, 36, 38, 38, 16, 16, 16, 16, 16, 16, 7, 7, 7, 7, 7,
+ 7, 7, 7, 7, 26, 17, 17, 17, 17, 17, 17, 17, 17, 7, 7, 7, 7,
+ 7, 7, 7, 7, 7, 7, 7, 7, 13, 13, 13, 13, 13, 15, 15, 15, 15,
+ 15, 15, 15, 15, 15, 15, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 17,
+ 17, 17, 17, 17, 17, 17, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
+ 38, 38]
 
-# You need to change the default format in colorFormatting.py (at the bottom) to CRITICAL
-# otherwise it will print all Python/ Theano debug messages as well
-logging.setLoggerClass(colorFormatting.ColoredLogger)
-logger_RNN = logging.getLogger('RNN')
-logger_RNN.setLevel(logging.DEBUG)
+from phoneme_set import phoneme_set_39_list
+
+b=[phoneme_set_39_list[a[i]] for i in range(len(a))]
+c = []
+for j in range(len(b)-1):
+    if b[j] != b[j+1]:
+        c.append(b[j])
+
+print(b)
+print(c)
 
 
 

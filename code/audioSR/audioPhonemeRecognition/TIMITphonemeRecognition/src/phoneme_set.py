@@ -37,7 +37,7 @@ phoneme_set_39_list = [
     'l', 'r', 'y', 'w', 'er', 'm', 'n', 'ng', 'ch', 'jh', 'dh', 'b', 'd', 'dx',
     'g', 'p', 't', 'k', 'z', 'v', 'f', 'th', 's', 'sh', 'hh', 'sil'
 ]
-values = [i + 1 for i in range(0, len(phoneme_set_39_list))]
+values = [i for i in range(0, len(phoneme_set_39_list))]
 phoneme_set_39 = dict(zip(phoneme_set_39_list, values))
 
 # from http://www.intechopen.com/books/speech-technologies/phoneme-recognition-on-the-timit-database, page 5
@@ -46,5 +46,5 @@ phoneme_set_61_list = [
     'ch', 'b', 'd', 'g', 'p', 't', 'k', 'dx', 's', 'sh', 'z', 'zh', 'f', 'th', 'v', 'dh', 'm', 'n', 'ng', 'em', 'nx',
     'en', 'eng', 'l', 'r', 'w', 'y', 'hh', 'hv', 'el', 'bcl', 'dcl', 'gcl', 'pcl', 'tcl', 'kcl', 'q', 'pau', 'epi', 'h#',
 ]
-values = [i + 1 for i in range(0, len(phoneme_set_61_list))]
+values = [i for i in range(0, len(phoneme_set_61_list))]
 phoneme_set_61 = dict(zip(phoneme_set_61_list, values))
