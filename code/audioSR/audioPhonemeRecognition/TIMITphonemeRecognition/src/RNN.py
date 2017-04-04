@@ -29,12 +29,12 @@ logger_RNN.info('\n * Setting up ...')
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-num_epochs = 20
-batch_size = 8
+num_epochs = 200
+batch_size = 256
 
 INPUT_SIZE = 26  # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 NUM_OUTPUT_UNITS = 39
-N_HIDDEN = 10
+N_HIDDEN = 100
 
 LEARNING_RATE = 1e-5
 MOMENTUM = 0.9
@@ -82,7 +82,7 @@ logger_RNN.info(' Network built. Trying to load stored model...')
 RNN_network.load_model(model_load)
 
 
-##### BUIDING FUNCTION #####
+##### COMPILING FUNCTIONS #####
 logger_RNN.info("\n* Compiling functions ...")
 RNN_network.build_functions(LEARNING_RATE=LEARNING_RATE, MOMENTUM=MOMENTUM, debug=False)
 
@@ -90,7 +90,7 @@ RNN_network.build_functions(LEARNING_RATE=LEARNING_RATE, MOMENTUM=MOMENTUM, debu
 ##### TRAINING #####
 logger_RNN.info("\n* Training ...")
 RNN_network.train(dataset, model_save, num_epochs=num_epochs,
-                  batch_size=batch_size, compute_confusion=False, debug=True)
+                  batch_size=batch_size, compute_confusion=False, debug=False)
 
 
 logger_RNN.info("\n* Done")

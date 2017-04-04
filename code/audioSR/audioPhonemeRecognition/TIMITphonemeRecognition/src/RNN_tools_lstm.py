@@ -73,7 +73,7 @@ class NeuralNetwork:
             X = X_train[:batch_size]
             y = y_train[:batch_size]
             self.masks = generate_masks(X, len(X))
-            # pdb.set_trace()
+
             self.X = pad_sequences_X(X)
             self.Y = pad_sequences_y(y)
 
@@ -95,110 +95,118 @@ class NeuralNetwork:
     def build_RNN(self, batch_size=1, num_features=26, n_hidden=275, num_output_units=61,
                   weight_init=0.1, activation_fn=lasagne.nonlinearities.sigmoid,
                   seed=int(time.time()), debug=False):
+        if debug:
+            logger_RNNtools.debug('\nInputs:');
+            logger_RNNtools.debug('  X.shape:    %s', self.X[0].shape)
+            logger_RNNtools.debug('  X[0].shape: %s %s %s \n%s', self.X[0][0].shape, type(self.X[0][0]),
+                                  type(self.X[0][0][0]), self.X[0][0][:5])
+
+            logger_RNNtools.debug('Targets: ');
+            logger_RNNtools.debug('  Y.shape:    %s', self.Y.shape)
+            logger_RNNtools.debug('  Y[0].shape: %s %s %s \n%s', self.Y[0].shape, type(self.Y[0]), type(self.Y[0][0]),
+                                  self.Y[0][:5])
+            logger_RNNtools.debug('Layers: ')
+
         np.random.seed(seed)
         # seed np for weight initialization
         net = {}
+
+        max_seq_length = 1000
         # shape = (batch_size, max_seq_length, num_features), but 1 and 2 are variable
-        net['l_in'] = L.InputLayer(shape=(None, None, num_features))
+        net['l1_in'] = L.InputLayer(shape=(batch_size, None, num_features))
         # l_in = L.InputLayer(shape=(None, None, num_features))      #compile for variable batch size; slower
 
         # This input will be used to provide the network with masks.
         # Masks are expected to be matrices of shape (n_batch, n_time_steps);
-        net['l_mask'] = L.InputLayer(shape=(None, None))  # See http://colinraffel.com/talks/hammer2015recurrent.pdf
+        net['l1_mask'] = L.InputLayer(shape=(batch_size, None))  # See http://colinraffel.com/talks/hammer2015recurrent.pdf
 
         if debug:
-            logger_RNNtools.debug('output size: ');
-            logger_RNNtools.debug('  Y.shape:    %s', self.Y.shape)
-            logger_RNNtools.debug('  Y[0].shape: %s %s %s %s', self.Y[0].shape, type(self.Y[0]), type(self.Y[0][0]), self.Y[0][1:10])
-
-            logger_RNNtools.debug('input size:');
-            logger_RNNtools.debug('  X.shape:    %s',self.X[0].shape)
-            logger_RNNtools.debug('  X[0].shape: %s %s %s %s',self.X[0][0].shape, type(self.X[0][0]), type(self.X[0][0][0]), self.X[0][0][1:10])
-
-            # get_l_in = theano.function([l_in.input_var], L.get_output(l_in))
-            get_l_in = L.get_output(net['l_in'])
-            l_in_val = get_l_in.eval({net['l_in'].input_var: self.X})
-            # l_in_val = get_l_in(self.X)
-            logger_RNNtools.debug(get_l_in)
-            logger_RNNtools.debug(l_in_val)
+            get_l_in = L.get_output(net['l1_in'])
+            l_in_val = get_l_in.eval({net['l1_in'].input_var: self.X})
+            #logger_RNNtools.debug(l_in_val)
             logger_RNNtools.debug('  l_in size: %s', l_in_val.shape);
 
-        net['l_rnn'] = L.recurrent.RecurrentLayer(
-                net['l_in'], num_units=n_hidden,
-                nonlinearity=activation_fn,
-                W_in_to_hid=lasagne.init.Uniform(weight_init),
-                W_hid_to_hid=lasagne.init.Uniform(weight_init),
-                b=lasagne.init.Constant(0.),
-                hid_init=lasagne.init.Constant(0.),
-                learn_init=False)
+            get_l_mask = L.get_output(net['l1_mask'])
+            l_mask_val = get_l_mask.eval({net['l1_mask'].input_var: self.masks})
+            # logger_RNNtools.debug(l_in_val)
+            logger_RNNtools.debug('  l_mask size: %s', l_mask_val.shape);
 
-        # ## LSTM stuff
-        # # All gates have initializers for the input-to-gate and hidden state-to-gate
-        # # weight matrices, the cell-to-gate weight vector, the bias vector, and the nonlinearity.
-        # # The convention is that gates use the standard sigmoid nonlinearity,
-        # # which is the default for the Gate class.
-        # gate_parameters = lasagne.layers.recurrent.Gate(
-        #         W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
-        #         b=lasagne.init.Constant(0.))
-        # cell_parameters = lasagne.layers.recurrent.Gate(
-        #         W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
-        #         # Setting W_cell to None denotes that no cell connection will be used.
-        #         W_cell=None, b=lasagne.init.Constant(0.),
-        #         # By convention, the cell nonlinearity is tanh in an LSTM.
-        #         nonlinearity=lasagne.nonlinearities.tanh)
-        # # Our LSTM will have 10 hidden/cell units
-        # N_HIDDEN = 10
-        # l_lstm = lasagne.layers.recurrent.LSTMLayer(
-        #         l_in, N_HIDDEN,
-        #         # We need to specify a separate input for masks
-        #         mask_input=l_mask,
-        #         # Here, we supply the gate parameters for each gate
-        #         ingate=gate_parameters, forgetgate=gate_parameters,
-        #         cell=cell_parameters, outgate=gate_parameters,
-        #         # We'll learn the initialization and use gradient clipping
-        #         learn_init=True, grad_clipping=100.)
+            n_batch, n_time_steps, n_features = net['l1_in'].input_var.shape
+            logger_RNNtools.debug("  n_batch: %s | n_time_steps: %s | n_features: %s", n_batch, n_time_steps, n_features)
 
-        # Bidirectional: add reverse layer
-        # # The "backwards" layer is the same as the first,
-        # # except that the backwards argument is set to True.
-        # l_lstm_back = lasagne.layers.recurrent.LSTMLayer(
-        #         l_in, N_HIDDEN, ingate=gate_parameters,
-        #         mask_input=l_mask, forgetgate=gate_parameters,
-        #         cell=cell_parameters, outgate=gate_parameters,
-        #         learn_init=True, grad_clipping=100., backwards=True)
 
-        # # We'll combine the forward and backward layer output by summing.
-        # # Merge layers take in lists of layers to merge as input.
-        # l_sum = lasagne.layers.ElemwiseSumLayer([l_lstm, l_lstm_back])
-        # # The output of l_msum will be of shape (n_batch, n_time_steps, num_features).
+        ## LSTM parameters
+        # All gates have initializers for the input-to-gate and hidden state-to-gate
+        # weight matrices, the cell-to-gate weight vector, the bias vector, and the nonlinearity.
+        # The convention is that gates use the standard sigmoid nonlinearity,
+        # which is the default for the Gate class.
+        gate_parameters = lasagne.layers.recurrent.Gate(
+                W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
+                b=lasagne.init.Constant(0.))
+        cell_parameters = lasagne.layers.recurrent.Gate(
+                W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
+                # Setting W_cell to None denotes that no cell connection will be used.
+                W_cell=None, b=lasagne.init.Constant(0.),
+                # By convention, the cell nonlinearity is tanh in an LSTM.
+                nonlinearity=lasagne.nonlinearities.tanh)
 
-        # # # Now we need to go from RNN to Feedforward -> different shape expected -> reshape
-        # # First, retrieve symbolic variables for the input shape
-        # n_batch, n_time_steps, n_features = l_in.input_var.shape
-        # # Now, squash the n_batch and n_time_steps dimensions
-        # l_reshape = lasagne.layers.ReshapeLayer(l_sum, (-1, N_HIDDEN))
-        # # Now, we can apply feed-forward layers as usual.
-        # # We want the network to predict a single value, the sum, so we'll use a single unit.
-        # l_dense = lasagne.layers.DenseLayer(
-        #         l_reshape, num_units=1, nonlinearity=lasagne.nonlinearities.tanh)
-        # # Now, the shape will be n_batch*n_timesteps, 1. We can then reshape to
-        # # n_batch, n_timesteps to get a single value for each timstep from each sequence
-        # l_out = lasagne.layers.ReshapeLayer(l_dense, (n_batch, n_time_steps))
+        net['l2_lstm'] = lasagne.layers.recurrent.LSTMLayer(
+                net['l1_in'], n_hidden,
+                # We need to specify a separate input for masks
+                mask_input=net['l1_mask'],
+                # Here, we supply the gate parameters for each gate
+                ingate=gate_parameters, forgetgate=gate_parameters,
+                cell=cell_parameters, outgate=gate_parameters,
+                # We'll learn the initialization and use gradient clipping
+                learn_init=True, grad_clipping=100.)
+
+        # The "backwards" layer is the same as the first,
+        # except that the backwards argument is set to True.
+        net['l3_lstm_back'] = lasagne.layers.recurrent.LSTMLayer(
+                net['l1_in'], n_hidden, ingate=gate_parameters,
+                mask_input=net['l1_mask'], forgetgate=gate_parameters,
+                cell=cell_parameters, outgate=gate_parameters,
+                learn_init=True, grad_clipping=100., backwards=True)
+        # We'll combine the forward and backward layer output by summing.
+        # Merge layers take in lists of layers to merge as input.
+        # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
+        net['l4_lsum']= lasagne.layers.ElemwiseSumLayer([net['l2_lstm'], net['l3_lstm_back']])
+
+        # To connect this to feedforward networks, we need to reshape
+        # use symbolic variables from the input shape
+
+        # Now, squash the n_batch and n_time_steps dimensions
+        net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l4_lsum'], (-1, n_hidden))
+
+        # Now, we can apply feed-forward layers as usual for classification
+        net['l6_dense'] = L.DenseLayer(net['l5_reshape'], num_units=num_output_units,
+                                    nonlinearity=T.nnet.softmax)
+        # Now, the shape will be (n_batch * n_timesteps, num_output_units. We can then reshape to
+        # n_batch to get num_output_units values for each timestep from each sequence
+        net['l7_out'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (-1, num_output_units))
+
         if debug:
-            get_l_rnn = theano.function([net['l_in'].input_var], L.get_output(net['l_rnn']))
-            l_rnn_val = get_l_rnn(self.X)
-            logger_RNNtools.debug('  l_rnn size:');
-            logger_RNNtools.debug(l_rnn_val.shape)
+            # Forwards LSTM
+            get_l_lstm = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var], L.get_output(net['l2_lstm']))
+            l_lstm_val = get_l_lstm(self.X, self.masks)
+            logger_RNNtools.debug('  l2_lstm size: %s', l_lstm_val.shape);
+            # Backwards LSTM
+            get_l_lstm_back = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var], L.get_output(net['l3_lstm_back']))
+            l_lstmBack_val = get_l_lstm_back(self.X, self.masks)
+            logger_RNNtools.debug('  l3_lstm_back size: %s', l_lstmBack_val.shape)
 
-        net['l_reshape'] = L.ReshapeLayer(net['l_rnn'], (-1, n_hidden))
         if debug:
-            get_l_reshape = theano.function([net['l_in'].input_var], L.get_output(net['l_reshape']))
-            l_reshape_val = get_l_reshape(self.X)
+            get_l_reshape = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var], L.get_output(net['l5_reshape']))
+            l_reshape_val = get_l_reshape(self.X, self.masks)
             logger_RNNtools.debug('  l_reshape size: %s', l_reshape_val.shape)
 
-        net['l_out'] = L.DenseLayer(net['l_reshape'], num_units=num_output_units,
-                             nonlinearity=T.nnet.softmax)
+            # print network structure
+            logger_RNNtools.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
+            for key in sorted(net.keys()):
+                try:logger_RNNtools.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape, net[key].output_shape)
+                except: logger_RNNtools.debug('Layer: %12s | out: %s', key, net[key].output_shape)
 
+            pdb.set_trace()
         self.network = net
 
 
@@ -236,59 +244,91 @@ class NeuralNetwork:
 
         target_var = T.imatrix('targets')
 
-        net = self.network['l_out']
-        network_output = L.get_output(net)
-        #predicted_values = network_output.flatten()
+        net_out = self.network['l7_out']
+        network_output = L.get_output(net_out)
 
         # Get the first layer of the network
-        l_in = self.network['l_in']
-        l_mask = self.network['l_mask']
+        l_in = self.network['l1_in']
+        l_mask = self.network['l1_mask']
 
-        # Retrieve all trainable parameters from the network
-        all_params = L.get_all_params(net, trainable=True)
-
-        # compare targets with highest output probatility
-        # network_output.shape = (len(X), 39) -> (nb_inputs, nb_classes)
-        cost_pointwise = lasagne.objectives.categorical_crossentropy(T.argmax(network_output,axis=1), target_var.flatten())  # from KPG-ASR, LasagneCLM.py
-        cost = (cost_pointwise * l_mask.input_var).sum()
-
-        # Function to determine the number of correct classifications
-        # TODO: only use the output at the middle of each phoneme interval
-        accuracy = T.constant([1]) #T.mean(T.eq(T.argmax(network_output, axis=1), target_var), dtype=theano.config.floatX)
-
+        if debug:
+            # print network structure
+            net = self.network
+            logger_RNNtools.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
+            for key in sorted(net.keys()):
+                try:
+                    logger_RNNtools.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape,
+                                          net[key].output_shape)
+                except:
+                    logger_RNNtools.debug('Layer: %12s | out: %s', key, net[key].output_shape)
 
         # Function to get the output of the network
-        output_fn = theano.function([l_in.input_var], network_output, name='output_fn')
+        output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
         if debug:
             logger_RNNtools.debug('l_in.input_var.type: \t%s', l_in.input_var.type)
-            logger_RNNtools.debug('l_in.input_var.shape:\t %s', l_in.input_var.shape)
+            logger_RNNtools.debug('l_in.input_var.shape:\t%s', l_in.input_var.shape)
 
-            l_out_val = output_fn(self.X)
+            l_out_val = output_fn(self.X, self.masks)
+            logger_RNNtools.debug('output_fn(X)[0]:     \n%s', l_out_val[0]);
             logger_RNNtools.debug('output_fn(X), shape: \t%s', l_out_val.shape);
-            logger_RNNtools.debug('output_fn(X), min/max: [{:.2f},{:.2f}]'.format(l_out_val.min(), l_out_val.max()))
+            logger_RNNtools.debug(
+                'output_fn(X), min/max: [{:.2f},{:.2f}]'.format(l_out_val.min(), l_out_val.max()))
 
-        argmax_fn = theano.function([l_in.input_var], T.argmax(network_output, axis=1), name='argmax_fn')
+
+        # Retrieve all trainable parameters from the network
+        all_params = L.get_all_params(net_out, trainable=True)
+
+        # compare targets with highest output probability. Take maximum of all probs (3rd axis of output: 1=batch_size (input files), 2 = time_seq (frames), 3 = n_features (phonemes)
+        # network_output.shape = (len(X), 39) -> (nb_inputs, nb_classes)
+
+        ## from https://groups.google.com/forum/#!topic/lasagne-users/os0j3f_Th5Q
+        # Pad your vector of labels and then mask the cost:
+        # cost = lasagne.objectives.categorical_crossentropy(predictions, targets)
+        # cost = lasagne.objectives.aggregate(cost, mask.flatten())
+        # The latter will do (cost * mask).mean().
+        # It's important to pad the label vectors with something valid such as zeros,
+        # since they will still have to give valid costs that can be multiplied by the mask.
+        # The shape of predictions, targets and mask should match:
+        # (predictions as (batch_size*max_seq_len, n_features), the other two as (batch_size*max_seq_len,)).
+        cost_pointwise = lasagne.objectives.categorical_crossentropy(network_output, target_var.flatten())
+        cost = (cost_pointwise * l_mask.input_var.flatten()).mean()
+
+        # Function to determine the number of correct classifications
+        predictions = (T.argmax(network_output, axis=1))
+        predictions_fn = theano.function([l_in.input_var, l_mask.input_var], predictions, name='predictions_fn')
         if debug:
-            logger_RNNtools.debug('argmax_fn(X), type:  \t%s', type(argmax_fn(self.X)[0]))
-            logger_RNNtools.debug('argmax_fn(X), value: \t%s', argmax_fn(self.X)[0].shape)
+            predicted = predictions_fn(self.X, self.masks)
+            logger_RNNtools.debug('predictions_fn(X).shape: %s', predicted.shape)
+            logger_RNNtools.debug('predictions_fn(X)[0], value: \n%s', predicted[0])
 
-        # Functions for training and computing cost
-        updates = lasagne.updates.adam(cost, all_params)
-        train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
-                [cost, accuracy], updates=updates, name='train_fn')
+        # TODO: only use the output at the middle of each phoneme interval (get better accuracy)
+        accuracy = T.mean(T.eq(predictions, target_var.flatten()), dtype=theano.config.floatX)
+
+
+        # Functions for computing cost and training
         validate_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
                                       [cost, accuracy], name='validate_fn')
-
+        cost_pointwise_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
+                                            cost_pointwise, name='cost_pointwise_fn')
         if debug:
+            logger_RNNtools.debug('%s', self.Y.flatten())
+
+            logger_RNNtools.debug('%s', cost_pointwise_fn(self.X, self.masks, self.Y))
+
             evaluate_cost = validate_fn(self.X, self.masks, self.Y)
             logger_RNNtools.debug('%s %s', type(evaluate_cost), len(evaluate_cost))
-            logger_RNNtools.debug('%s', evaluate_cost[0].shape)
             logger_RNNtools.debug('%s', evaluate_cost)
             logger_RNNtools.debug('cost:     {:.3f}'.format(float(evaluate_cost[0])))
             logger_RNNtools.debug('accuracy: {:.3f}'.format(float(evaluate_cost[1])))
-            #pdb.set_trace()
 
-        self.training_fn = output_fn, argmax_fn, train_fn, validate_fn
+        #pdb.set_trace()
+
+        updates = lasagne.updates.adam(cost, all_params)
+        train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
+                [cost, accuracy], updates=updates, name='train_fn')
+
+
+        self.training_fn = output_fn, predictions_fn, train_fn, validate_fn
 
     def create_confusion(self, X, y, debug=False):
         argmax_fn = self.training_fn[1]
@@ -358,12 +398,15 @@ class NeuralNetwork:
             for inputs, targets, masks, seq_lengths in tqdm(iterate_minibatches(X_train, y_train, batch_size, shuffle=True),
                                         total=math.ceil(len(X_train) / batch_size)):
 
-                # logger_RNNtools.debug('%s %s',inputs.shape, targets.shape)
-                # logger_RNNtools.debug('%s %s',inputs[0].shape, targets[0].shape)
+                if debug:
+                    logger_RNNtools.debug('%s %s',inputs.shape, targets.shape)
+                    logger_RNNtools.debug('%s %s',inputs[0].shape, targets[0].shape)
                 error, accuracy = train_fn(inputs, masks, targets)
+                if debug: logger_RNNtools.debug('%s %s', error, accuracy)
                 train_error[epoch] += error
                 train_accuracy[epoch] += accuracy
                 train_batches[epoch] += len(inputs)
+                #pdb.set_trace()
 
             logger_RNNtools.info("Pass over Validation Set")
             for inputs, targets, masks, seq_lengths in iterate_minibatches(X_val, y_val, batch_size, shuffle=False):
@@ -396,7 +439,7 @@ class NeuralNetwork:
             if val_epoch_error < self.best_error:
                 self.best_error = val_epoch_error
                 self.best_epoch = self.curr_epoch
-                self.best_param = L.get_all_param_values(self.network['l_out'])
+                self.best_param = L.get_all_param_values(self.network['l7_out'])
                 logger_RNNtools.info("New best model found!")
                 if save_name is not None:
                     logger_RNNtools.info("Model saved as " + save_name + '.npz')
@@ -432,3 +475,4 @@ class NeuralNetwork:
                             [confusion_matrices],
                             cPickle_file,
                             protocol=cPickle.HIGHEST_PROTOCOL)
+                            
