@@ -60,7 +60,7 @@ logger_RNN.info("LR_decay = %s", str(LR_decay))
 #############################################################
 # Set locations for LOG, PARAMETERS, TRAIN info
 model_name = "_1HiddenLayer" + str(N_HIDDEN) + "_nbMFCC" + str(INPUT_SIZE) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional")
-store_dir = output_path = "/home/matthijs/TCDTIMIT/TIMIT/binary/results"
+store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binary/results"
 
 # model parameters and network_training_info
 model_load = os.path.join(store_dir, model_name)
@@ -79,7 +79,7 @@ logger_RNN.addHandler(fh)
 logger_RNNtools.info("\n\n\n\n STARTING NEW TRAINING SESSION AT " + strftime("%Y-%m-%d %H:%M:%S", gmtime()))
 
 ##### IMPORTING DATA #####
-dataRootPath = "/home/matthijs/TCDTIMIT/TIMIT/binary_list39/speech2phonemes26Mels/"
+dataRootPath = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binary_list39/speech2phonemes26Mels/")
 data_path = dataRootPath + "std_preprocess_26_ch.pkl"
 
 logger_RNN.info('  data source: ' + dataRootPath)
