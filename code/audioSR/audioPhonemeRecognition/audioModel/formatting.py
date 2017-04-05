@@ -1,5 +1,6 @@
 # from http://stackoverflow.com/questions/384076/how-can-i-color-python-logging-output?rq=1
 import logging
+import os
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
@@ -9,6 +10,7 @@ BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 RESET_SEQ = "\033[0m"
 COLOR_SEQ = "\033[1;%dm"
 BOLD_SEQ = "\033[1m"
+
 
 def formatter_message(message, use_color=True):
     if use_color:
@@ -42,16 +44,23 @@ class ColoredFormatter(logging.Formatter):
 
 # Custom logger class with multiple destinations
 class ColoredLogger(logging.Logger):
-    FORMAT = "[$BOLD%(name)-5s$RESET][%(levelname)-10s]($BOLD%(filename)s$RESET:%(lineno)d) %(message)s "
+    FORMAT = '%(asctime)s - (%(filename)s:%(lineno)d) | %(message)s'  # "[$BOLD%(name)-5s$RESET][%(levelname)-10s]($BOLD%(filename)s$RESET:%(lineno)d) %(message)s "
     COLOR_FORMAT = formatter_message(FORMAT, True)
 
     def __init__(self, name):
-        logging.Logger.__init__(self, name, logging.CRITICAL)
+        logging.Logger.__init__(self, name, logging.WARNING)
 
         color_formatter = ColoredFormatter(self.COLOR_FORMAT)
 
         console = logging.StreamHandler()
         console.setFormatter(color_formatter)
+        console.setLevel(logging.INFO)
 
         self.addHandler(console)
         return
+
+    def addFileHandler(self, output_dir='.', log_name="logger.log"):
+        fileHandler = logging.FileHandler(os.path.join(output_dir, log_name), "w", encoding=None, delay=True)
+        fileHandler.setFormatter(ColoredFormatter(self.COLOR_FORMAT))
+        fileHandler.setLevel(logging.DEBUG)
+        self.addHandler(fileHandler)

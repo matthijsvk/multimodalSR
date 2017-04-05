@@ -42,9 +42,11 @@ phoneme_set_39 = dict(zip(phoneme_set_39_list, values))
 
 # from http://www.intechopen.com/books/speech-technologies/phoneme-recognition-on-the-timit-database, page 5
 phoneme_set_61_list = [
-    'iy', 'ih', 'eh', 'ey', 'ae', 'aa', 'aw', 'ay', 'ah', 'ao', 'oy', 'ow', 'uh', 'uw', 'ux', 'er', 'ax', 'ix', 'axr', 'ax-h', 'jh',
+    'iy', 'ih', 'eh', 'ey', 'ae', 'aa', 'aw', 'ay', 'ah', 'ao', 'oy', 'ow', 'uh', 'uw', 'ux', 'er', 'ax', 'ix', 'axr',
+    'ax-h', 'jh',
     'ch', 'b', 'd', 'g', 'p', 't', 'k', 'dx', 's', 'sh', 'z', 'zh', 'f', 'th', 'v', 'dh', 'm', 'n', 'ng', 'em', 'nx',
-    'en', 'eng', 'l', 'r', 'w', 'y', 'hh', 'hv', 'el', 'bcl', 'dcl', 'gcl', 'pcl', 'tcl', 'kcl', 'q', 'pau', 'epi', 'h#',
+    'en', 'eng', 'l', 'r', 'w', 'y', 'hh', 'hv', 'el', 'bcl', 'dcl', 'gcl', 'pcl', 'tcl', 'kcl', 'q', 'pau', 'epi',
+    'h#',
 ]
 values = [i for i in range(0, len(phoneme_set_61_list))]
 phoneme_set_61 = dict(zip(phoneme_set_61_list, values))

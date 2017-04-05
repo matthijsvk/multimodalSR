@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 
 from general_tools import *
 
-paths = path_reader('path_toke.txt')
-dataset_path = os.path.join(paths[0], 'std_preprocess_26_ch_DEBUG.pkl')
+store_dir = '/home/matthijs//home/matthijs/TCDTIMIT/TIMIT/binary_list39/speech2phonemes26Mels
+dataset_path = os.path.join(paths[0], 'std_preprocess_26_ch.pkl')
 
 X_train, y_train, X_val, y_val, X_test, y_test = load_dataset(dataset_path)
 

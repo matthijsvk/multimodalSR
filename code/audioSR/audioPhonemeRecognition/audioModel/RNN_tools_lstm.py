@@ -1,21 +1,17 @@
 from __future__ import print_function
 
+import logging  # debug < info < warn < error < critical  # from https://docs.python.org/3/howto/logging-cookbook.html
+import math
 import os
 import time
 
 import lasagne
 import lasagne.layers as L
-import numpy as np
 import theano
 import theano.tensor as T
-
 from tqdm import tqdm
-import math
 
-import pdb
-import logging  # debug < info < warn < error < critical  # from https://docs.python.org/3/howto/logging-cookbook.html
-
-logger_RNNtools = logging.getLogger('RNNtools')
+logger_RNNtools = logging.getLogger('RNN.tools')
 logger_RNNtools.setLevel(logging.DEBUG)
 
 from general_tools import *
@@ -65,8 +61,12 @@ class NeuralNetwork:
     network_train_info = [[], [], []]
 
     def __init__(self, architecture, dataset, batch_size=1, num_features=26, n_hidden=275, num_output_units=61,
-                 weight_init=0.1, activation_fn=lasagne.nonlinearities.sigmoid,
-                 seed=int(time.time()), debug=False):
+                 bidirectional=False, seed=int(time.time()), debug=False):
+        self.num_output_units = num_output_units
+        self.num_features = num_features
+        self.batch_size = batch_size
+        self.updates = {}
+
         if architecture == 'RNN':
             X_train, y_train, X_val, y_val, X_test, y_test = dataset
 
@@ -87,13 +87,12 @@ class NeuralNetwork:
             logger_RNNtools.debug('masks[0].shape:   %s', self.masks[0].shape)
             logger_RNNtools.debug('masks[0][0].type: %s', type(self.masks[0][0]))
 
-            self.build_RNN(batch_size, num_features, n_hidden, num_output_units,
-                           weight_init, activation_fn, seed, debug)
+            self.build_RNN(batch_size, num_features, n_hidden, num_output_units, bidirectional,
+                           seed, debug)
         else:
             print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
 
-    def build_RNN(self, batch_size=1, num_features=26, n_hidden=275, num_output_units=61,
-                  weight_init=0.1, activation_fn=lasagne.nonlinearities.sigmoid,
+    def build_RNN(self, batch_size=1, num_features=26, n_hidden=275, num_output_units=61, bidirectional=False,
                   seed=int(time.time()), debug=False):
         if debug:
             logger_RNNtools.debug('\nInputs:');
@@ -107,23 +106,23 @@ class NeuralNetwork:
                                   self.Y[0][:5])
             logger_RNNtools.debug('Layers: ')
 
-        np.random.seed(seed)
         # seed np for weight initialization
+        np.random.seed(seed)
+
         net = {}
 
-        max_seq_length = 1000
-        # shape = (batch_size, max_seq_length, num_features), but 1 and 2 are variable
+        # some inspiration from http://colinraffel.com/talks/hammer2015recurrent.pdf
+        # shape = (batch_size, max_seq_length, num_features)
         net['l1_in'] = L.InputLayer(shape=(batch_size, None, num_features))
-        # l_in = L.InputLayer(shape=(None, None, num_features))      #compile for variable batch size; slower
 
         # This input will be used to provide the network with masks.
-        # Masks are expected to be matrices of shape (n_batch, n_time_steps);
-        net['l1_mask'] = L.InputLayer(shape=(batch_size, None))  # See http://colinraffel.com/talks/hammer2015recurrent.pdf
+        # Masks are expected to be matrices of shape (batch_size, n_time_steps);
+        net['l1_mask'] = L.InputLayer(shape=(batch_size, None))
 
         if debug:
             get_l_in = L.get_output(net['l1_in'])
             l_in_val = get_l_in.eval({net['l1_in'].input_var: self.X})
-            #logger_RNNtools.debug(l_in_val)
+            # logger_RNNtools.debug(l_in_val)
             logger_RNNtools.debug('  l_in size: %s', l_in_val.shape);
 
             get_l_mask = L.get_output(net['l1_mask'])
@@ -132,8 +131,8 @@ class NeuralNetwork:
             logger_RNNtools.debug('  l_mask size: %s', l_mask_val.shape);
 
             n_batch, n_time_steps, n_features = net['l1_in'].input_var.shape
-            logger_RNNtools.debug("  n_batch: %s | n_time_steps: %s | n_features: %s", n_batch, n_time_steps, n_features)
-
+            logger_RNNtools.debug("  n_batch: %s | n_time_steps: %s | n_features: %s", n_batch, n_time_steps,
+                                  n_features)
 
         ## LSTM parameters
         # All gates have initializers for the input-to-gate and hidden state-to-gate
@@ -160,56 +159,66 @@ class NeuralNetwork:
                 # We'll learn the initialization and use gradient clipping
                 learn_init=True, grad_clipping=100.)
 
-        # The "backwards" layer is the same as the first,
-        # except that the backwards argument is set to True.
-        net['l3_lstm_back'] = lasagne.layers.recurrent.LSTMLayer(
-                net['l1_in'], n_hidden, ingate=gate_parameters,
-                mask_input=net['l1_mask'], forgetgate=gate_parameters,
-                cell=cell_parameters, outgate=gate_parameters,
-                learn_init=True, grad_clipping=100., backwards=True)
-        # We'll combine the forward and backward layer output by summing.
-        # Merge layers take in lists of layers to merge as input.
-        # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
-        net['l4_lsum']= lasagne.layers.ElemwiseSumLayer([net['l2_lstm'], net['l3_lstm_back']])
+        if bidirectional:
+            # Use backward LSTM
+            # The "backwards" layer is the same as the first,
+            # except that the backwards argument is set to True.
+            net['l3_lstm_back'] = lasagne.layers.recurrent.LSTMLayer(
+                    net['l1_in'], n_hidden, ingate=gate_parameters,
+                    mask_input=net['l1_mask'], forgetgate=gate_parameters,
+                    cell=cell_parameters, outgate=gate_parameters,
+                    learn_init=True, grad_clipping=100., backwards=True)
+            # We'll combine the forward and backward layer output by summing.
+            # Merge layers take in lists of layers to merge as input.
+            # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
+            net['l4_sum'] = lasagne.layers.ElemwiseSumLayer([net['l2_lstm'], net['l3_lstm_back']])
 
-        # To connect this to feedforward networks, we need to reshape
-        # use symbolic variables from the input shape
+            # To connect this to feedforward networks, we need to reshape
+            # -> squash the n_batch and n_time_steps dimensions
+            net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l4_sum'], (-1, n_hidden))
 
-        # Now, squash the n_batch and n_time_steps dimensions
-        net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l4_lsum'], (-1, n_hidden))
+            if debug:
+                # Backwards LSTM
+                get_l_lstm_back = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
+                                                  L.get_output(net['l3_lstm_back']))
+                l_lstmBack_val = get_l_lstm_back(self.X, self.masks)
+                logger_RNNtools.debug('  l3_lstm_back size: %s', l_lstmBack_val.shape)
+        else:
+            # use only forward LSTM
+            net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'], (-1, n_hidden))
 
-        # Now, we can apply feed-forward layers as usual for classification
+        if debug:
+            # Forwards LSTM
+            get_l_lstm = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
+                                         L.get_output(net['l2_lstm']))
+            l_lstm_val = get_l_lstm(self.X, self.masks)
+            logger_RNNtools.debug('  l2_lstm size: %s', l_lstm_val.shape);
+
+        # Now we can apply feed-forward layers as usual for classification
         net['l6_dense'] = L.DenseLayer(net['l5_reshape'], num_units=num_output_units,
-                                    nonlinearity=T.nnet.softmax)
+                                       nonlinearity=lasagne.nonlinearities.softmax)
+
         # Now, the shape will be (n_batch * n_timesteps, num_output_units. We can then reshape to
         # n_batch to get num_output_units values for each timestep from each sequence
         net['l7_out'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (-1, num_output_units))
 
         if debug:
-            # Forwards LSTM
-            get_l_lstm = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var], L.get_output(net['l2_lstm']))
-            l_lstm_val = get_l_lstm(self.X, self.masks)
-            logger_RNNtools.debug('  l2_lstm size: %s', l_lstm_val.shape);
-            # Backwards LSTM
-            get_l_lstm_back = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var], L.get_output(net['l3_lstm_back']))
-            l_lstmBack_val = get_l_lstm_back(self.X, self.masks)
-            logger_RNNtools.debug('  l3_lstm_back size: %s', l_lstmBack_val.shape)
-
-        if debug:
-            get_l_reshape = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var], L.get_output(net['l5_reshape']))
+            get_l_reshape = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
+                                            L.get_output(net['l5_reshape']))
             l_reshape_val = get_l_reshape(self.X, self.masks)
             logger_RNNtools.debug('  l_reshape size: %s', l_reshape_val.shape)
 
             # print network structure
             logger_RNNtools.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
             for key in sorted(net.keys()):
-                try:logger_RNNtools.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape, net[key].output_shape)
-                except: logger_RNNtools.debug('Layer: %12s | out: %s', key, net[key].output_shape)
+                try:
+                    logger_RNNtools.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape,
+                                          net[key].output_shape)
+                except:
+                    logger_RNNtools.debug('Layer: %12s | out: %s', key, net[key].output_shape)
 
-            pdb.set_trace()
+                # pdb.set_trace()
         self.network = net
-
-
 
     def use_best_param(self):
         lasagne.layers.set_all_param_values(self.network, self.best_param)
@@ -222,25 +231,64 @@ class NeuralNetwork:
     def load_model(self, model_name):
         if self.network is not None:
             try:
-                #print("Loading previous model...")
-                with np.load(model_name) as f:
+                logger_RNNtools.info("Loading stored model...")
+
+                # restore network weights
+                with np.load(model_name + ".npz") as f:
                     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-                # param_values[0] = param_values[0].astype('float32')
-                param_values = [param_values[i].astype('float32') for i in range(len(param_values))]
-                lasagne.layers.set_all_param_values(self.network, param_values)
+                    lasagne.layers.set_all_param_values(self.network['l7_out'], *param_values)
+
+                # # restore 'updates' training parameters
+                # with np.load(model_name + "_updates.npz") as f:
+                #     updates_values = [f['arr_%d' % i] for i in range(len(f.files))]
+                #     for p, value in zip(self.updates.keys(), updates_values):
+                #         p.set_value(value)
+                logger_RNNtools.info("Loading parameters successful.")
+                return 0
+
             except IOError as e:
                 # print(os.strerror(e.errno))
                 logger_RNNtools.warning('Model: {} not found. No weights loaded'.format(model_name))
+                return -1
         else:
             logger_RNNtools.error('You must build the network before loading the weights.')
-            raise Exception
+            return -1
+        return -1
 
     def save_model(self, model_name):
         if not os.path.exists(os.path.dirname(model_name)):
             os.makedirs(os.path.dirname(model_name))
-        np.savez(model_name, self.best_param)
+        np.savez(model_name + '.npz', self.best_param)
 
-    def build_functions(self, LEARNING_RATE=1e-5, MOMENTUM=0.9, debug=False):  # LSTM in lasagne: see https://github.com/craffel/Lasagne-tutorial/blob/master/examples/recurrent.py
+        # updates_vals = [p.get_value() for p in self.best_updates.keys()]
+        # np.savez(model_name + '_updates.npz', updates_vals)
+
+    def create_confusion(self, X, y, debug=False):
+        argmax_fn = self.training_fn[1]
+
+        y_pred = []
+        for X_obs in X:
+            for x in argmax_fn(X_obs):
+                for j in x:
+                    y_pred.append(j)
+
+        y_actu = []
+        for Y in y:
+            for y in Y:
+                y_actu.append(y)
+
+        conf_img = np.zeros([61, 61])
+        assert (len(y_pred) == len(y_actu))
+
+        for i in range(len(y_pred)):
+            row_idx = y_actu[i]
+            col_idx = y_pred[i]
+            conf_img[row_idx, col_idx] += 1
+
+        return conf_img, y_pred, y_actu
+
+    def build_functions(self, MOMENTUM=0.9,
+                        debug=False):  # LSTM in lasagne: see https://github.com/craffel/Lasagne-tutorial/blob/master/examples/recurrent.py
 
         target_var = T.imatrix('targets')
 
@@ -272,8 +320,7 @@ class NeuralNetwork:
             logger_RNNtools.debug('output_fn(X)[0]:     \n%s', l_out_val[0]);
             logger_RNNtools.debug('output_fn(X), shape: \t%s', l_out_val.shape);
             logger_RNNtools.debug(
-                'output_fn(X), min/max: [{:.2f},{:.2f}]'.format(l_out_val.min(), l_out_val.max()))
-
+                    'output_fn(X), min/max: [{:.2f},{:.2f}]'.format(l_out_val.min(), l_out_val.max()))
 
         # Retrieve all trainable parameters from the network
         all_params = L.get_all_params(net_out, trainable=True)
@@ -304,7 +351,6 @@ class NeuralNetwork:
         # TODO: only use the output at the middle of each phoneme interval (get better accuracy)
         accuracy = T.mean(T.eq(predictions, target_var.flatten()), dtype=theano.config.floatX)
 
-
         # Functions for computing cost and training
         validate_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
                                       [cost, accuracy], name='validate_fn')
@@ -321,45 +367,19 @@ class NeuralNetwork:
             logger_RNNtools.debug('cost:     {:.3f}'.format(float(evaluate_cost[0])))
             logger_RNNtools.debug('accuracy: {:.3f}'.format(float(evaluate_cost[1])))
 
-        #pdb.set_trace()
+        # pdb.set_trace()
+        LR = T.scalar('LR', dtype=theano.config.floatX)
+        self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
+        train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
+                                   [cost, accuracy], updates=self.updates, name='train_fn')
 
-        updates = lasagne.updates.adam(cost, all_params)
-        train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
-                [cost, accuracy], updates=updates, name='train_fn')
+        self.all_fn = output_fn, predictions_fn, train_fn, validate_fn
 
-
-        self.training_fn = output_fn, predictions_fn, train_fn, validate_fn
-
-    def create_confusion(self, X, y, debug=False):
-        argmax_fn = self.training_fn[1]
-
-        y_pred = []
-        for X_obs in X:
-            for x in argmax_fn(X_obs):
-                for j in x:
-                    y_pred.append(j)
-
-        y_actu = []
-        for Y in y:
-            for y in Y:
-                y_actu.append(y)
-
-        conf_img = np.zeros([61, 61])
-        assert (len(y_pred) == len(y_actu))
-
-        for i in range(len(y_pred)):
-            row_idx = y_actu[i]
-            col_idx = y_pred[i]
-            conf_img[row_idx, col_idx] += 1
-
-        return conf_img, y_pred, y_actu
-
-
-    def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1,
+    def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
               compute_confusion=False, debug=False):
 
         X_train, y_train, X_val, y_val, X_test, y_test = dataset
-        output_fn, argmax_fn, train_fn, validate_fn = self.training_fn
+        output_fn, argmax_fn, train_fn, validate_fn = self.all_fn
 
         if debug:
             logger_RNNtools.debug('  X_train')
@@ -388,6 +408,7 @@ class NeuralNetwork:
         confusion_matrices = []
 
         logger_RNNtools.info("\n* Starting training...")
+        LR = LR_start
         for epoch in range(num_epochs):
             self.curr_epoch += 1
             epoch_time = time.time()
@@ -395,32 +416,34 @@ class NeuralNetwork:
             logger_RNNtools.info("CURRENT EPOCH: %s", self.curr_epoch)
 
             logger_RNNtools.info("Pass over Training Set")
-            for inputs, targets, masks, seq_lengths in tqdm(iterate_minibatches(X_train, y_train, batch_size, shuffle=True),
-                                        total=math.ceil(len(X_train) / batch_size)):
+            for inputs, targets, masks, seq_lengths in tqdm(
+                    iterate_minibatches(X_train, y_train, batch_size, shuffle=True),
+                    total=math.ceil(len(X_train) / batch_size)):
 
                 if debug:
-                    logger_RNNtools.debug('%s %s',inputs.shape, targets.shape)
-                    logger_RNNtools.debug('%s %s',inputs[0].shape, targets[0].shape)
-                error, accuracy = train_fn(inputs, masks, targets)
+                    logger_RNNtools.debug('%s %s', inputs.shape, targets.shape)
+                    logger_RNNtools.debug('%s %s', inputs[0].shape, targets[0].shape)
+
+                error, accuracy = train_fn(inputs, masks, targets, LR)
                 if debug: logger_RNNtools.debug('%s %s', error, accuracy)
                 train_error[epoch] += error
                 train_accuracy[epoch] += accuracy
-                train_batches[epoch] += len(inputs)
-                #pdb.set_trace()
+                train_batches[epoch] += 1
+                # pdb.set_trace()
 
             logger_RNNtools.info("Pass over Validation Set")
             for inputs, targets, masks, seq_lengths in iterate_minibatches(X_val, y_val, batch_size, shuffle=False):
-                    error, accuracy = validate_fn(inputs, masks, targets)
-                    validation_error[epoch] += error
-                    validation_accuracy[epoch] += accuracy
-                    validation_batches[epoch] += len(inputs)
+                error, accuracy = validate_fn(inputs, masks, targets)
+                validation_error[epoch] += error
+                validation_accuracy[epoch] += accuracy
+                validation_batches[epoch] += 1
 
             logger_RNNtools.info("Pass over Test Set")
             for inputs, targets, masks, seq_lengths in iterate_minibatches(X_test, y_test, batch_size, shuffle=False):
-                    error, accuracy = validate_fn(inputs, masks, targets)
-                    test_error[epoch] += error
-                    test_accuracy[epoch] += accuracy
-                    test_batches[epoch] += len(inputs)
+                error, accuracy = validate_fn(inputs, masks, targets)
+                test_error[epoch] += error
+                test_accuracy[epoch] += accuracy
+                test_batches[epoch] += 1
 
             # Print epoch summary
             train_epoch_error = (100 - train_accuracy[epoch]
@@ -436,25 +459,28 @@ class NeuralNetwork:
 
             logger_RNNtools.info("Epoch {} of {} took {:.3f}s.".format(
                     epoch + 1, num_epochs, time.time() - epoch_time))
+
+            # better model, so save parameters
             if val_epoch_error < self.best_error:
                 self.best_error = val_epoch_error
                 self.best_epoch = self.curr_epoch
-                self.best_param = L.get_all_param_values(self.network['l7_out'])
+                self.best_param = lasagne.layers.get_all_param_values(self.network['l7_out'])
+                self.best_updates = [p.get_value() for p in self.updates.keys()]
                 logger_RNNtools.info("New best model found!")
                 if save_name is not None:
-                    logger_RNNtools.info("Model saved as " + save_name + '.npz')
-                    self.save_model(save_name + '.npz')
+                    logger_RNNtools.info("Model saved as " + save_name)
+                    self.save_model(save_name)
 
-
-            logger_RNNtools.info("training cost:\t{:.6f}".format(
+            logger_RNNtools.info("Learning Rate:\t\t{:.6f} %".format(LR))
+            logger_RNNtools.info("Training cost:\t{:.6f}".format(
                     train_error[epoch] / train_batches[epoch]))
             logger_RNNtools.info("  train error:\t\t{:.6f} %".format(train_epoch_error))
 
-            logger_RNNtools.info("validation cost:\t{:.6f}".format(
+            logger_RNNtools.info("Validation cost:\t{:.6f}".format(
                     validation_error[epoch] / validation_batches[epoch]))
             logger_RNNtools.info("  validation error:\t{:.6f} %".format(val_epoch_error))
 
-            logger_RNNtools.info("test cost:\t\t{:.6f}".format(
+            logger_RNNtools.info("Test cost:\t\t{:.6f}".format(
                     test_error[epoch] / test_batches[epoch]))
             logger_RNNtools.info("  test error:\t\t{:.6f} %".format(test_epoch_error))
 
@@ -462,12 +488,14 @@ class NeuralNetwork:
                 confusion_matrices.append(self.create_confusion(X_val, y_val)[0])
                 logger_RNNtools.info('  Confusion matrix computed')
 
-
-            with open(save_name + '_var.pkl', 'wb') as cPickle_file:
+            # store train info
+            store_path = save_name + '_trainInfo.pkl'
+            with open(store_path, 'wb') as cPickle_file:
                 cPickle.dump(
                         [self.network_train_info],
                         cPickle_file,
                         protocol=cPickle.HIGHEST_PROTOCOL)
+            logger_RNNtools.info("Train info written to:\t %s", store_path)
 
             if compute_confusion:
                 with open(save_name + '_conf.pkl', 'wb') as cPickle_file:
@@ -475,4 +503,7 @@ class NeuralNetwork:
                             [confusion_matrices],
                             cPickle_file,
                             protocol=cPickle.HIGHEST_PROTOCOL)
+
+            LR = LR * LR_decay
+
                             
