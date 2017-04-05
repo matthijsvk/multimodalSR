@@ -10,7 +10,7 @@ from helpFunctions import resample
 from helpFunctions.writeToTxt import writeToTxt
 from phoneme_set import phoneme_set_39, phoneme_set_61_39
 
-
+debug = True
 # example usage: python transform.py phonemes -i /home/matthijs/TCDTIMIT/TIMIT/original/TIMIT/ -o /home/matthijs/TCDTIMIT/TIMIT/processed
 
 
@@ -117,6 +117,9 @@ def transformPhn(phn_file, dstPath):
 def transformWavs(args):
     srcDir = args.srcDir
     dstDir = args.dstDir
+
+    print("src: ", srcDir)
+    print("dst: ", dstDir)
     srcWavs = loadWavs(srcDir)
     srcWavs.sort()
 
@@ -131,6 +134,7 @@ def transformWavs(args):
         dstPath = getDestPath(srcPath, dstDir)
         resampled.append(dstPath)
         transformWav(srcPath, dstPath)
+        if debug: print(srcPath, dstPath)
 
     print("RESAMPLING TO 16kHz...")
     for dstPath in tqdm(resampled, total=len(resampled)):
