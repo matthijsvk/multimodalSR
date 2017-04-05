@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from six.moves import cPickle
 
-logger_GeneralTools = logging.getLogger('GeneralTools')
+logger_GeneralTools = logging.getLogger('RNN.generalTools')
 logger_GeneralTools.setLevel(logging.ERROR)
 
 
@@ -53,7 +53,8 @@ def pad_sequences_X(sequences, maxlen=None, padding='post', truncating='post', v
     # sequences = [[np.reshape(subsequence, (subsequence.shape[0], 1)) for subsequence in sequence] for sequence in sequences]
 
     logger_GeneralTools.debug('new dimensions: %s, %s, %s', xSize, ySize, zSize)
-    logger_GeneralTools.debug('intermediate matrix, estimated_size: %s', xSize * ySize * zSize * np.dtype(datatype).itemsize)
+    logger_GeneralTools.debug('intermediate matrix, estimated_size: %s',
+                              xSize * ySize * zSize * np.dtype(datatype).itemsize)
 
     x = (np.ones((xSize, ySize, zSize)) * value).astype(datatype)
 
@@ -136,7 +137,7 @@ def generate_masks(inputs, batch_size):  # inputs = X
     logger_GeneralTools.debug("input_dim: %d", input_dim)
 
     # X = np.zeros((batch_size, max_input_length, input_dim))
-    input_mask = np.zeros((batch_size, max_input_length),dtype='float32')
+    input_mask = np.zeros((batch_size, max_input_length), dtype='float32')
 
     for example_id in range(len(inputs)):
         logger_GeneralTools.debug('%d', example_id)

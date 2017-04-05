@@ -1,9 +1,6 @@
 import numpy as np
-# import coloredlogs, logging
-# logger = logging.getLogger('your-module')
-# coloredlogs.install(level='DEBUG')
-# coloredlogs.install(level='DEBUG', logger=logger)
-# #
+
+
 # # a = np.array([[1, 2, 3],
 # #               [3, 4, 5]])
 # # b = np.array([[4, 5, 6],
@@ -44,7 +41,8 @@ import numpy as np
 # import numpy as np
 # import random
 # from six.moves import range
-#
+
+
 # def pad_sequences(sequences, maxlen=None, dtype='int32',
 #                   padding='post', truncating='pre', value=0.):
 #     """
@@ -154,74 +152,96 @@ import numpy as np
 
 
 # LOGGING stuff
-# import logging
-#
-# logger = logging.getLogger('simple_example')
-# logger.setLevel(logging.DEBUG)
-# # create file handler which logs even debug messages
-# fh = logging.FileHandler('spam.log')
-# fh.setLevel(logging.DEBUG)
-# # create console handler with a higher log level
-# ch = logging.StreamHandler()
-# ch.setLevel(logging.ERROR)
-# # create formatter and add it to the handlers
-# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# ch.setFormatter(formatter)
-# fh.setFormatter(formatter)
-# # add the handlers to logger
-# logger.addHandler(ch)
-# logger.addHandler(fh)
-#
-# # 'application' code
-# logger.debug('debug message')
-# logger.info('info message')
-# logger.warn('warn message')
-# logger.error('error message')
-# logger.critical('critical message')
-#
+import logging
+
+logger = logging.getLogger('simple_example')
+logger.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('spam.log')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+# add the handlers to logger
+logger.addHandler(ch)
+logger.addHandler(fh)
+
+# 'application' code
+logger.debug('debug message')
+logger.info('info message')
+logger.warn('warn message')
+logger.error('error message')
+logger.critical('critical message')
+
+# # Attempting to add colors to logging, but many issues...
 # # from https://docs.python.org/3/howto/logging-cookbook.html
 # import logging, colorFormatting  # debug < info < warn < error < critical
 #
-# # You need to change the default format in colorFormatting.py (at the bottom) to CRITICAL
-# # otherwise it will print all Python/ Theano debug messages as well
 # logging.setLoggerClass(colorFormatting.ColoredLogger)
 # logger_RNN = logging.getLogger('RNN')
-# logger_RNN.setLevel(logging.DEBUG)
+
+# thisModelName = "1HiddenLayer" + str(N_HIDDEN) + "_nbMFCC" + str(INPUT_SIZE)
+# logger_RNN.addFileHandler(output_dir='./logs', log_name=thisModelName + ".log")
 
 
-
-a = [38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
- 38, 38, 36, 36, 36, 36, 36, 36, 36, 36, 36, 1, 1, 1, 1, 1, 1,
- 1, 1, 37, 37, 37, 37, 37, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
- 2, 2, 2, 2, 38, 38, 22, 22, 22, 22, 22, 22, 22, 1, 1, 1, 1,
- 1, 1, 1, 1, 38, 38, 38, 38, 38, 38, 25, 4, 4, 4, 4, 4, 4,
- 4, 4, 4, 4, 4, 4, 4, 38, 38, 38, 38, 38, 38, 38, 30, 30, 30,
- 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 5, 5, 5, 5, 5, 5,
- 5, 5, 5, 5, 5, 5, 5, 5, 38, 38, 38, 38, 38, 19, 19, 19, 19,
- 19, 19, 19, 19, 19, 38, 38, 27, 27, 14, 14, 14, 14, 14, 14, 1, 1,
- 1, 1, 1, 1, 1, 1, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 1,
- 1, 1, 1, 1, 1, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 7, 7,
- 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 36, 36, 36, 36, 36, 36,
- 36, 36, 36, 36, 38, 38, 16, 16, 16, 16, 16, 16, 7, 7, 7, 7, 7,
- 7, 7, 7, 7, 26, 17, 17, 17, 17, 17, 17, 17, 17, 7, 7, 7, 7,
- 7, 7, 7, 7, 7, 7, 7, 7, 13, 13, 13, 13, 13, 15, 15, 15, 15,
- 15, 15, 15, 15, 15, 15, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 17,
- 17, 17, 17, 17, 17, 17, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
- 38, 38]
-
-from phoneme_set import phoneme_set_39_list
-
-b=[phoneme_set_39_list[a[i]] for i in range(len(a))]
-c = []
-for j in range(len(b)-1):
-    if b[j] != b[j+1]:
-        c.append(b[j])
-
-print(b)
-print(c)
-
-
+## Converting numbers to phonemes
+# a = [38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
+#  38, 38, 36, 36, 36, 36, 36, 36, 36, 36, 36, 1, 1, 1, 1, 1, 1,
+#  1, 1, 37, 37, 37, 37, 37, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+#  2, 2, 2, 2, 38, 38, 22, 22, 22, 22, 22, 22, 22, 1, 1, 1, 1,
+#  1, 1, 1, 1, 38, 38, 38, 38, 38, 38, 25, 4, 4, 4, 4, 4, 4,
+#  4, 4, 4, 4, 4, 4, 4, 38, 38, 38, 38, 38, 38, 38, 30, 30, 30,
+#  35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 5, 5, 5, 5, 5, 5,
+#  5, 5, 5, 5, 5, 5, 5, 5, 38, 38, 38, 38, 38, 19, 19, 19, 19,
+#  19, 19, 19, 19, 19, 38, 38, 27, 27, 14, 14, 14, 14, 14, 14, 1, 1,
+#  1, 1, 1, 1, 1, 1, 35, 35, 35, 35, 35, 35, 35, 35, 35, 35, 1,
+#  1, 1, 1, 1, 1, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 7, 7,
+#  7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 36, 36, 36, 36, 36, 36,
+#  36, 36, 36, 36, 38, 38, 16, 16, 16, 16, 16, 16, 7, 7, 7, 7, 7,
+#  7, 7, 7, 7, 26, 17, 17, 17, 17, 17, 17, 17, 17, 7, 7, 7, 7,
+#  7, 7, 7, 7, 7, 7, 7, 7, 13, 13, 13, 13, 13, 15, 15, 15, 15,
+#  15, 15, 15, 15, 15, 15, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 17,
+#  17, 17, 17, 17, 17, 17, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
+#  38, 38]
+#
+# from phoneme_set import phoneme_set_39_list
+#
+# b=[phoneme_set_39_list[a[i]] for i in range(len(a))]
+# c = []
+# for j in range(len(b)-1):
+#     if b[j] != b[j+1]:
+#         c.append(b[j])
+#
+# print(b)
+# print(c)
 
 
+def load_model(self, model_name):
+    if self.network is not None:
+        try:
+            print("Loading stored model...")
+            with np.load(model_name) as f:
+                param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+                # lasagne.layers.set_all_param_values(self.network['l7_out'], param_values)
+
+                # with np.load(model_name) as f:
+                #     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+                # # param_values[0] = param_values[0].astype('float32')
+                # pdb.set_trace()
+                # param_values = [param_values[i].astype('float32') for i in range(len(param_values))]
+                # lasagne.layers.set_all_param_values(self.network, param_values)
+        except IOError as e:
+            # print(os.strerror(e.errno))
+            print('Model: {} not found. No weights loaded'.format(model_name))
+    else:
+        print('You must build the network before loading the weights.')
+        raise Exception
+    return param_values
 
 
+model_name = "/home/matthijs/TCDTIMIT/TIMIT/binary/results/TEST1HiddenLayer150_nbMFCC26.npz"
+a = load_model(model_name)

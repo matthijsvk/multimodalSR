@@ -2,10 +2,12 @@ import glob
 import logging
 import os
 import sys
+
 import numpy as np
-from tqdm import tqdm
-import utils
 from sklearn import preprocessing
+from tqdm import tqdm
+
+import utils
 
 """
 This file is based on https://github.com/dtjchen/spoken-command-processor
@@ -43,7 +45,7 @@ def createPKL(type):
         outputPath = getFileName(data_dir, 'trainData', 'pkl')
         print(outputPath)
         if (os.path.exists(outputPath)):
-            if (not utils.query_yes_no("TrainData.pkl exists. Overwrite?","no")):
+            if (not utils.query_yes_no("TrainData.pkl exists. Overwrite?", "no")):
                 return 0
         X, y = read_labeled_wavfiles(train_dataset_path)
         print("ALL FILES READ")

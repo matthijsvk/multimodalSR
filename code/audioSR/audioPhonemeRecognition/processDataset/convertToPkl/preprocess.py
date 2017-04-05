@@ -2,7 +2,6 @@ import cPickle
 import glob
 import math
 import os
-import sys
 import timeit;
 
 import numpy as np
@@ -11,15 +10,18 @@ from tqdm import tqdm
 
 program_start_time = timeit.default_timer()
 import random
+
 random.seed(int(timeit.default_timer()))
 import pdb
 
-import general_tools
+import audioPhonemeRecognition.audioModel.general_tools
 import python_speech_features
-from phoneme_set import phoneme_set_61, phoneme_set_39, phoneme_set_39_list, phoneme_set_61_list
+from audioPhonemeRecognition.audioModel.phoneme_set import phoneme_set_39_list
 
-import logging, colorFormatting  # debug < info < warn < error < critical  # from https://docs.python.org/3/howto/logging-cookbook.html
-logging.setLoggerClass(colorFormatting.ColoredLogger)
+import logging, \
+    audioPhonemeRecognition.audioModel.formatting  # debug < info < warn < error < critical  # from https://docs.python.org/3/howto/logging-cookbook.html
+
+logging.setLoggerClass(audioPhonemeRecognition.audioModel.formatting.ColoredLogger)
 logger = logging.getLogger('PrepData')
 logger.setLevel(logging.INFO)
 
@@ -35,10 +37,9 @@ FRAC_TRAIN = 0.9
 # TODO MODIFY THESE PARAMETERS for other nbPhonemes. Save location is updated automatically.
 nbPhonemes = 39
 
-phoneme_set_list = phoneme_set_39_list  #import list of phonemes, convert to dictionary with number mappings (see phoneme_set.py)
+phoneme_set_list = phoneme_set_39_list  # import list of phonemes, convert to dictionary with number mappings (see phoneme_set.py)
 values = [i for i in range(0, len(phoneme_set_list))]
 phoneme_classes = dict(zip(phoneme_set_list, values))
-
 
 ## DATA LOCATIONS ##
 rootPath = "/home/matthijs/TCDTIMIT/TIMIT/fixed" + str(nbPhonemes) + "/TIMIT/"
@@ -53,9 +54,8 @@ if not os.path.exists(outputDir):
 
 # already exists, ask if overwrite
 if (os.path.exists(target_path)):
-    if (not general_tools.query_yes_no(target_path + " exists. Overwrite?", "no")):
+    if (not audioPhonemeRecognition.audioModel.general_tools.query_yes_no(target_path + " exists. Overwrite?", "no")):
         raise Exception("Not Overwriting")
-
 
 ### SETUP ###
 if VERBOSE:
@@ -166,17 +166,17 @@ def preprocess_dataset(source_path, verbose=False):
 
         # some .PHN files don't start at 0. Default phoneme = silence (expected at the end of phoneme_set_list)
         y_val = np.zeros(total_frames) - phoneme_classes[phoneme_set_list[-1]]
-        #start_ind = 0
+        # start_ind = 0
         for line in fr:
             [start_time, end_time, phoneme] = line.rstrip('\n').split()
             start_time = int(start_time)
-            start_ind = int(np.round(start_time *  (total_frames / float(total_duration))))
+            start_ind = int(np.round(start_time * (total_frames / float(total_duration))))
             end_time = int(end_time)
             end_ind = int(np.round(end_time * (total_frames / float(total_duration))))
 
             phoneme_num = phoneme_classes[phoneme]
-            #check that phoneme is found in dict
-            if (phoneme_num ==-1):
+            # check that phoneme is found in dict
+            if (phoneme_num == -1):
                 logger.debug("In file: %s, phoneme not found: %s", phn_name, phoneme)
                 pdb.set_trace()
             y_val[start_ind:end_ind] = phoneme_num
@@ -195,15 +195,14 @@ def preprocess_dataset(source_path, verbose=False):
 
         if verbose:
             logger.debug('(%s) create_target_vector: %s', i, phn_name[:-4])
-            logger.debug('type(X_val): \t\t %s',type(X_val))
-            logger.debug('X_val.shape: \t\t %s',X_val.shape)
-            logger.debug('type(X_val[0][0]):\t %s',type(X_val[0][0]))
+            logger.debug('type(X_val): \t\t %s', type(X_val))
+            logger.debug('X_val.shape: \t\t %s', X_val.shape)
+            logger.debug('type(X_val[0][0]):\t %s', type(X_val[0][0]))
 
-            logger.debug('type(y_val): \t\t %s',type(y_val))
-            logger.debug('y_val.shape: \t\t %s',y_val.shape)
-            logger.debug('type(y_val[0]):\t %s',type(y_val[0]))
-            logger.debug('y_val: \t\t %s',(y_val))
-
+            logger.debug('type(y_val): \t\t %s', type(y_val))
+            logger.debug('y_val.shape: \t\t %s', y_val.shape)
+            logger.debug('type(y_val[0]):\t %s', type(y_val[0]))
+            logger.debug('y_val: \t\t %s', (y_val))
 
         if DEBUG and i >= debug_size:
             break
@@ -231,7 +230,6 @@ if VERBOSE:
     print('type(X_train_all[0]): {}'.format(type(X_train_all[0])))
     print('type(X_train_all[0][0]): {}'.format(type(X_train_all[0][0])))
     print('type(X_train_all[0][0][0]): {}'.format(type(X_train_all[0][0][0])))
-
 
 logger.info('Creating Validation index ...')
 test_size = len(X_test)
@@ -263,14 +261,13 @@ for i in range(len(X_train_all)):
 if VERBOSE:
     print('Length of train, val, test')
     print("train X: ", len(X_train))
-    print("train y: ",len(y_train))
+    print("train y: ", len(y_train))
 
-    print("val X: ",len(X_val))
-    print("val y: ",len(y_val))
+    print("val X: ", len(X_val))
+    print("val y: ", len(y_val))
 
-    print("test X: ",len(X_test))
-    print("test y: ",len(y_test))
-
+    print("test X: ", len(X_test))
+    print("test y: ", len(y_test))
 
 logger.info('Normalizing data ...')
 logger.info('    Each channel mean=0, sd=1 ...')
