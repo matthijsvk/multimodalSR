@@ -49,7 +49,7 @@ name = os.path.basename(os.path.dirname(wavDir)) + "_" + os.path.basename(wavDir
 # network parameters
 INPUT_SIZE = 26  # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 NUM_OUTPUT_UNITS = 39
-N_HIDDEN_LIST = [100,100]
+N_HIDDEN_LIST = [256,256]
 BIDIRECTIONAL = False
 MOMENTUM = 0.9
 ##################################
@@ -127,7 +127,7 @@ logger_evaluate.info('  %s %s', type(targets[0][0]), targets[0][0].shape)
 
 #############################################################
 # Set locations for LOG, PARAMETERS, TRAIN info
-model_name = "1HiddenLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) + "_nbMFCC" + str(INPUT_SIZE) + (
+model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) + "_nbMFCC" + str(INPUT_SIZE) + (
 "_bidirectional" if BIDIRECTIONAL else "_unidirectional") + ".npz"
 
 # model parameters and network_training_info

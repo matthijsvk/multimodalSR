@@ -36,16 +36,16 @@ VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
 batch_size = 8
-num_epochs = 200
+num_epochs = 20
 
 INPUT_SIZE = 26  # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 NUM_OUTPUT_UNITS = 39
 N_HIDDEN_LIST = [256, 256]
 
-BIDIRECTIONAL = False
+BIDIRECTIONAL = True
 
 # Decaying LR
-LR_start = 0.001
+LR_start = 0.1
 logger_RNN.info("LR_start = %s", str(LR_start))
 LR_fin = 0.0000003
 logger_RNN.info("LR_fin = %s", str(LR_fin))
@@ -59,7 +59,7 @@ dataRootPath = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binaryValidFrames39/
 data_path = os.path.join(dataRootPath, "TIMIT_26_ch.pkl")
 
 
-model_name = "1HiddenLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) + "_nbMFCC" + str(INPUT_SIZE) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + "_" + os.path.basename(dataRootPath)
+model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) + "_nbMFCC" + str(INPUT_SIZE) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + "_" + os.path.basename(dataRootPath)
 # store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binary/results")
 store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/results/" + os.path.basename(dataRootPath))
 if not os.path.exists(store_dir): os.makedirs(store_dir)
