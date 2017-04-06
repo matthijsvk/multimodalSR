@@ -208,16 +208,8 @@ logger.critical('critical message')
 #  17, 17, 17, 17, 17, 17, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
 #  38, 38]
 #
-# from phoneme_set import phoneme_set_39_list
 #
-# b=[phoneme_set_39_list[a[i]] for i in range(len(a))]
-# c = []
-# for j in range(len(b)-1):
-#     if b[j] != b[j+1]:
-#         c.append(b[j])
-#
-# print(b)
-# print(c)
+
 
 
 def load_model(self, model_name):

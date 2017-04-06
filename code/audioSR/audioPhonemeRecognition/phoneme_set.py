@@ -50,3 +50,15 @@ phoneme_set_61_list = [
 ]
 values = [i for i in range(0, len(phoneme_set_61_list))]
 phoneme_set_61 = dict(zip(phoneme_set_61_list, values))
+
+
+def convertNbToPhonemeList(a, phoneme_list=phoneme_set_39_list):
+    # b is straight conversion to phoneme chars
+    b = [phoneme_list[a[i]] for i in range(len(a))]
+
+    # C is reduced set of b: duplicates following each other are removed until only 1 is left
+    c = []
+    for j in range(len(b) - 1):
+        if b[j] != b[j + 1]:
+            c.append(b[j])
+    return b, c
