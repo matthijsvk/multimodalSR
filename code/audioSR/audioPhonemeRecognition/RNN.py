@@ -24,12 +24,12 @@ logger_RNN.addHandler(ch)
 
 
 import time
-
 program_start_time = time.time()
 
 print("\n * Importing libraries...")
 from RNN_tools_lstm import *
 from general_tools import *
+
 
 ##### SCRIPT META VARIABLES #####
 VERBOSE = True
@@ -40,14 +40,10 @@ batch_size = 32
 
 INPUT_SIZE = 26  # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 NUM_OUTPUT_UNITS = 39
-N_HIDDEN = 150
+N_HIDDEN = 100
 N_HIDDEN_2 = 0
 
 BIDIRECTIONAL = True
-
-LEARNING_RATE = 1e-3
-MOMENTUM = 0.9
-WEIGHT_INIT = 0.1
 
 # Decaying LR
 LR_start = 0.001
@@ -58,12 +54,19 @@ LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)  # each epoch, LR := LR * LR
 logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
-# Set locations for LOG, PARAMETERS, TRAIN info
-model_name = "_1HiddenLayer" + str(N_HIDDEN) + "_nbMFCC" + str(INPUT_SIZE) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional")
-store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binary/results"
+# Set locations for DATA, LOG, PARAMETERS, TRAIN info
+
+dataRootPath = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/binary39/lipspeakers")
+data_path = os.path.join(dataRootPath, "lipspeakers_26_ch.pkl")
+
+
+model_name = "1HiddenLayer" + str(N_HIDDEN) + "_nbMFCC" + str(INPUT_SIZE) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + "_" + os.path.basename(dataRootPath)
+# store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binary/results")
+store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/results")
+if not os.path.exists(store_dir): os.makedirs(store_dir)
 
 # model parameters and network_training_info
-model_load = os.path.join(store_dir, model_name)
+model_load = os.path.join(store_dir, model_name + ".npz")
 model_save = os.path.join(store_dir, model_name)
 
 # log file
@@ -76,11 +79,11 @@ fh.setLevel(logging.DEBUG)
 fh.setFormatter(formatter)
 logger_RNN.addHandler(fh)
 #############################################################
+
+
 logger_RNNtools.info("\n\n\n\n STARTING NEW TRAINING SESSION AT " + strftime("%Y-%m-%d %H:%M:%S", gmtime()))
 
 ##### IMPORTING DATA #####
-dataRootPath = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binary_list39/speech2phonemes26Mels/")
-data_path = dataRootPath + "std_preprocess_26_ch.pkl"
 
 logger_RNN.info('  data source: ' + dataRootPath)
 logger_RNN.info('  model target: ' + model_save + '.npz')
@@ -112,7 +115,7 @@ RNN_network.load_model(model_load)
 
 ##### COMPILING FUNCTIONS #####
 logger_RNN.info("\n* Compiling functions ...")
-RNN_network.build_functions(MOMENTUM=MOMENTUM, debug=True)
+RNN_network.build_functions(train=True, debug=True)
 
 ##### TRAINING #####
 logger_RNN.info("\n* Training ...")
