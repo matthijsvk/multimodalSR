@@ -90,7 +90,7 @@ class NeuralNetwork:
 
     network_train_info = [[], [], []]
 
-    def __init__(self, architecture, dataset=None, batch_size=1, num_features=26, n_hidden=275, num_output_units=61,
+    def __init__(self, architecture, dataset=None, batch_size=1, num_features=26, n_hidden_list=(100,), num_output_units=61,
                  bidirectional=False, seed=int(time.time()), debug=False, logger=logger_RNNtools):
         self.num_output_units = num_output_units
         self.num_features = num_features
@@ -119,12 +119,12 @@ class NeuralNetwork:
                 logger.debug('masks[0].shape:   %s', self.masks[0].shape)
                 logger.debug('masks[0][0].type: %s', type(self.masks[0][0]))
 
-            self.build_RNN(batch_size, num_features, n_hidden, num_output_units, bidirectional,
+            self.build_RNN(batch_size, num_features, n_hidden_list, num_output_units, bidirectional,
                            seed, debug)
         else:
             print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
 
-    def build_RNN(self, batch_size=1, num_features=26, n_hidden=275, num_output_units=61, bidirectional=False,
+    def build_RNN(self, batch_size=1, num_features=26, n_hidden_list=(100,), num_output_units=61, bidirectional=False,
                   seed=int(time.time()), debug=False, logger=logger_RNNtools):
         if debug:
             logger_RNNtools.debug('\nInputs:');
@@ -142,7 +142,7 @@ class NeuralNetwork:
         np.random.seed(seed)
 
         net = {}
-
+        #n_hidden = n_hidden_list[0]
         # some inspiration from http://colinraffel.com/talks/hammer2015recurrent.pdf
         # shape = (batch_size, max_seq_length, num_features)
         net['l1_in'] = L.InputLayer(shape=(None, None, num_features))
@@ -181,54 +181,77 @@ class NeuralNetwork:
                 # By convention, the cell nonlinearity is tanh in an LSTM.
                 nonlinearity=lasagne.nonlinearities.tanh)
 
-        net['l2_lstm'] = lasagne.layers.recurrent.LSTMLayer(
-                net['l1_in'], n_hidden,
-                # We need to specify a separate input for masks
-                mask_input=net['l1_mask'],
-                # Here, we supply the gate parameters for each gate
-                ingate=gate_parameters, forgetgate=gate_parameters,
-                cell=cell_parameters, outgate=gate_parameters,
-                # We'll learn the initialization and use gradient clipping
-                learn_init=True, grad_clipping=100.)
+        # generate layers of stacked LSTMs, possibly bidirectional
+        net['l2_lstm'] = []
 
-        if bidirectional:
-            # Use backward LSTM
-            # The "backwards" layer is the same as the first,
-            # except that the backwards argument is set to True.
-            net['l3_lstm_back'] = lasagne.layers.recurrent.LSTMLayer(
-                    net['l1_in'], n_hidden, ingate=gate_parameters,
-                    mask_input=net['l1_mask'], forgetgate=gate_parameters,
+        for i in range(len(n_hidden_list)):
+            n_hidden = n_hidden_list[i]
+
+            if i==0: input = net['l1_in']
+            else:    input = net['l2_lstm'][i-1]
+
+            nextLSTMLayer = lasagne.layers.recurrent.LSTMLayer(
+                    input, n_hidden,
+                    # We need to specify a separate input for masks
+                    mask_input=net['l1_mask'],
+                    # Here, we supply the gate parameters for each gate
+                    ingate=gate_parameters, forgetgate=gate_parameters,
                     cell=cell_parameters, outgate=gate_parameters,
-                    learn_init=True, grad_clipping=100., backwards=True)
-            if debug:
-                # Backwards LSTM
-                get_l_lstm_back = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
-                                                  L.get_output(net['l3_lstm_back']))
-                l_lstmBack_val = get_l_lstm_back(self.X, self.masks)
-                logger_RNNtools.debug('  l3_lstm_back size: %s', l_lstmBack_val.shape)
+                    # We'll learn the initialization and use gradient clipping
+                    learn_init=True, grad_clipping=100.)
+            net['l2_lstm'].append(nextLSTMLayer)
 
-            # We'll combine the forward and backward layer output by summing.
-            # Merge layers take in lists of layers to merge as input.
-            # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
-            net['l4_sum'] = lasagne.layers.ElemwiseSumLayer([net['l2_lstm'], net['l3_lstm_back']])
+        net['l3_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'][-1], (-1, n_hidden_list[-1]))
 
-            # To connect this to feedforward networks, we need to reshape
-            # -> squash the n_batch and n_time_steps dimensions
-            net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l4_sum'], (-1, n_hidden))
 
-        else:
-            # use only forward LSTM
-            net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'], (-1, n_hidden))
+        # net['l2_lstm'] = lasagne.layers.recurrent.LSTMLayer(
+        #         net['l1_in'], n_hidden,
+        #         # We need to specify a separate input for masks
+        #         mask_input=net['l1_mask'],
+        #         # Here, we supply the gate parameters for each gate
+        #         ingate=gate_parameters, forgetgate=gate_parameters,
+        #         cell=cell_parameters, outgate=gate_parameters,
+        #         # We'll learn the initialization and use gradient clipping
+        #         learn_init=True, grad_clipping=100.)
+        #
+        # if bidirectional:
+        #     # Use backward LSTM
+        #     # The "backwards" layer is the same as the first,
+        #     # except that the backwards argument is set to True.
+        #     net['l3_lstm_back'] = lasagne.layers.recurrent.LSTMLayer(
+        #             net['l1_in'], n_hidden, ingate=gate_parameters,
+        #             mask_input=net['l1_mask'], forgetgate=gate_parameters,
+        #             cell=cell_parameters, outgate=gate_parameters,
+        #             learn_init=True, grad_clipping=100., backwards=True)
+        #     if debug:
+        #         # Backwards LSTM
+        #         get_l_lstm_back = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
+        #                                           L.get_output(net['l3_lstm_back']))
+        #         l_lstmBack_val = get_l_lstm_back(self.X, self.masks)
+        #         logger_RNNtools.debug('  l3_lstm_back size: %s', l_lstmBack_val.shape)
+        #
+        #     # We'll combine the forward and backward layer output by summing.
+        #     # Merge layers take in lists of layers to merge as input.
+        #     # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
+        #     net['l4_sum'] = lasagne.layers.ElemwiseSumLayer([net['l2_lstm'], net['l3_lstm_back']])
+        #
+        #     # To connect this to feedforward networks, we need to reshape
+        #     # -> squash the n_batch and n_time_steps dimensions
+        #     net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l4_sum'], (-1, n_hidden))
+        #
+        # else:
+        #     # use only forward LSTM
+        #     net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'], (-1, n_hidden))
 
         if debug:
             # Forwards LSTM
             get_l_lstm = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
-                                         L.get_output(net['l2_lstm']))
+                                         L.get_output(net['l2_lstm'][-1]))
             l_lstm_val = get_l_lstm(self.X, self.masks)
             logger_RNNtools.debug('  l2_lstm size: %s', l_lstm_val.shape);
 
         # Now we can apply feed-forward layers as usual for classification
-        net['l6_dense'] = L.DenseLayer(net['l5_reshape'], num_units=num_output_units,
+        net['l6_dense'] = L.DenseLayer(net['l3_reshape'], num_units=num_output_units,
                                        nonlinearity=lasagne.nonlinearities.softmax)
 
         # Now, the shape will be (n_batch * n_timesteps, num_output_units. We can then reshape to
@@ -237,21 +260,42 @@ class NeuralNetwork:
 
         if debug:
             get_l_reshape = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
-                                            L.get_output(net['l5_reshape']))
+                                            L.get_output(net['l3_reshape']))
             l_reshape_val = get_l_reshape(self.X, self.masks)
             logger.debug('  l_reshape size: %s', l_reshape_val.shape)
 
             # print network structure
-            logger.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
-            for key in sorted(net.keys()):
+            # logger.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
+            # for key in sorted(net.keys()):
+            #     if key == 'l2_lstm':
+            #         for layer in net['l2_lstm']:
+            #             try:  logger.debug('Layer: %12s | in: %s | out: %s', key, layer.input_shape,layer.output_shape)
+            #             except:  logger.debug('Layer: %12s | out: %s', key, layer.output_shape)
+            #     else:
+            #         try: logger.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape, net[key].output_shape)
+            #         except:  logger.debug('Layer: %12s | out: %s', key, net[key].output_shape)
+            #     # pdb.set_trace()
+            self.print_network_structure(net)
+
+        self.network = net
+
+    def print_network_structure(self, net=None, logger=logger_RNNtools):
+        if net==None: net = self.network
+
+        logger.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
+        for key in sorted(net.keys()):
+            if key == 'l2_lstm':
+                for layer in net['l2_lstm']:
+                    try:
+                        logger.debug('Layer: %12s | in: %s | out: %s', key, layer.input_shape, layer.output_shape)
+                    except:
+                        logger.debug('Layer: %12s | out: %s', key, layer.output_shape)
+            else:
                 try:
-                    logger.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape,
-                                          net[key].output_shape)
+                    logger.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape, net[key].output_shape)
                 except:
                     logger.debug('Layer: %12s | out: %s', key, net[key].output_shape)
-
-                # pdb.set_trace()
-        self.network = net
+        return 0
 
     def use_best_param(self):
         lasagne.layers.set_all_param_values(self.network, self.best_param)
@@ -332,16 +376,7 @@ class NeuralNetwork:
         l_in = self.network['l1_in']
         l_mask = self.network['l1_mask']
 
-        if debug:
-            # print network structure
-            net = self.network
-            logger.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
-            for key in sorted(net.keys()):
-                try:
-                    logger.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape,
-                                          net[key].output_shape)
-                except:
-                    logger.debug('Layer: %12s | out: %s', key, net[key].output_shape)
+        if debug:  self.print_network_structure()
 
         # Function to get the output of the network
         #output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')

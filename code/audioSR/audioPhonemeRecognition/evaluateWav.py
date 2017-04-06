@@ -49,9 +49,8 @@ name = os.path.basename(os.path.dirname(wavDir)) + "_" + os.path.basename(wavDir
 # network parameters
 INPUT_SIZE = 26  # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 NUM_OUTPUT_UNITS = 39
-N_HIDDEN = 100
-N_HIDDEN_2 = 0
-BIDIRECTIONAL = True
+N_HIDDEN_LIST = [100,100]
+BIDIRECTIONAL = False
 MOMENTUM = 0.9
 ##################################
 
@@ -128,7 +127,7 @@ logger_evaluate.info('  %s %s', type(targets[0][0]), targets[0][0].shape)
 
 #############################################################
 # Set locations for LOG, PARAMETERS, TRAIN info
-model_name = "1HiddenLayer" + str(N_HIDDEN) + "_nbMFCC" + str(INPUT_SIZE) + (
+model_name = "1HiddenLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) + "_nbMFCC" + str(INPUT_SIZE) + (
 "_bidirectional" if BIDIRECTIONAL else "_unidirectional") + ".npz"
 
 # model parameters and network_training_info
@@ -137,7 +136,7 @@ model_load = os.path.join(model_dir, model_name)
 
 ##### BUIDING MODEL #####
 logger_evaluate.info('\n* Building network ...')
-RNN_network = NeuralNetwork('RNN', batch_size=1, num_features=INPUT_SIZE, n_hidden=N_HIDDEN,
+RNN_network = NeuralNetwork('RNN', batch_size=1, num_features=INPUT_SIZE, n_hidden_list=N_HIDDEN_LIST,
                             num_output_units=NUM_OUTPUT_UNITS, bidirectional=BIDIRECTIONAL, seed=0, debug=False, logger=logger_evaluate)
 
 # Try to load stored model
