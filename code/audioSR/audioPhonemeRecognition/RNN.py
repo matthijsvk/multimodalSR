@@ -35,8 +35,8 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-num_epochs = 200
 batch_size = 32
+num_epochs = 200
 
 INPUT_SIZE = 26  # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 NUM_OUTPUT_UNITS = 39
@@ -56,13 +56,13 @@ logger_RNN.info("LR_decay = %s", str(LR_decay))
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
 
-dataRootPath = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/binary39/lipspeakers")
-data_path = os.path.join(dataRootPath, "lipspeakers_26_ch.pkl")
+dataRootPath = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binaryValidFrames39/TIMIT")
+data_path = os.path.join(dataRootPath, "TIMIT_26_ch.pkl")
 
 
 model_name = "1HiddenLayer" + str(N_HIDDEN) + "_nbMFCC" + str(INPUT_SIZE) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + "_" + os.path.basename(dataRootPath)
 # store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binary/results")
-store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/results")
+store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/results/" + os.path.basename(dataRootPath))
 if not os.path.exists(store_dir): os.makedirs(store_dir)
 
 # model parameters and network_training_info
@@ -89,20 +89,25 @@ logger_RNN.info('  data source: ' + dataRootPath)
 logger_RNN.info('  model target: ' + model_save + '.npz')
 
 dataset = load_dataset(data_path)
-X_train, y_train, X_val, y_val, X_test, y_test = dataset
+X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
 
 # Print some information
 logger_RNN.info("\n* Data information")
-logger_RNN.info('  X train')
-logger_RNN.info('%s %s', type(X_train), len(X_train))
-logger_RNN.info('%s %s', type(X_train[0]), X_train[0].shape)
-logger_RNN.info('%s %s', type(X_train[0][0]), X_train[0][0].shape)
-logger_RNN.info('%s', type(X_train[0][0][0]))
+logger_RNN.info('X train')
+logger_RNN.info('  %s %s', type(X_train), len(X_train))
+logger_RNN.info('  %s %s', type(X_train[0]), X_train[0].shape)
+logger_RNN.info('  %s %s', type(X_train[0][0]), X_train[0][0].shape)
+logger_RNN.info('  %s', type(X_train[0][0][0]))
 
-logger_RNN.info('  y train')
-logger_RNN.info('%s %s', type(y_train), len(y_train))
-logger_RNN.info('%s %s', type(y_train[0]), y_train[0].shape)
-logger_RNN.info('%s %s', type(y_train[0][0]), y_train[0][0].shape)
+logger_RNN.info('y train')
+logger_RNN.info('  %s %s', type(y_train), len(y_train))
+logger_RNN.info('  %s %s', type(y_train[0]), y_train[0].shape)
+logger_RNN.info('  %s %s', type(y_train[0][0]), y_train[0][0].shape)
+
+logger_RNN.info('valid_frames train')
+logger_RNN.info('  %s %s', type(valid_frames_train), len(valid_frames_train))
+logger_RNN.info('  %s %s', type(valid_frames_train[0]), valid_frames_train[0].shape)
+logger_RNN.info('  %s %s', type(valid_frames_train[0][0]), valid_frames_train[0][0].shape)
 
 ##### BUIDING MODEL #####
 logger_RNN.info('\n* Building network ...')

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import numpy as np
 from phoneme_set import *
@@ -7,47 +8,50 @@ import pdb
 def unpickle(file):
     import cPickle
     fo = open(file, 'rb')
-    dict = cPickle.load(fo)
+    data = cPickle.load(fo)
     fo.close()
-    return dict
+    return data
 
-pickleFile = '/home/matthijs/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/evaluations/volunteers_10M_predictions.pkl'
-#pickleFile = '/home/matthijs/TCDTIMIT/TIMIT/binary_default/speech2phonemes26Mels/std_preprocess_26_ch.pkl'
-# '/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master_2/Thesis/convNets/code/audioSR/KGP-ASR/TIMIT_Alphabet.pkl'
-#  '/home/matthijs/Documents/Dropbox/_MyDocs/_ku_leuven/Master_2/Thesis/convNets/code/audioSR/KGP-ASR/TIMIT_data_prepared_for_CTC.pkl'
-a = unpickle(os.path.expanduser(pickleFile))
-for i in range(len(a)):
-    lst = np.array(a[i])
-    a[i] = lst
-    print(lst.shape)
+def print_results(input, prediction, target, valid_frame):
+    # print("input -> len: %s  | values: %s " % (len(input), input))
+    # print("Pred:  -> len: %s  | values: %s " % (len(prediction), prediction))
+    # print("Target: -> len: %s  | values: %s " % (len(target), target))
+    # # print(predictions[0][0] - targets[0])
+    # print("validFrames: -> len: % s | values: % s" % (len(valid_frame), valid_frame))
 
-print(type(a[0]))
-#[X_train, y_train, X_val, y_val, X_test, y_test] = a
-[inputs, predictions, targets, avg_Acc] = a
+    Tfull, Treduced, Tvalid = convertPredictions(target, valid_frames=valid_frame, outputType = "phonemes")
+    Pfull, Preduced, Pvalid = convertPredictions(prediction, valid_frames=valid_frame, outputType = "phonemes")
 
+    TfullClass, TreducedClass, TvalidClass = convertPredictions(target, valid_frames=valid_frame, outputType="classes")
+    PfullClass, PreducedClass, PvalidClass = convertPredictions(prediction, valid_frames=valid_frame, outputType="classes")
 
-print(inputs[0])
-print(predictions[0][0])
-print(targets[0])
-#print(predictions[0][0] - targets[0])
-print(avg_Acc)
+    try:    assert len(Tfull) == len(Pfull)
+    except: pdb.set_trace()
 
-
-t1 = convertNbToPhonemeList(targets[0])[1]
-p1 = convertNbToPhonemeList(predictions[0])[1]
-print(len(t1), len(p1))
-try:assert len(t1) == len(p1)
-except:pdb.set_trace()
-
-for i in range(len(t1)):
-    print(t1[i], " ", p1[i])
-
-import pdb;pdb.set_trace()
-# print(X_train.shape)
-# print(X_train[0].shape)
-# print(len(X_train))
-# print(y_train.shape)
-# print(y_train[0].shape)
+    # print valid predictions, formatted
+    print("    TARGETS \t     PREDICTIONS")
+    for i in range(len(Tvalid)):
+        print("%s \t %s \t| \t %s \t %s" %(Tvalid[i], TvalidClass[i], Pvalid[i], PvalidClass[i]))
 
 
-#print(unpickle(os.path.expanduser(pickleFile)).keys())
+#pickleFile = os.path.expanduser('~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/evaluations/volunteers_10M_predictions.pkl')
+def printEvaluation(inputs, predictions, targets, valid_frames, avgAcc="unknown", indexList=(0,)):
+    # each of these is a list, containing one entry per input wav file
+    print("Avg ACCURACY: -> %s " % (avgAcc))
+
+    for index in indexList:
+        print("\n    RESULTS FOR FILE AT INDEX ", index)
+        assert (index >= 0 and index < len(inputs))
+        input       = inputs[index]
+        prediction  = predictions[index]
+        target      = targets[index]
+        valid_frame = valid_frames[index]
+
+        print_results(input, prediction, target, valid_frame)
+
+
+pickleFile = os.path.expanduser('~/TCDTIMIT/audioSR/TIMIT/evaluations/volunteers_10M_predictions.pkl')
+[inputs, predictions, targets, valid_frames, avg_Acc] = unpickle(os.path.expanduser(pickleFile))
+printEvaluation(inputs, predictions, targets, valid_frames, avg_Acc)
+
+

@@ -17,15 +17,7 @@ def path_reader(filename):
 def load_dataset(file_path):  # TODO: split X_train in train and validation sets
     with open(file_path, 'rb') as cPickle_file:
         a = cPickle.load(cPickle_file)
-
-        # convert from list to numpy array
-        # for i in range(len(a)):
-        #     lst = np.array(a[i])
-        #     a[i] = lst
-
-        [X_train, y_train, X_val, y_val, X_test, y_test] = a
-
-    return X_train, y_train, X_val, y_val, X_test, y_test
+    return a
 
 
 def pad_sequences_X(sequences, maxlen=None, padding='post', truncating='post', value=0.):
@@ -120,31 +112,37 @@ def pad_sequences_y(sequences, maxlen=None, padding='post', truncating='post', v
     return y
 
 
-def generate_masks(inputs, batch_size):  # inputs = X
+def generate_masks(inputs, valid_frames=None, batch_size=1, logger=logger_GeneralTools):  # inputs = X. valid_frames = list of frames when we need to extract the phoneme
     ## all recurrent layers in lasagne accept a separate mask input which has shape
     # (batch_size, n_time_steps), which is populated such that mask[i, j] = 1 when j <= (length of sequence i) and mask[i, j] = 0 when j > (length
     # of sequence i). When no mask is provided, it is assumed that all sequences in the minibatch are of length n_time_steps.
-    logger_GeneralTools.debug("* Data information")
-    logger_GeneralTools.debug('%s %s', type(inputs), len(inputs))
-    logger_GeneralTools.debug('%s %s', type(inputs[0]), inputs[0].shape)
-    logger_GeneralTools.debug('%s %s', type(inputs[0][0]), inputs[0][0].shape)
-    logger_GeneralTools.debug('%s', type(inputs[0][0][0]))
+    logger.debug("* Data information")
+    logger.debug('%s %s', type(inputs), len(inputs))
+    logger.debug('%s %s', type(inputs[0]), inputs[0].shape)
+    logger.debug('%s %s', type(inputs[0][0]), inputs[0][0].shape)
+    logger.debug('%s', type(inputs[0][0][0]))
 
     max_input_length = max([len(inputs[i]) for i in range(len(inputs))])
     input_dim = len(inputs[0][0])
 
-    logger_GeneralTools.debug("max_seq_len: %d", max_input_length)
-    logger_GeneralTools.debug("input_dim: %d", input_dim)
+    logger.debug("max_seq_len: %d", max_input_length)
+    logger.debug("input_dim: %d", input_dim)
 
     # X = np.zeros((batch_size, max_input_length, input_dim))
     input_mask = np.zeros((batch_size, max_input_length), dtype='float32')
 
     for example_id in range(len(inputs)):
-        logger_GeneralTools.debug('%d', example_id)
-        curr_seq_len = len(inputs[example_id])
-        logger_GeneralTools.debug('%d', curr_seq_len)
-        # X[example_id, :curr_seq_len] = inputs[example_id]
-        input_mask[example_id, :curr_seq_len] = 1
+        if valid_frames == None:
+            logger.warning("NO VALID FRAMES SPECIFIED!!!")
+            #raise Exception("NO VALID FRAMES SPECIFIED!!!")
+
+            logger.debug('%d', example_id)
+            curr_seq_len = len(inputs[example_id])
+            logger.debug('%d', curr_seq_len)
+            input_mask[example_id, :curr_seq_len] = 1
+        else:
+            #use valid_frames
+            input_mask[example_id,valid_frames[example_id]] = 1
 
     return input_mask
 

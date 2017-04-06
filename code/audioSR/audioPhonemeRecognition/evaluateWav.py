@@ -30,30 +30,54 @@ import preprocessWavs
 import fixDataset.transform as transform
 
 
-model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/results")
-meanStd_path = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/binary39/TCDTIMITMeanStd.pkl")
-store_dir = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/evaluations")
+###########################
+# storage locations
+model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/results/TIMIT")
+meanStd_path = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binaryValidFrames39/TIMITMeanStd.pkl")
+store_dir = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/evaluations")
+
+# model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/results")
+# meanStd_path = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/binary39/TCDTIMITMeanStd.pkl")
+# store_dir = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/evaluations")
 if not os.path.exists(store_dir): os.makedirs(store_dir)
 
 # get the wav files to evaluate
-wavDir = os.path.expanduser('~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/fixed39/TCDTIMIT/volunteers/10M')
+wavDir = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/fixed39/TIMIT/TEST/DR5/FHES0")
+#wavDir = os.path.expanduser('~/TCDTIMIT/audioSR/TCDTIMITaudio_resampled/fixed39/TCDTIMIT/volunteers/10M')
 name = os.path.basename(os.path.dirname(wavDir)) + "_" + os.path.basename(wavDir)
 
+# network parameters
+INPUT_SIZE = 26  # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
+NUM_OUTPUT_UNITS = 39
+N_HIDDEN = 100
+N_HIDDEN_2 = 0
+BIDIRECTIONAL = True
+MOMENTUM = 0.9
+##################################
+
+# log file
+logFile = store_dir + os.sep + name + '.log'
+fh = logging.FileHandler(logFile, 'w')  # create new logFile
+fh.setLevel(logging.DEBUG)
+fh.setFormatter(formatter)
+logger_evaluate.addHandler(fh)
 
 # From WAVS, generate X, y and masks; also store as store_dir/name.pkl
 def preprocessLabeledWavs(wavDir, store_dir, name):
     # fixWavs -> suppose this is done
     # convert to pkl
-    X, y = preprocessWavs.preprocess_dataset(source_path=wavDir, logger=logger_evaluate)
+    X, y, valid_frames = preprocessWavs.preprocess_dataset(source_path=wavDir, logger=logger_evaluate)
 
     X_data_type = 'float32'
     X = preprocessWavs.set_type(X, X_data_type)
     y_data_type = 'int32'
     y = preprocessWavs.set_type(y, y_data_type)
+    valid_frames_data_type = 'int32'
+    valid_frames = preprocessWavs.set_type(valid_frames, valid_frames_data_type)
 
-    general_tools.saveToPkl(store_dir + os.sep + name + '.pkl', [X, y])
+    general_tools.saveToPkl(store_dir + os.sep + name + '.pkl', [X, y, valid_frames])
 
-    return X, y
+    return X, y, valid_frames
 
 def preprocessUnlabeledWavs(wavDir, store_dir, name):
     # fixWavs -> suppose this is done
@@ -75,7 +99,7 @@ calculateAccuracy = True
 if not (len(wav_files) == len(label_files)):
     calculateAccuracy = False
     inputs = preprocessUnlabeledWavs(wavDir=wavDir, store_dir=store_dir, name=name)
-else: inputs, targets = preprocessLabeledWavs(wavDir=wavDir, store_dir=store_dir, name=name)
+else: inputs, targets, valid_frames = preprocessLabeledWavs(wavDir=wavDir, store_dir=store_dir, name=name)
 
 
 # normalize inputs, convert to float32
@@ -101,21 +125,6 @@ logger_evaluate.info('  %s %s', type(targets[0]), targets[0].shape)
 logger_evaluate.info('  %s %s', type(targets[0][0]), targets[0][0].shape)
 
 
-# log file
-logFile = store_dir + os.sep + name + '.log'
-fh = logging.FileHandler(logFile, 'w')  # create new logFile
-fh.setLevel(logging.DEBUG)
-fh.setFormatter(formatter)
-logger_evaluate.addHandler(fh)
-
-
-##### SCRIPT META VARIABLES #####
-INPUT_SIZE = 26  # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
-NUM_OUTPUT_UNITS = 39
-N_HIDDEN = 400
-N_HIDDEN_2 = 0
-BIDIRECTIONAL = True
-MOMENTUM = 0.9
 
 #############################################################
 # Set locations for LOG, PARAMETERS, TRAIN info
@@ -148,34 +157,30 @@ predictions_fn = RNN_network.predictions_fn
 # make copy because we might need to use is again for calculating accurasy, and the iterator will remove elements from the array
 inputs_bak = copy.deepcopy(inputs)
 targets_bak = copy.deepcopy(targets)
+valid_frames_bak = copy.deepcopy(valid_frames)
 
-# calculate network predictions
-predictions = []
-for inputs, masks, seq_lengths in iterate_minibatches_noTargets(inputs, batch_size=1, shuffle=False):
-    nb_inputs = len(inputs) #usually batch size, but could be lower
-    seq_len = len(inputs[0])
-    prediction = predictions_fn(inputs, masks)
-    prediction = np.reshape(prediction,(nb_inputs,-1))
-    prediction = list(prediction)
-    predictions= predictions + prediction
-    #pdb.set_trace()
+
+#  actually doing the predictions
 predictions_path = store_dir + os.sep + name + "_predictions.pkl"
 logger_evaluate.info(" Predictions are being stored under: %s", predictions_path)
 
-# restore inputs
-inputs = inputs_bak
-
-# if .phn files are provided, we can check our predictions
-totError = 0
-totAcc = 0
-n_batches = 0
+predictions = []
 if calculateAccuracy:
-    logger_evaluate.info("also calculating accuracy...")
-    for inputs, targets, masks, seq_lengths in iterate_minibatches(inputs, targets, batch_size=1, shuffle=False):
-        # print(inputs)
-        # print(targets)
-        # print(masks)
-        # print(seq_lengths)
+    # if .phn files are provided, we can check our predictions
+    totError = 0
+    totAcc = 0
+    n_batches = 0
+    logger_evaluate.info("Getting predictions and calculating accuracy...")
+    for inputs, targets, masks, seq_lengths in iterate_minibatches(inputs, targets, valid_frames, batch_size=1, shuffle=False):
+        # get predictions
+        nb_inputs = len(inputs)  # usually batch size, but could be lower
+        seq_len = len(inputs[0])
+        prediction = predictions_fn(inputs, masks)
+        prediction = np.reshape(prediction, (nb_inputs, -1))
+        prediction = list(prediction)
+        predictions = predictions + prediction
+
+        # get error and accuracy
         error, accuracy = validate_fn(inputs, masks, targets)
         totError += error
         totAcc += accuracy
@@ -185,12 +190,55 @@ if calculateAccuracy:
     avg_Acc = (100 - totAcc / n_batches * 100)
 
     logger_evaluate.info(" Accuracy: %s", avg_Acc)
+    inputs = inputs_bak
+    targets = targets_bak
+    valid_frames = valid_frames_bak
+    general_tools.saveToPkl(predictions_path, [inputs, predictions, targets, valid_frames, avg_Acc])
 
-    general_tools.saveToPkl(predictions_path, [inputs_bak, predictions, targets_bak, avg_Acc])
 else:
-    inputs = general_tools.pad_sequences_X(inputs_bak)
-    general_tools.saveToPkl(predictions_path, [inputs_bak, predictions])
+    # TODO make sure this works when you don't give targets and valid_frames
+    for inputs, masks, seq_lengths in iterate_minibatches_noTargets(inputs, batch_size=1, shuffle=False):
+        # get predictions
+        nb_inputs = len(inputs)  # usually batch size, but could be lower
+        seq_len = len(inputs[0])
+        prediction = predictions_fn(inputs, masks)
+        prediction = np.reshape(prediction, (nb_inputs, -1))
+        prediction = list(prediction)
+        predictions = predictions + prediction
 
+    inputs = inputs_bak
+    general_tools.saveToPkl(predictions_path, [inputs, predictions])
 
 logger_evaluate.info("\n* Done")
 logger_evaluate.info('Total time: {:.3f}'.format(time.time() - program_start_time))
+
+
+from phoneme_set import *
+def print_results(input, prediction, target, valid_frame):
+    # print("input -> len: %s  | values: %s " % (len(input), input))
+    # print("Pred:  -> len: %s  | values: %s " % (len(prediction), prediction))
+    # print("Target: -> len: %s  | values: %s " % (len(target), target))
+    # # print(predictions[0][0] - targets[0])
+    # print("validFrames: -> len: % s | values: % s" % (len(valid_frame), valid_frame))
+    print("Avg_ACC: -> %s " % (avg_Acc))
+
+    Tfull, Treduced, Tvalid = convertPredictions(target, valid_frames=valid_frame, outputType="phonemes")
+    Pfull, Preduced, Pvalid = convertPredictions(prediction, valid_frames=valid_frame, outputType="phonemes")
+
+    TfullClass, TreducedClass, TvalidClass = convertPredictions(target, valid_frames=valid_frame, outputType="classes")
+    PfullClass, PreducedClass, PvalidClass = convertPredictions(prediction, valid_frames=valid_frame,
+                                                                outputType="classes")
+
+    try:
+        assert len(Tfull) == len(Pfull)
+    except:
+        pdb.set_trace()
+
+    # print valid predictions
+    print("    TARGETS \t     PREDICTIONS")
+    for i in range(len(Tvalid)):
+        print("%s \t %s \t| \t %s \t %s" % (Tvalid[i], TvalidClass[i], Pvalid[i], PvalidClass[i]))
+
+
+import readData
+readData.printEvaluation(inputs, predictions, targets, valid_frames, avg_Acc,range(len(inputs)))
