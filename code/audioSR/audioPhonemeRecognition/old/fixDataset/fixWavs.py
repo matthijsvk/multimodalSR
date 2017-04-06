@@ -11,7 +11,7 @@ import subprocess
 # Read a file that contains the paths of all our .wav files
 # Then, for each wav file, get the path where the fixed version should be stored
 # Then generate the fixed files.
-from audioPhonemeRecognition.processDataset.fixDataset.old.prepareWAV_HTK import prepareWAV_HTK
+from audioPhonemeRecognition.old.fixDataset import prepareWAV_HTK
 
 
 def readFile(filename):

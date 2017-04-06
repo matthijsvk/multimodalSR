@@ -10,7 +10,7 @@ from helpFunctions import resample
 from helpFunctions.writeToTxt import writeToTxt
 from phoneme_set import phoneme_set_39, phoneme_set_61_39
 
-debug = True
+debug = False
 # example usage: python transform.py phonemes -i /home/matthijs/TCDTIMIT/TIMIT/original/TIMIT/ -o /home/matthijs/TCDTIMIT/TIMIT/processed
 
 
@@ -28,7 +28,7 @@ def loadWavs(rootDir):
         for f in files:
             if (f.lower().endswith(".wav")):
                 wav_files.append(os.path.join(dirpath, f))
-    return wav_files
+    return sorted(wav_files)
 
 
 def loadPhns(rootDir):
@@ -37,7 +37,7 @@ def loadPhns(rootDir):
         for f in files:
             if (f.lower().endswith(".phn")):
                 phn_files.append(os.path.join(dirpath, f))
-    return phn_files
+    return sorted(phn_files)
 
 
 # generates for example: dstDir/TIMIT/TRAIN/DR2/MTAT1/SX59.PHN'
