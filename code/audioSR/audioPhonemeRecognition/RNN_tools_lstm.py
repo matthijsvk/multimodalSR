@@ -190,7 +190,7 @@ class NeuralNetwork:
             if i==0: input = net['l1_in']
             else:    input = net['l2_lstm'][i-1]
 
-            nextLSTMLayer = lasagne.layers.recurrent.LSTMLayer(
+            nextForwardLSTMLayer = lasagne.layers.recurrent.LSTMLayer(
                     input, n_hidden,
                     # We need to specify a separate input for masks
                     mask_input=net['l1_mask'],
@@ -199,49 +199,34 @@ class NeuralNetwork:
                     cell=cell_parameters, outgate=gate_parameters,
                     # We'll learn the initialization and use gradient clipping
                     learn_init=True, grad_clipping=100.)
-            net['l2_lstm'].append(nextLSTMLayer)
+            net['l2_lstm'].append(nextForwardLSTMLayer)
+
+            if bidirectional:
+                input = net['l2_lstm'][-1]
+                # Use backward LSTM
+                # The "backwards" layer is the same as the first,
+                # except that the backwards argument is set to True.
+                nextBackwardLSTMLayer = lasagne.layers.recurrent.LSTMLayer(
+                        input, n_hidden, ingate=gate_parameters,
+                        mask_input=net['l1_mask'], forgetgate=gate_parameters,
+                        cell=cell_parameters, outgate=gate_parameters,
+                        learn_init=True, grad_clipping=100., backwards=True)
+                net['l2_lstm'].append(nextBackwardLSTMLayer)
+
+                if debug:
+                    # Backwards LSTM
+                    get_l_lstm_back = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
+                                                      L.get_output(net['l2_lstm'][-1]))
+                    l_lstmBack_val = get_l_lstm_back(self.X, self.masks)
+                    logger_RNNtools.debug('  l_lstm_back size: %s', l_lstmBack_val.shape)
+
+                # We'll combine the forward and backward layer output by summing.
+                # Merge layers take in lists of layers to merge as input.
+                # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
+                net['l2_lstm'].append(lasagne.layers.ElemwiseSumLayer([net['l2_lstm'][-2], net['l2_lstm'][-1]]))
+
 
         net['l3_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'][-1], (-1, n_hidden_list[-1]))
-
-
-        # net['l2_lstm'] = lasagne.layers.recurrent.LSTMLayer(
-        #         net['l1_in'], n_hidden,
-        #         # We need to specify a separate input for masks
-        #         mask_input=net['l1_mask'],
-        #         # Here, we supply the gate parameters for each gate
-        #         ingate=gate_parameters, forgetgate=gate_parameters,
-        #         cell=cell_parameters, outgate=gate_parameters,
-        #         # We'll learn the initialization and use gradient clipping
-        #         learn_init=True, grad_clipping=100.)
-        #
-        # if bidirectional:
-        #     # Use backward LSTM
-        #     # The "backwards" layer is the same as the first,
-        #     # except that the backwards argument is set to True.
-        #     net['l3_lstm_back'] = lasagne.layers.recurrent.LSTMLayer(
-        #             net['l1_in'], n_hidden, ingate=gate_parameters,
-        #             mask_input=net['l1_mask'], forgetgate=gate_parameters,
-        #             cell=cell_parameters, outgate=gate_parameters,
-        #             learn_init=True, grad_clipping=100., backwards=True)
-        #     if debug:
-        #         # Backwards LSTM
-        #         get_l_lstm_back = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
-        #                                           L.get_output(net['l3_lstm_back']))
-        #         l_lstmBack_val = get_l_lstm_back(self.X, self.masks)
-        #         logger_RNNtools.debug('  l3_lstm_back size: %s', l_lstmBack_val.shape)
-        #
-        #     # We'll combine the forward and backward layer output by summing.
-        #     # Merge layers take in lists of layers to merge as input.
-        #     # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
-        #     net['l4_sum'] = lasagne.layers.ElemwiseSumLayer([net['l2_lstm'], net['l3_lstm_back']])
-        #
-        #     # To connect this to feedforward networks, we need to reshape
-        #     # -> squash the n_batch and n_time_steps dimensions
-        #     net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l4_sum'], (-1, n_hidden))
-        #
-        # else:
-        #     # use only forward LSTM
-        #     net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'], (-1, n_hidden))
 
         if debug:
             # Forwards LSTM
@@ -264,18 +249,7 @@ class NeuralNetwork:
             l_reshape_val = get_l_reshape(self.X, self.masks)
             logger.debug('  l_reshape size: %s', l_reshape_val.shape)
 
-            # print network structure
-            # logger.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
-            # for key in sorted(net.keys()):
-            #     if key == 'l2_lstm':
-            #         for layer in net['l2_lstm']:
-            #             try:  logger.debug('Layer: %12s | in: %s | out: %s', key, layer.input_shape,layer.output_shape)
-            #             except:  logger.debug('Layer: %12s | out: %s', key, layer.output_shape)
-            #     else:
-            #         try: logger.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape, net[key].output_shape)
-            #         except:  logger.debug('Layer: %12s | out: %s', key, net[key].output_shape)
-            #     # pdb.set_trace()
-            self.print_network_structure(net)
+        if debug:   self.print_network_structure(net)
 
         self.network = net
 
@@ -328,8 +302,7 @@ class NeuralNetwork:
                 logger.warning('Model: {} not found. No weights loaded'.format(model_name))
                 return -1
         else:
-            logger.error('You must build the network before loading the weights.')
-            return -1
+            raise IOError('You must build the network before loading the weights.')
         return -1
 
     def save_model(self, model_name, logger=logger_RNNtools):
