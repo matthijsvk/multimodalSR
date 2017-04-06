@@ -35,15 +35,14 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 32
+batch_size = 8
 num_epochs = 200
 
 INPUT_SIZE = 26  # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 NUM_OUTPUT_UNITS = 39
-N_HIDDEN = 100
-N_HIDDEN_2 = 0
+N_HIDDEN_LIST = [256, 256]
 
-BIDIRECTIONAL = True
+BIDIRECTIONAL = False
 
 # Decaying LR
 LR_start = 0.001
@@ -60,7 +59,7 @@ dataRootPath = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binaryValidFrames39/
 data_path = os.path.join(dataRootPath, "TIMIT_26_ch.pkl")
 
 
-model_name = "1HiddenLayer" + str(N_HIDDEN) + "_nbMFCC" + str(INPUT_SIZE) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + "_" + os.path.basename(dataRootPath)
+model_name = "1HiddenLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) + "_nbMFCC" + str(INPUT_SIZE) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + "_" + os.path.basename(dataRootPath)
 # store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/binary/results")
 store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/TIMIT/results/" + os.path.basename(dataRootPath))
 if not os.path.exists(store_dir): os.makedirs(store_dir)
@@ -111,7 +110,7 @@ logger_RNN.info('  %s %s', type(valid_frames_train[0][0]), valid_frames_train[0]
 
 ##### BUIDING MODEL #####
 logger_RNN.info('\n* Building network ...')
-RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size, num_features=INPUT_SIZE, n_hidden=N_HIDDEN,
+RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size, num_features=INPUT_SIZE, n_hidden_list=N_HIDDEN_LIST,
                             num_output_units=NUM_OUTPUT_UNITS, bidirectional=BIDIRECTIONAL, seed=0, debug=True)
 
 # Try to load stored model
