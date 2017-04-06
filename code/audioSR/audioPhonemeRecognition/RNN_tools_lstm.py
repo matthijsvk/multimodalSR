@@ -48,6 +48,35 @@ def iterate_minibatches(inputs, targets, batch_size, shuffle=False):
         yield input_iter, target_iter, mask_iter, seq_lengths
         #  it's convention that data is presented in the shape (batch_size, n_time_steps, n_features) -> (batch_size, None, 26)
 
+# used for evaluating, when there are no targets
+def iterate_minibatches_noTargets(inputs, batch_size, shuffle=False):
+    """
+    Helper function that returns an iterator over the training data of a particular
+    size, optionally in a random order.
+    """
+    if len(inputs) < batch_size:
+        batch_size = len(inputs)
+        print("INPUTS < Batch_size")
+
+    if shuffle:
+        indices = np.arange(len(inputs))
+        np.random.shuffle(indices)
+
+    for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
+        if shuffle:
+            excerpt = indices[start_idx:start_idx + batch_size]
+        else:
+            excerpt = range(start_idx, start_idx + batch_size, 1)
+
+        input_iter = [inputs[i] for i in excerpt]
+        mask_iter = generate_masks(input_iter, batch_size)
+        seq_lengths = np.sum(mask_iter, axis=1)
+
+        # now pad inputs and target to maxLen
+        input_iter = pad_sequences_X(input_iter)
+
+        yield input_iter, mask_iter, seq_lengths
+
 
 class NeuralNetwork:
     network = None
@@ -60,32 +89,33 @@ class NeuralNetwork:
 
     network_train_info = [[], [], []]
 
-    def __init__(self, architecture, dataset, batch_size=1, num_features=26, n_hidden=275, num_output_units=61,
-                 bidirectional=False, seed=int(time.time()), debug=False):
+    def __init__(self, architecture, dataset=None, batch_size=1, num_features=26, n_hidden=275, num_output_units=61,
+                 bidirectional=False, seed=int(time.time()), debug=False, logger=logger_RNNtools):
         self.num_output_units = num_output_units
         self.num_features = num_features
         self.batch_size = batch_size
         self.updates = {}
 
         if architecture == 'RNN':
-            X_train, y_train, X_val, y_val, X_test, y_test = dataset
+            if dataset != None:
+                X_train, y_train, X_val, y_val, X_test, y_test = dataset
 
-            X = X_train[:batch_size]
-            y = y_train[:batch_size]
-            self.masks = generate_masks(X, len(X))
+                X = X_train[:batch_size]
+                y = y_train[:batch_size]
+                self.masks = generate_masks(X, len(X))
 
-            self.X = pad_sequences_X(X)
-            self.Y = pad_sequences_y(y)
+                self.X = pad_sequences_X(X)
+                self.Y = pad_sequences_y(y)
 
-            logger_RNNtools.debug('X.shape:          %s', self.X.shape)
-            logger_RNNtools.debug('X[0].shape:       %s', self.X[0].shape)
-            logger_RNNtools.debug('X[0][0][0].type:  %s', type(self.X[0][0][0]))
-            logger_RNNtools.debug('y.shape:          %s', self.Y.shape)
-            logger_RNNtools.debug('y[0].shape:       %s', self.Y[0].shape)
-            logger_RNNtools.debug('y[0][0].type:     %s', type(self.Y[0][0]))
-            logger_RNNtools.debug('masks.shape:      %s', self.masks.shape)
-            logger_RNNtools.debug('masks[0].shape:   %s', self.masks[0].shape)
-            logger_RNNtools.debug('masks[0][0].type: %s', type(self.masks[0][0]))
+                logger.debug('X.shape:          %s', self.X.shape)
+                logger.debug('X[0].shape:       %s', self.X[0].shape)
+                logger.debug('X[0][0][0].type:  %s', type(self.X[0][0][0]))
+                logger.debug('y.shape:          %s', self.Y.shape)
+                logger.debug('y[0].shape:       %s', self.Y[0].shape)
+                logger.debug('y[0][0].type:     %s', type(self.Y[0][0]))
+                logger.debug('masks.shape:      %s', self.masks.shape)
+                logger.debug('masks[0].shape:   %s', self.masks[0].shape)
+                logger.debug('masks[0][0].type: %s', type(self.masks[0][0]))
 
             self.build_RNN(batch_size, num_features, n_hidden, num_output_units, bidirectional,
                            seed, debug)
@@ -93,7 +123,7 @@ class NeuralNetwork:
             print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
 
     def build_RNN(self, batch_size=1, num_features=26, n_hidden=275, num_output_units=61, bidirectional=False,
-                  seed=int(time.time()), debug=False):
+                  seed=int(time.time()), debug=False, logger=logger_RNNtools):
         if debug:
             logger_RNNtools.debug('\nInputs:');
             logger_RNNtools.debug('  X.shape:    %s', self.X[0].shape)
@@ -113,11 +143,11 @@ class NeuralNetwork:
 
         # some inspiration from http://colinraffel.com/talks/hammer2015recurrent.pdf
         # shape = (batch_size, max_seq_length, num_features)
-        net['l1_in'] = L.InputLayer(shape=(batch_size, None, num_features))
+        net['l1_in'] = L.InputLayer(shape=(None, None, num_features))
 
         # This input will be used to provide the network with masks.
         # Masks are expected to be matrices of shape (batch_size, n_time_steps);
-        net['l1_mask'] = L.InputLayer(shape=(batch_size, None))
+        net['l1_mask'] = L.InputLayer(shape=(None, None))
 
         if debug:
             get_l_in = L.get_output(net['l1_in'])
@@ -206,16 +236,16 @@ class NeuralNetwork:
             get_l_reshape = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
                                             L.get_output(net['l5_reshape']))
             l_reshape_val = get_l_reshape(self.X, self.masks)
-            logger_RNNtools.debug('  l_reshape size: %s', l_reshape_val.shape)
+            logger.debug('  l_reshape size: %s', l_reshape_val.shape)
 
             # print network structure
-            logger_RNNtools.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
+            logger.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
             for key in sorted(net.keys()):
                 try:
-                    logger_RNNtools.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape,
+                    logger.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape,
                                           net[key].output_shape)
                 except:
-                    logger_RNNtools.debug('Layer: %12s | out: %s', key, net[key].output_shape)
+                    logger.debug('Layer: %12s | out: %s', key, net[key].output_shape)
 
                 # pdb.set_trace()
         self.network = net
@@ -228,13 +258,13 @@ class NeuralNetwork:
         del self.network_train_info[1][self.best_epoch:]
         del self.network_train_info[2][self.best_epoch:]
 
-    def load_model(self, model_name):
+    def load_model(self, model_name, logger=logger_RNNtools):
         if self.network is not None:
             try:
-                logger_RNNtools.info("Loading stored model...")
+                logger.info("Loading stored model...")
 
                 # restore network weights
-                with np.load(model_name + ".npz") as f:
+                with np.load(model_name) as f:
                     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
                     lasagne.layers.set_all_param_values(self.network['l7_out'], *param_values)
 
@@ -243,19 +273,19 @@ class NeuralNetwork:
                 #     updates_values = [f['arr_%d' % i] for i in range(len(f.files))]
                 #     for p, value in zip(self.updates.keys(), updates_values):
                 #         p.set_value(value)
-                logger_RNNtools.info("Loading parameters successful.")
+                logger.info("Loading parameters successful.")
                 return 0
 
             except IOError as e:
-                # print(os.strerror(e.errno))
-                logger_RNNtools.warning('Model: {} not found. No weights loaded'.format(model_name))
+                print(os.strerror(e.errno))
+                logger.warning('Model: {} not found. No weights loaded'.format(model_name))
                 return -1
         else:
-            logger_RNNtools.error('You must build the network before loading the weights.')
+            logger.error('You must build the network before loading the weights.')
             return -1
         return -1
 
-    def save_model(self, model_name):
+    def save_model(self, model_name, logger=logger_RNNtools):
         if not os.path.exists(os.path.dirname(model_name)):
             os.makedirs(os.path.dirname(model_name))
         np.savez(model_name + '.npz', self.best_param)
@@ -263,7 +293,7 @@ class NeuralNetwork:
         # updates_vals = [p.get_value() for p in self.best_updates.keys()]
         # np.savez(model_name + '_updates.npz', updates_vals)
 
-    def create_confusion(self, X, y, debug=False):
+    def create_confusion(self, X, y, debug=False, logger=logger_RNNtools):
         argmax_fn = self.training_fn[1]
 
         y_pred = []
@@ -287,9 +317,9 @@ class NeuralNetwork:
 
         return conf_img, y_pred, y_actu
 
-    def build_functions(self, MOMENTUM=0.9,
-                        debug=False):  # LSTM in lasagne: see https://github.com/craffel/Lasagne-tutorial/blob/master/examples/recurrent.py
-
+    def build_functions(self, train=False, debug=False, logger=logger_RNNtools):
+        
+        # LSTM in lasagne: see https://github.com/craffel/Lasagne-tutorial/blob/master/examples/recurrent.py
         target_var = T.imatrix('targets')
 
         net_out = self.network['l7_out']
@@ -302,28 +332,23 @@ class NeuralNetwork:
         if debug:
             # print network structure
             net = self.network
-            logger_RNNtools.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
+            logger.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
             for key in sorted(net.keys()):
                 try:
-                    logger_RNNtools.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape,
+                    logger.debug('Layer: %12s | in: %s | out: %s', key, net[key].input_shape,
                                           net[key].output_shape)
                 except:
-                    logger_RNNtools.debug('Layer: %12s | out: %s', key, net[key].output_shape)
+                    logger.debug('Layer: %12s | out: %s', key, net[key].output_shape)
 
         # Function to get the output of the network
-        output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
+        #output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
         if debug:
-            logger_RNNtools.debug('l_in.input_var.type: \t%s', l_in.input_var.type)
-            logger_RNNtools.debug('l_in.input_var.shape:\t%s', l_in.input_var.shape)
+            logger.debug('l_in.input_var.type: \t%s', l_in.input_var.type)
+            logger.debug('l_in.input_var.shape:\t%s', l_in.input_var.shape)
 
-            l_out_val = output_fn(self.X, self.masks)
-            logger_RNNtools.debug('output_fn(X)[0]:     \n%s', l_out_val[0]);
-            logger_RNNtools.debug('output_fn(X), shape: \t%s', l_out_val.shape);
-            logger_RNNtools.debug(
-                    'output_fn(X), min/max: [{:.2f},{:.2f}]'.format(l_out_val.min(), l_out_val.max()))
+            logger.debug('network_output[0]:     \n%s', network_output[0]);
+            logger.debug('network_output, shape: \t%s', network_output.shape);
 
-        # Retrieve all trainable parameters from the network
-        all_params = L.get_all_params(net_out, trainable=True)
 
         # compare targets with highest output probability. Take maximum of all probs (3rd axis of output: 1=batch_size (input files), 2 = time_seq (frames), 3 = n_features (phonemes)
         # network_output.shape = (len(X), 39) -> (nb_inputs, nb_classes)
@@ -343,10 +368,10 @@ class NeuralNetwork:
         # Function to determine the number of correct classifications
         predictions = (T.argmax(network_output, axis=1))
         predictions_fn = theano.function([l_in.input_var, l_mask.input_var], predictions, name='predictions_fn')
-        if debug:
+        if debug and train:
             predicted = predictions_fn(self.X, self.masks)
-            logger_RNNtools.debug('predictions_fn(X).shape: %s', predicted.shape)
-            logger_RNNtools.debug('predictions_fn(X)[0], value: \n%s', predicted[0])
+            logger.debug('predictions_fn(X).shape: %s', predicted.shape)
+            logger.debug('predictions_fn(X)[0], value: \n%s', predicted[0])
 
         # TODO: only use the output at the middle of each phoneme interval (get better accuracy)
         accuracy = T.mean(T.eq(predictions, target_var.flatten()), dtype=theano.config.floatX)
@@ -356,41 +381,50 @@ class NeuralNetwork:
                                       [cost, accuracy], name='validate_fn')
         cost_pointwise_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
                                             cost_pointwise, name='cost_pointwise_fn')
-        if debug:
-            logger_RNNtools.debug('%s', self.Y.flatten())
+        if debug and train:
+            logger.debug('%s', self.Y.flatten())
 
-            logger_RNNtools.debug('%s', cost_pointwise_fn(self.X, self.masks, self.Y))
+            logger.debug('%s', cost_pointwise_fn(self.X, self.masks, self.Y))
 
             evaluate_cost = validate_fn(self.X, self.masks, self.Y)
-            logger_RNNtools.debug('%s %s', type(evaluate_cost), len(evaluate_cost))
-            logger_RNNtools.debug('%s', evaluate_cost)
-            logger_RNNtools.debug('cost:     {:.3f}'.format(float(evaluate_cost[0])))
-            logger_RNNtools.debug('accuracy: {:.3f}'.format(float(evaluate_cost[1])))
+            logger.debug('%s %s', type(evaluate_cost), len(evaluate_cost))
+            logger.debug('%s', evaluate_cost)
+            logger.debug('cost:     {:.3f}'.format(float(evaluate_cost[0])))
+            logger.debug('accuracy: {:.3f}'.format(float(evaluate_cost[1])))
 
         # pdb.set_trace()
-        LR = T.scalar('LR', dtype=theano.config.floatX)
-        self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
-        train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
-                                   [cost, accuracy], updates=self.updates, name='train_fn')
+        if train:
+            LR = T.scalar('LR', dtype=theano.config.floatX)
+            # Retrieve all trainable parameters from the network
+            all_params = L.get_all_params(net_out, trainable=True)
+            self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
+            train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
+                                       [cost, accuracy], updates=self.updates, name='train_fn')
+            self.train_fn = train_fn
 
-        self.all_fn = output_fn, predictions_fn, train_fn, validate_fn
+        #self.out_fn = output_fn
+        self.predictions_fn = predictions_fn
+        self.validate_fn = validate_fn
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
-              compute_confusion=False, debug=False):
+              compute_confusion=False, debug=False, logger=logger_RNNtools):
 
         X_train, y_train, X_val, y_val, X_test, y_test = dataset
-        output_fn, argmax_fn, train_fn, validate_fn = self.all_fn
+        #output_fn = self.out_fn
+        predictions_fn = self.predictions_fn
+        train_fn = self.train_fn
+        validate_fn = self.validate_fn
 
         if debug:
-            logger_RNNtools.debug('  X_train')
-            logger_RNNtools.debug('%s %s', type(X_train), len(X_train))
-            logger_RNNtools.debug('X_train[0] %s %s', type(X_train[0]), X_train[0].shape)
-            logger_RNNtools.debug('X_train[0][0] %s %s', type(X_train[0][0]), X_train[0][0].shape)
-            logger_RNNtools.debug('X_train[0][0][0]  %s %s', type(X_train[0][0][0]), X_train[0][0][0].shape)
-            logger_RNNtools.debug('  y_train')
-            logger_RNNtools.debug('y_train  %s %s', type(y_train), len(y_train))
-            logger_RNNtools.debug('y_train[0]  %s %s', type(y_train[0]), y_train[0].shape)
-            logger_RNNtools.debug('y_train[0][0]  %s %s', type(y_train[0][0]), y_train[0][0].shape)
+            logger.debug('  X_train')
+            logger.debug('%s %s', type(X_train), len(X_train))
+            logger.debug('X_train[0] %s %s', type(X_train[0]), X_train[0].shape)
+            logger.debug('X_train[0][0] %s %s', type(X_train[0][0]), X_train[0][0].shape)
+            logger.debug('X_train[0][0][0]  %s %s', type(X_train[0][0][0]), X_train[0][0][0].shape)
+            logger.debug('  y_train')
+            logger.debug('y_train  %s %s', type(y_train), len(y_train))
+            logger.debug('y_train[0]  %s %s', type(y_train[0]), y_train[0].shape)
+            logger.debug('y_train[0][0]  %s %s', type(y_train[0][0]), y_train[0][0].shape)
 
         # Initiate some vectors used for tracking performance
         train_error = np.zeros([num_epochs])
@@ -407,38 +441,38 @@ class NeuralNetwork:
 
         confusion_matrices = []
 
-        logger_RNNtools.info("\n* Starting training...")
+        logger.info("\n* Starting training...")
         LR = LR_start
         for epoch in range(num_epochs):
             self.curr_epoch += 1
             epoch_time = time.time()
 
-            logger_RNNtools.info("CURRENT EPOCH: %s", self.curr_epoch)
+            logger.info("CURRENT EPOCH: %s", self.curr_epoch)
 
-            logger_RNNtools.info("Pass over Training Set")
+            logger.info("Pass over Training Set")
             for inputs, targets, masks, seq_lengths in tqdm(
                     iterate_minibatches(X_train, y_train, batch_size, shuffle=True),
                     total=math.ceil(len(X_train) / batch_size)):
 
                 if debug:
-                    logger_RNNtools.debug('%s %s', inputs.shape, targets.shape)
-                    logger_RNNtools.debug('%s %s', inputs[0].shape, targets[0].shape)
+                    logger.debug('%s %s', inputs.shape, targets.shape)
+                    logger.debug('%s %s', inputs[0].shape, targets[0].shape)
 
                 error, accuracy = train_fn(inputs, masks, targets, LR)
-                if debug: logger_RNNtools.debug('%s %s', error, accuracy)
+                if debug: logger.debug('%s %s', error, accuracy)
                 train_error[epoch] += error
                 train_accuracy[epoch] += accuracy
                 train_batches[epoch] += 1
                 # pdb.set_trace()
 
-            logger_RNNtools.info("Pass over Validation Set")
+            logger.info("Pass over Validation Set")
             for inputs, targets, masks, seq_lengths in iterate_minibatches(X_val, y_val, batch_size, shuffle=False):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 validation_error[epoch] += error
                 validation_accuracy[epoch] += accuracy
                 validation_batches[epoch] += 1
 
-            logger_RNNtools.info("Pass over Test Set")
+            logger.info("Pass over Test Set")
             for inputs, targets, masks, seq_lengths in iterate_minibatches(X_test, y_test, batch_size, shuffle=False):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 test_error[epoch] += error
@@ -457,7 +491,7 @@ class NeuralNetwork:
             self.network_train_info[1].append(val_epoch_error)
             self.network_train_info[2].append(test_epoch_error)
 
-            logger_RNNtools.info("Epoch {} of {} took {:.3f}s.".format(
+            logger.info("Epoch {} of {} took {:.3f}s.".format(
                     epoch + 1, num_epochs, time.time() - epoch_time))
 
             # better model, so save parameters
@@ -466,27 +500,27 @@ class NeuralNetwork:
                 self.best_epoch = self.curr_epoch
                 self.best_param = lasagne.layers.get_all_param_values(self.network['l7_out'])
                 self.best_updates = [p.get_value() for p in self.updates.keys()]
-                logger_RNNtools.info("New best model found!")
+                logger.info("New best model found!")
                 if save_name is not None:
-                    logger_RNNtools.info("Model saved as " + save_name)
+                    logger.info("Model saved as " + save_name)
                     self.save_model(save_name)
 
-            logger_RNNtools.info("Learning Rate:\t\t{:.6f} %".format(LR))
-            logger_RNNtools.info("Training cost:\t{:.6f}".format(
+            logger.info("Learning Rate:\t\t{:.6f} %".format(LR))
+            logger.info("Training cost:\t{:.6f}".format(
                     train_error[epoch] / train_batches[epoch]))
-            logger_RNNtools.info("  train error:\t\t{:.6f} %".format(train_epoch_error))
+            logger.info("  train error:\t\t{:.6f} %".format(train_epoch_error))
 
-            logger_RNNtools.info("Validation cost:\t{:.6f}".format(
+            logger.info("Validation cost:\t{:.6f}".format(
                     validation_error[epoch] / validation_batches[epoch]))
-            logger_RNNtools.info("  validation error:\t{:.6f} %".format(val_epoch_error))
+            logger.info("  validation error:\t{:.6f} %".format(val_epoch_error))
 
-            logger_RNNtools.info("Test cost:\t\t{:.6f}".format(
+            logger.info("Test cost:\t\t{:.6f}".format(
                     test_error[epoch] / test_batches[epoch]))
-            logger_RNNtools.info("  test error:\t\t{:.6f} %".format(test_epoch_error))
+            logger.info("  test error:\t\t{:.6f} %".format(test_epoch_error))
 
             if compute_confusion:
                 confusion_matrices.append(self.create_confusion(X_val, y_val)[0])
-                logger_RNNtools.info('  Confusion matrix computed')
+                logger.info('  Confusion matrix computed')
 
             # store train info
             store_path = save_name + '_trainInfo.pkl'
@@ -495,7 +529,7 @@ class NeuralNetwork:
                         [self.network_train_info],
                         cPickle_file,
                         protocol=cPickle.HIGHEST_PROTOCOL)
-            logger_RNNtools.info("Train info written to:\t %s", store_path)
+            logger.info("Train info written to:\t %s", store_path)
 
             if compute_confusion:
                 with open(save_name + '_conf.pkl', 'wb') as cPickle_file:
@@ -505,5 +539,4 @@ class NeuralNetwork:
                             protocol=cPickle.HIGHEST_PROTOCOL)
 
             LR = LR * LR_decay
-
-                            
+                          

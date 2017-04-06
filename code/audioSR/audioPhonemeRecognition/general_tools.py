@@ -182,3 +182,12 @@ def query_yes_no(question, default="yes"):
         else:
             sys.stdout.write("Please respond with 'yes' or 'no' "
                              "(or 'y' or 'n').\n")
+
+
+def saveToPkl(target_path, dataList):
+    with open(target_path, 'wb') as cPickle_file:
+        cPickle.dump(
+            dataList,
+            cPickle_file,
+            protocol=cPickle.HIGHEST_PROTOCOL)
+    return 0
