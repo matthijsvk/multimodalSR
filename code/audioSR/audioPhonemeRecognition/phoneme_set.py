@@ -39,6 +39,7 @@ phoneme_set_39_list = [
 ]
 values = [i for i in range(0, len(phoneme_set_39_list))]
 phoneme_set_39 = dict(zip(phoneme_set_39_list, values))
+classToPhoneme39 = dict((v, k) for k, v in phoneme_set_39.iteritems())
 
 # from http://www.intechopen.com/books/speech-technologies/phoneme-recognition-on-the-timit-database, page 5
 phoneme_set_61_list = [
@@ -52,13 +53,25 @@ values = [i for i in range(0, len(phoneme_set_61_list))]
 phoneme_set_61 = dict(zip(phoneme_set_61_list, values))
 
 
-def convertNbToPhonemeList(a, phoneme_list=phoneme_set_39_list):
+def convertPredictions(predictions, phoneme_list=classToPhoneme39, valid_frames=None, outputType="phonemes"):
     # b is straight conversion to phoneme chars
-    b = [phoneme_list[a[i]] for i in range(len(a))]
+    predictedPhonemes = [phoneme_list[predictedClass] for predictedClass in predictions]
 
-    # C is reduced set of b: duplicates following each other are removed until only 1 is left
-    c = []
-    for j in range(len(b) - 1):
-        if b[j] != b[j + 1]:
-            c.append(b[j])
-    return b, c
+    # c is reduced set of b: duplicates following each other are removed until only 1 is left
+    reducedPhonemes = []
+    for j in range(len(predictedPhonemes) - 1):
+        if predictedPhonemes[j] != predictedPhonemes[j + 1]:
+            reducedPhonemes.append(predictedPhonemes[j])
+
+    # get only the outputs for valid phrames
+    validPredictions = [predictedPhonemes[frame] for frame in valid_frames]
+
+    # return class outputs
+    if outputType!= "phonemes":
+        predictedPhonemes = [phoneme_set_39[phoneme] for phoneme in predictedPhonemes]
+        reducedPhonemes = [phoneme_set_39[phoneme] for phoneme in reducedPhonemes]
+        validPredictions = [phoneme_set_39[phoneme] for phoneme in validPredictions]
+
+    return predictedPhonemes, reducedPhonemes, validPredictions
+
+

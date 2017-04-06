@@ -84,7 +84,8 @@ def set_type(X, type):
 def preprocess_dataset(source_path, logger=None, debug=None, verbose=False):
     """Preprocess data, ignoring compressed files and files starting with 'SA'"""
     X = []
-    Y = []
+    y = []
+    valid_frames = []
 
     # source_path should be TRAIN/ or TEST/
     wav_files = transform.loadWavs(source_path)
@@ -116,7 +117,8 @@ def preprocess_dataset(source_path, logger=None, debug=None, verbose=False):
         X.append(X_val)
 
         # some .PHN files don't start at 0. Default phoneme = silence (expected at the end of phoneme_set_list)
-        y_val = np.zeros(total_frames) - phoneme_classes[phoneme_set_list[-1]]
+        y_vals = np.zeros(total_frames) - phoneme_classes[phoneme_set_list[-1]]
+        valid_frames_vals = []
         # start_ind = 0
         for line in fr:
             [start_time, end_time, phoneme] = line.rstrip('\n').split()
@@ -125,12 +127,15 @@ def preprocess_dataset(source_path, logger=None, debug=None, verbose=False):
             end_time = int(end_time)
             end_ind = int(np.round(end_time * (total_frames / float(total_duration))))
 
+            valid_ind = int( (start_ind + end_ind)/2)
+            valid_frames_vals.append(valid_ind)
+
             phoneme_num = phoneme_classes[phoneme]
             # check that phoneme is found in dict
             if (phoneme_num == -1):
                 logger.error("In file: %s, phoneme not found: %s", phn_name, phoneme)
                 pdb.set_trace()
-            y_val[start_ind:end_ind] = phoneme_num
+            y_vals[start_ind:end_ind] = phoneme_num
 
             if verbose:
                 logger.debug('%s', (total_frames / float(total_duration)))
@@ -138,12 +143,18 @@ def preprocess_dataset(source_path, logger=None, debug=None, verbose=False):
                 logger.debug('FRAME start: %s end: %s, phoneme: %s, class: %s', start_ind, end_ind, phoneme, phoneme_num)
         fr.close()
 
-        if -1 in y_val:
+        # append the target array to our y
+        if -1 in y_vals:
             logger.warning("%s", phn_name)
             logger.warning('WARNING: -1 detected in TARGET: %s', y_val)
             pdb.set_trace()
 
-        Y.append(y_val.astype('int32'))
+        y.append(y_vals.astype('int32'))
+
+        # append the valid_frames array to our valid_frames
+        valid_frames_vals = np.array(valid_frames_vals)
+        valid_frames.append(valid_frames_vals.astype('int32'))
+
 
         if verbose:
             logger.debug('(%s) create_target_vector: %s', i, phn_name[:-4])
@@ -160,20 +171,15 @@ def preprocess_dataset(source_path, logger=None, debug=None, verbose=False):
         if debug!=None and processed >= debug:
             break
 
-    return X, Y
+    return X, y, valid_frames
 
 
 def preprocess_unlabeled_dataset(source_path, verbose=False, logger=None):
-    """Preprocess data, ignoring compressed files and files starting with 'SA'"""
-    X = []
-
-    # source_path should be TRAIN/ or TEST/
     wav_files = transform.loadWavs(source_path)
-
-    # import pdb; pdb.set_trace()
     logger.debug("Found %d WAV files" % len(wav_files))
     assert len(wav_files) != 0
 
+    X = []
     for i in tqdm(range(len(wav_files))):
         wav_name = str(wav_files[i])
         X_val, total_frames = create_mfcc('DUMMY', wav_name)

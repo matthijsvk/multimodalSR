@@ -17,12 +17,12 @@ logger_RNNtools.setLevel(logging.DEBUG)
 from general_tools import *
 
 
-def iterate_minibatches(inputs, targets, batch_size, shuffle=False):
+def iterate_minibatches(inputs, targets, valid_frames, batch_size, shuffle=False):
     """
     Helper function that returns an iterator over the training data of a particular
     size, optionally in a random order.
     """
-    assert len(inputs) == len(targets)
+    assert len(inputs) == len(targets) == len(valid_frames)
     if len(inputs) < batch_size:
         batch_size = len(inputs)
 
@@ -38,7 +38,8 @@ def iterate_minibatches(inputs, targets, batch_size, shuffle=False):
 
         input_iter = [inputs[i] for i in excerpt]
         target_iter = [targets[i] for i in excerpt]
-        mask_iter = generate_masks(input_iter, batch_size)
+        valid_frames_iter = [valid_frames[i] for i in excerpt]
+        mask_iter = generate_masks(input_iter, valid_frames=valid_frames_iter, batch_size=batch_size)
         seq_lengths = np.sum(mask_iter, axis=1)
 
         # now pad inputs and target to maxLen
@@ -49,7 +50,7 @@ def iterate_minibatches(inputs, targets, batch_size, shuffle=False):
         #  it's convention that data is presented in the shape (batch_size, n_time_steps, n_features) -> (batch_size, None, 26)
 
 # used for evaluating, when there are no targets
-def iterate_minibatches_noTargets(inputs, batch_size, shuffle=False):
+def iterate_minibatches_noTargets(inputs, valid_frames, batch_size=1, shuffle=False):
     """
     Helper function that returns an iterator over the training data of a particular
     size, optionally in a random order.
@@ -69,7 +70,7 @@ def iterate_minibatches_noTargets(inputs, batch_size, shuffle=False):
             excerpt = range(start_idx, start_idx + batch_size, 1)
 
         input_iter = [inputs[i] for i in excerpt]
-        mask_iter = generate_masks(input_iter, batch_size)
+        mask_iter = generate_masks(input_iter, valid_frames=valid_frames, batch_size = batch_size)
         seq_lengths = np.sum(mask_iter, axis=1)
 
         # now pad inputs and target to maxLen
@@ -98,11 +99,12 @@ class NeuralNetwork:
 
         if architecture == 'RNN':
             if dataset != None:
-                X_train, y_train, X_val, y_val, X_test, y_test = dataset
+                X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
 
                 X = X_train[:batch_size]
                 y = y_train[:batch_size]
-                self.masks = generate_masks(X, len(X))
+                valid_frames = valid_frames_train[:batch_size]
+                self.masks = generate_masks(X, valid_frames=valid_frames,batch_size=len(X))
 
                 self.X = pad_sequences_X(X)
                 self.Y = pad_sequences_y(y)
@@ -198,6 +200,13 @@ class NeuralNetwork:
                     mask_input=net['l1_mask'], forgetgate=gate_parameters,
                     cell=cell_parameters, outgate=gate_parameters,
                     learn_init=True, grad_clipping=100., backwards=True)
+            if debug:
+                # Backwards LSTM
+                get_l_lstm_back = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
+                                                  L.get_output(net['l3_lstm_back']))
+                l_lstmBack_val = get_l_lstm_back(self.X, self.masks)
+                logger_RNNtools.debug('  l3_lstm_back size: %s', l_lstmBack_val.shape)
+
             # We'll combine the forward and backward layer output by summing.
             # Merge layers take in lists of layers to merge as input.
             # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
@@ -207,12 +216,6 @@ class NeuralNetwork:
             # -> squash the n_batch and n_time_steps dimensions
             net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l4_sum'], (-1, n_hidden))
 
-            if debug:
-                # Backwards LSTM
-                get_l_lstm_back = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
-                                                  L.get_output(net['l3_lstm_back']))
-                l_lstmBack_val = get_l_lstm_back(self.X, self.masks)
-                logger_RNNtools.debug('  l3_lstm_back size: %s', l_lstmBack_val.shape)
         else:
             # use only forward LSTM
             net['l5_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'], (-1, n_hidden))
@@ -409,22 +412,11 @@ class NeuralNetwork:
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
               compute_confusion=False, debug=False, logger=logger_RNNtools):
 
-        X_train, y_train, X_val, y_val, X_test, y_test = dataset
+        X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
         #output_fn = self.out_fn
         predictions_fn = self.predictions_fn
         train_fn = self.train_fn
         validate_fn = self.validate_fn
-
-        if debug:
-            logger.debug('  X_train')
-            logger.debug('%s %s', type(X_train), len(X_train))
-            logger.debug('X_train[0] %s %s', type(X_train[0]), X_train[0].shape)
-            logger.debug('X_train[0][0] %s %s', type(X_train[0][0]), X_train[0][0].shape)
-            logger.debug('X_train[0][0][0]  %s %s', type(X_train[0][0][0]), X_train[0][0][0].shape)
-            logger.debug('  y_train')
-            logger.debug('y_train  %s %s', type(y_train), len(y_train))
-            logger.debug('y_train[0]  %s %s', type(y_train[0]), y_train[0].shape)
-            logger.debug('y_train[0][0]  %s %s', type(y_train[0][0]), y_train[0][0].shape)
 
         # Initiate some vectors used for tracking performance
         train_error = np.zeros([num_epochs])
@@ -451,7 +443,7 @@ class NeuralNetwork:
 
             logger.info("Pass over Training Set")
             for inputs, targets, masks, seq_lengths in tqdm(
-                    iterate_minibatches(X_train, y_train, batch_size, shuffle=True),
+                    iterate_minibatches(X_train, y_train, valid_frames_train, batch_size, shuffle=True),
                     total=math.ceil(len(X_train) / batch_size)):
 
                 if debug:
@@ -466,14 +458,14 @@ class NeuralNetwork:
                 # pdb.set_trace()
 
             logger.info("Pass over Validation Set")
-            for inputs, targets, masks, seq_lengths in iterate_minibatches(X_val, y_val, batch_size, shuffle=False):
+            for inputs, targets, masks, seq_lengths in iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 validation_error[epoch] += error
                 validation_accuracy[epoch] += accuracy
                 validation_batches[epoch] += 1
 
             logger.info("Pass over Test Set")
-            for inputs, targets, masks, seq_lengths in iterate_minibatches(X_test, y_test, batch_size, shuffle=False):
+            for inputs, targets, masks, seq_lengths in iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 test_error[epoch] += error
                 test_accuracy[epoch] += accuracy
