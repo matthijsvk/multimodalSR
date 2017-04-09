@@ -1,4 +1,0 @@
-.
-./phoneme_to_word
-./testing
-

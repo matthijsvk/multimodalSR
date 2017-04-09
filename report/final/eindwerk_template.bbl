@@ -21,28 +21,8 @@
 \providecommand{\BIBdecl}{\relax}
 \BIBdecl
 
-\bibitem{h2g2}
-D.~Adams, \emph{The Hitchhiker's Guide to the Galaxy}.\hskip 1em plus 0.5em
-  minus 0.4em\relax Del Rey (reprint), 1995, no. ISBN-13: 978-0345391803.
-
-\bibitem{wiki}
-\BIBentryALTinterwordspacing
-Proefschrift. Last checked: 5/3/2007. [Online]. Available:
-  \url{http://nl.wikipedia.org/wiki/Proefschrift}
-\BIBentrySTDinterwordspacing
-
-\bibitem{pratchett06:_good_omens}
-T.~Pratchett and N.~Gaiman, \emph{Good Omens: \emph{The Nice and Accurate
-  Prophecies of Agnes Nutter, Witch}}.\hskip 1em plus 0.5em minus 0.4em\relax
-  HarperTorch (reprint), 2006, no. ISBN-13: 978-0060853983.
-
 \bibitem{palaz2015analysis}
 D.~Palaz, R.~Collobert \emph{et~al.}, ``Analysis of cnn-based speech
   recognition system using raw speech as input,'' Idiap, Tech. Rep., 2015.
-
-\bibitem{BiLSTM}
-A.~Graves and J.~Schmidhuber, ``Framewise phoneme classification with
-  bidirectional lstm and other neural network architectures,'' \emph{Neural
-  Networks}, pp. 5--6, 2005.
 
 \end{thebibliography}
