@@ -12,10 +12,18 @@
 \contentsline {chapter}{Lijst van tabellen}{vii}{section*.6}
 \contentsline {chapter}{\chapternumberline {1}Inleiding}{1}{chapter.7}
 \contentsline {chapter}{\chapternumberline {2}Het echte werk}{2}{chapter.9}
-\contentsline {section}{\numberline {2.1}Titel om hier iets te hebben}{2}{section.10}
-\contentsline {section}{\numberline {2.2}Geschiedenis van het proefschrift}{2}{section.11}
-\contentsline {section}{\numberline {2.3}Verwante onderwerpen}{3}{section.12}
-\contentsline {section}{\numberline {2.4}Titel om hier iets te hebben}{3}{section.13}
-\contentsline {section}{\numberline {2.5}Geschiedenis van het proefschrift}{3}{section.14}
-\contentsline {section}{\numberline {2.6}Verwante onderwerpen}{4}{section.15}
-\contentsline {chapter}{Bibliography}{5}{section*.17}
+\contentsline {section}{\numberline {2.1}Dataset}{2}{section.10}
+\contentsline {section}{\numberline {2.2}MFCC vs spectograms}{2}{section.11}
+\contentsline {section}{\numberline {2.3}Geschiedenis van het proefschrift}{2}{section.12}
+\contentsline {section}{\numberline {2.4}Verwante onderwerpen}{2}{section.13}
+\contentsline {section}{\numberline {2.5}Titel om hier iets te hebben}{3}{section.14}
+\contentsline {section}{\numberline {2.6}Geschiedenis van het proefschrift}{3}{section.15}
+\contentsline {section}{\numberline {2.7}Verwante onderwerpen}{3}{section.16}
+\contentsline {chapter}{\chapternumberline {3}Het echte werk}{4}{chapter.17}
+\contentsline {section}{\numberline {3.1}Titel om hier iets te hebben}{4}{section.18}
+\contentsline {section}{\numberline {3.2}Geschiedenis van het proefschrift}{4}{section.19}
+\contentsline {section}{\numberline {3.3}Verwante onderwerpen}{5}{section.20}
+\contentsline {section}{\numberline {3.4}Titel om hier iets te hebben}{5}{section.21}
+\contentsline {section}{\numberline {3.5}Geschiedenis van het proefschrift}{5}{section.22}
+\contentsline {section}{\numberline {3.6}Verwante onderwerpen}{6}{section.23}
+\contentsline {chapter}{Bibliography}{7}{section*.25}
