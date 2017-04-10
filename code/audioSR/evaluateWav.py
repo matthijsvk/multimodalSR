@@ -38,7 +38,7 @@ batch_size = 32
 
 
 # MODEL and log locations
-model_dataset = "TIMIT"  # the dataset the model has been trained on
+model_dataset = "TCDTIMIT"  # the dataset the model has been trained on
 model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/"+model_dataset+"/results/")
 meanStd_path = os.path.expanduser("~/TCDTIMIT/audioSR/" + model_dataset + "/binary39/" + model_dataset + "MeanStd.pkl")
 store_dir = os.path.expanduser("~/TCDTIMIT/audioSR/" + model_dataset + "/evaluations")
@@ -48,7 +48,7 @@ data_store_dir = os.path.expanduser("~/TCDTIMIT/audioSR/dataPreparedForEvaluatio
 
 
 ####### THE DATA you want to evaluate ##########
-evaluate_dataset = "TIMIT"
+evaluate_dataset = "TCDTIMIT"
 test = evaluate_dataset +'/TEST'
 train = evaluate_dataset+'/TRAIN'
 dataDir_root = os.path.expanduser("~/TCDTIMIT/audioSR/" + evaluate_dataset + "/fixed39/")
@@ -63,7 +63,7 @@ volunteer10M = 'TCDTIMIT/volunteers/10M'
 # TIMIT specific
 DR5 = 'TIMIT/TEST/DR5'
 
-dataName = lipspeakers
+dataName = test
 wavDir = dataDir_root + dataName
 data_store_path = data_store_dir + dataName.replace('/','_') + "_nbMFCC" + str(nbMFCCs)
 if not os.path.exists(data_store_dir): os.makedirs(data_store_dir)
@@ -206,6 +206,8 @@ wav_filenames = [str(
         os.path.dirname(os.path.dirname(wav_file))) + os.sep + os.path.basename(
         os.path.dirname(wav_file)) + os.sep + os.path.basename(wav_file)) for wav_file in wav_files]
 
+logger_evaluate.debug(" # inputs: %s, # wav files: %s", len(inputs), len(wav_files))
+
 # make copy of data because we might need to use is again for calculating accurasy, and the iterator will remove elements from the array
 inputs_bak = copy.deepcopy(inputs)
 if calculateAccuracy:
@@ -270,6 +272,7 @@ logger_evaluate.info('Total time: {:.3f}'.format(eval_duration))
 
 
 # Print the results
-printEvaluation(wav_filenames, inputs, predictions, targets, valid_frames, avg_Acc, range(len(inputs)), logger=logger_evaluate, only_final_accuracy=True)
+try:printEvaluation(wav_filenames, inputs, predictions, targets, valid_frames, avg_Acc, range(len(inputs)), logger=logger_evaluate, only_final_accuracy=True)
+except: pdb.set_trace()
 logger_evaluate.info('Evaluation duration: {:.3f}'.format(eval_duration))
 logger_evaluate.info('Printing duration: {:.3f}'.format(time.time() - end_evaluation_time))
