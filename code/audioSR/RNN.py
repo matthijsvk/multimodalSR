@@ -35,10 +35,10 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 16
+batch_size = 32
 num_epochs = 50
 
-nbMFCCs = 39  # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
+nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 nbPhonemes = 39  # number output neurons
 N_HIDDEN_LIST = [100, 100]
 
@@ -54,7 +54,7 @@ logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-dataset = "combined"
+dataset = "TCDTIMIT"
 dataDir = os.path.expanduser("~/TCDTIMIT/audioSR/" + dataset + "/binary") + str(nbPhonemes) + os.sep + dataset
 data_path = os.path.join(dataDir, os.path.basename(dataDir) + '_' + str(nbMFCCs) + '_ch.pkl');
 

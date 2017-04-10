@@ -39,20 +39,26 @@ def create_mfcc(method, filename, type=2):
 
     mfcc = python_speech_features.mfcc(sample, rate, winlen=0.025, winstep=0.01, numcep=13, nfilt=26,
                                        preemph=0.97, appendEnergy=True)
-
-    if type > 1:
+    out = mfcc
+    if type > 13:
         derivative = np.zeros(mfcc.shape)
         for i in range(1, mfcc.shape[0] - 1):
             derivative[i, :] = mfcc[i + 1, :] - mfcc[i - 1, :]
 
         mfcc_derivative = np.concatenate((mfcc, derivative), axis=1)
-
-        if type > 2:
+        out = mfcc_derivative
+        if type > 26:
             derivative2 = np.zeros(derivative.shape)
             for i in range(1, derivative.shape[0] - 1):
                 derivative2[i, :] = derivative[i + 1, :] - derivative[i - 1, :]
 
-            out = np.concatenate((mfcc_derivative, derivative), axis=1)
+            out = np.concatenate((out, derivative2), axis=1)
+            if type > 39:
+                derivative3 = np.zeros(derivative2.shape)
+                for i in range(1, derivative2.shape[0] - 1):
+                    derivative3[i, :] = derivative2[i + 1, :] - derivative2[i - 1, :]
+
+                out = np.concatenate((out, derivative3), axis=1)
 
     return out, out.shape[0]
 

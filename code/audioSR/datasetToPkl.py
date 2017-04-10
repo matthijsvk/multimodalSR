@@ -41,7 +41,7 @@ phoneme_classes = dict(zip(phoneme_set_list, values))
 dataPreSplit = True #some datasets have a pre-defined TEST set (eg TIMIT)
 FRAC_VAL = 0.1 # fraction of training data to be used for validation
 if dataPreSplit:
-    dataset = "lipspeakers" #TIMIT, TCDTIMIT or combined
+    dataset = "TCDTIMIT" #TIMIT, TCDTIMIT or combined
     ## eg TIMIT ##
     dataRootDir       = os.path.expanduser("~/TCDTIMIT/audioSR/"+dataset+"/fixed") + str(nbPhonemes) + "/"+dataset
     train_source_path = os.path.join(dataRootDir, 'TRAIN')
