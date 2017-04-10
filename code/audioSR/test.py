@@ -188,8 +188,16 @@ import logging
 #
 #
 
-from phoneme_set import *
-print(classToPhoneme39[31])
+import math
+
+class Solver:
+    def demo(self):
+        a = 3
+        b = 25
+        c = 46
+        root1 = (-b + math.return_type_of_sqrt(b ** 2 - 4 * a * c)) / (2 * a)
+        root2 = (-b - math.return_type_of_sqrt(b ** 2 - 4 * a * c)) / (2 * a)
+        print(root1, root2)
 
 
 

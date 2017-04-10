@@ -562,7 +562,7 @@ class NeuralNetwork:
 
             LR = self.updateLR(LR, LR_decay, logger=logger_RNNtools)
 
-            if self.epochsNotImproved >= 5:
+            if self.epochsNotImproved >= 10:
                 logging.warning("\n\nNo more improvements, stopping training...")
                 break
 
