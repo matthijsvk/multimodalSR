@@ -105,7 +105,7 @@ class NeuralNetwork:
     network_train_info = [[], [], []]
 
     def __init__(self, architecture, dataset=None, batch_size=1, num_features=26, n_hidden_list=(100,), num_output_units=61,
-                 bidirectional=False, seed=int(time.time()), debug=False, logger=logger_RNNtools):
+                 bidirectional=False, addDenseLayers=False, seed=int(time.time()), debug=False, logger=logger_RNNtools):
         self.num_output_units = num_output_units
         self.num_features = num_features
         self.batch_size = batch_size
@@ -136,12 +136,12 @@ class NeuralNetwork:
 
             logger.info("NUM FEATURES: %s", num_features)
 
-            self.build_RNN(batch_size, num_features, n_hidden_list, num_output_units, bidirectional,
+            self.build_RNN(batch_size, num_features, n_hidden_list, num_output_units, bidirectional, addDenseLayers,
                            seed, debug)
         else:
             print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
 
-    def build_RNN(self, batch_size=1, num_features=26, n_hidden_list=(100,), num_output_units=61, bidirectional=False,
+    def build_RNN(self, batch_size=1, num_features=26, n_hidden_list=(100,), num_output_units=61, bidirectional=False, addDenseLayers=False,
                   seed=int(time.time()), debug=False, logger=logger_RNNtools):
         if debug:
             logger_RNNtools.debug('\nInputs:');
@@ -252,9 +252,17 @@ class NeuralNetwork:
             l_lstm_val = get_l_lstm(self.X, self.masks)
             logger_RNNtools.debug('  l2_lstm size: %s', l_lstm_val.shape);
 
-        # Now we can apply feed-forward layers as usual for classification
-        net['l6_dense'] = L.DenseLayer(net['l3_reshape'], num_units=num_output_units,
-                                       nonlinearity=lasagne.nonlinearities.softmax)
+        if addDenseLayers:
+            net['l4_dense'] = L.DenseLayer(net['l3_reshape'], nonlinearity =lasagne.nonlinearities.rectify, num_units=256)
+            dropoutLayer = L.DropoutLayer(net['l4_dense'], p=0.3)
+            net['l5_dense'] = L.DenseLayer(dropoutLayer, nonlinearity=lasagne.nonlinearities.rectify, num_units=64)
+            # Now we can apply feed-forward layers as usual for classification
+            net['l6_dense'] = L.DenseLayer(net['l5_dense'], num_units=num_output_units,
+                                           nonlinearity=lasagne.nonlinearities.softmax)
+        else:
+            # Now we can apply feed-forward layers as usual for classification
+            net['l6_dense'] = L.DenseLayer(net['l3_reshape'], num_units=num_output_units,
+                                           nonlinearity=lasagne.nonlinearities.softmax)
 
         # Now, the shape will be (n_batch * n_timesteps, num_output_units. We can then reshape to
         # n_batch to get num_output_units values for each timestep from each sequence
@@ -267,7 +275,7 @@ class NeuralNetwork:
             logger.debug('  l_reshape size: %s', l_reshape_val.shape)
 
         if debug:   self.print_network_structure(net)
-
+        self.network_output_layer = net['l7_out']
         self.network = net
 
     def print_network_structure(self, net=None, logger=logger_RNNtools):
@@ -304,7 +312,7 @@ class NeuralNetwork:
                 # restore network weights
                 with np.load(model_name) as f:
                     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-                    lasagne.layers.set_all_param_values(self.network['l7_out'], *param_values)
+                    lasagne.layers.set_all_param_values(self.network_output_layer, *param_values)
 
                 # # restore 'updates' training parameters
                 # with np.load(model_name + "_updates.npz") as f:
@@ -359,8 +367,8 @@ class NeuralNetwork:
         # LSTM in lasagne: see https://github.com/craffel/Lasagne-tutorial/blob/master/examples/recurrent.py
         target_var = T.imatrix('targets')
 
-        net_out = self.network['l7_out']
-        network_output = L.get_output(net_out)
+        # net_out = self.network['l7_out']
+        network_output = L.get_output(self.network_output_layer)
 
         # Get the first layer of the network
         l_in = self.network['l1_in']
@@ -429,7 +437,7 @@ class NeuralNetwork:
         if train:
             LR = T.scalar('LR', dtype=theano.config.floatX)
             # Retrieve all trainable parameters from the network
-            all_params = L.get_all_params(net_out, trainable=True)
+            all_params = L.get_all_params(self.network_output_layer, trainable=True)
             self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
             train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
                                        [cost, accuracy], updates=self.updates, name='train_fn')
@@ -473,7 +481,7 @@ class NeuralNetwork:
 
             logger.info("Pass over Training Set")
             for inputs, targets, masks, seq_lengths in tqdm(
-                    iterate_minibatches(X_train, y_train, valid_frames_train, batch_size, shuffle=False),
+                    iterate_minibatches(X_train, y_train, valid_frames_train, batch_size, shuffle=True),
                     total=math.ceil(len(X_train) / batch_size)):
 
                 # if debug:
@@ -488,14 +496,14 @@ class NeuralNetwork:
                 # pdb.set_trace()
 
             logger.info("Pass over Validation Set")
-            for inputs, targets, masks, seq_lengths in iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False):
+            for inputs, targets, masks, seq_lengths in tqdm(iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False),total=math.ceil(len(X_val)/batch_size)):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 validation_error[epoch] += error
                 validation_accuracy[epoch] += accuracy
                 validation_batches[epoch] += 1
 
             logger.info("Pass over Test Set")
-            for inputs, targets, masks, seq_lengths in iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False):
+            for inputs, targets, masks, seq_lengths in tqdm(iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False),total=math.ceil(len(X_test)/batch_size)):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 test_error[epoch] += error
                 test_accuracy[epoch] += accuracy
@@ -508,6 +516,7 @@ class NeuralNetwork:
                                / validation_batches[epoch] * 100)
             test_epoch_error = (100 - test_accuracy[epoch]
                                 / test_batches[epoch] * 100)
+            test_epoch_accuracy = test_accuracy[epoch] / test_batches[epoch] * 100
 
             self.network_train_info[0].append(train_epoch_error)
             self.network_train_info[1].append(val_epoch_error)
@@ -520,7 +529,7 @@ class NeuralNetwork:
             if val_epoch_error < self.best_error:
                 self.best_error = val_epoch_error
                 self.best_epoch = self.curr_epoch
-                self.best_param = lasagne.layers.get_all_param_values(self.network['l7_out'])
+                self.best_param = lasagne.layers.get_all_param_values(self.network_output_layer)
                 self.best_updates = [p.get_value() for p in self.updates.keys()]
                 logger.info("New best model found!")
                 if save_name is not None:
@@ -539,6 +548,7 @@ class NeuralNetwork:
             logger.info("Test cost:\t\t{:.6f}".format(
                     test_error[epoch] / test_batches[epoch]))
             logger.info("  test error:\t\t{:.6f} %".format(test_epoch_error))
+            logger.info("  test accuracy:\t\t{:.6f} %".format(test_epoch_accuracy))
 
             if compute_confusion:
                 confusion_matrices.append(self.create_confusion(X_val, y_val)[0])
@@ -562,7 +572,7 @@ class NeuralNetwork:
 
             LR = self.updateLR(LR, LR_decay, logger=logger_RNNtools)
 
-            if self.epochsNotImproved >= 10:
+            if self.epochsNotImproved >= 5:
                 logging.warning("\n\nNo more improvements, stopping training...")
                 break
 
@@ -572,7 +582,7 @@ class NeuralNetwork:
         except: last_error = 10*this_error #first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_error / float(last_error) >= 0.95:
+        if this_error / float(last_error) >= 0.98:
             logger.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_error, last_error, LR * LR_decay)
             self.epochsNotImproved += 1
             return LR * LR_decay

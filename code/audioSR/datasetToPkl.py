@@ -29,7 +29,7 @@ DEBUG = False
 debug_size = 50
 
 # TODO:  MODIFY THESE PARAMETERS for other nbPhonemes of mfccTypes. Save location is updated automatically.
-nbMFCCs = 39; # 13= just mfcc (13 features). 26 = also derivative (26 features). 39 = also 2nd derivative (39 features)
+nbMFCCs = 39 # 13= just mfcc (13 features). 26 = also derivative (26 features). 39 = also 2nd derivative (39 features)
 nbPhonemes = 39
 phoneme_set_list = phoneme_set_39_list  # import list of phonemes,
 # convert to dictionary with number mappings (see phoneme_set.py)

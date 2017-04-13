@@ -40,27 +40,30 @@ num_epochs = 50
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 nbPhonemes = 39  # number output neurons
-N_HIDDEN_LIST = [100, 100]
+N_HIDDEN_LIST = [32,32,32,32,32,32,32,32]
 
 BIDIRECTIONAL = True
+ADD_DENSE_LAYERS = False
 
 # Decaying LR
 LR_start = 0.01
 logger_RNN.info("LR_start = %s", str(LR_start))
 LR_fin = 0.0000001
 logger_RNN.info("LR_fin = %s", str(LR_fin))
-LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)  # each epoch, LR := LR * LR_decay
+# LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)  # each epoch, LR := LR * LR_decay
+LR_decay= 0.5
 logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-dataset = "TCDTIMIT"
+dataset = "TIMIT"
 dataDir = os.path.expanduser("~/TCDTIMIT/audioSR/" + dataset + "/binary") + str(nbPhonemes) + os.sep + dataset
 data_path = os.path.join(dataDir, os.path.basename(dataDir) + '_' + str(nbMFCCs) + '_ch.pkl');
 
 
 model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) \
-             + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + "_" + dataset
+             + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + \
+("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset
 
 store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/"+dataset+"/results")
 if not os.path.exists(store_dir): os.makedirs(store_dir)
@@ -113,7 +116,10 @@ debug = False
 ##### BUIDING MODEL #####
 logger_RNN.info('\n* Building network ...')
 RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size, num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
-                            num_output_units=nbPhonemes, bidirectional=BIDIRECTIONAL, seed=0, debug=debug)
+                            num_output_units=nbPhonemes, bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS, seed=0, debug=debug)
+# print number of parameters
+nb_params = lasagne.layers.count_params(RNN_network.network_output_layer)
+logger_RNN.info(" Number of parameters of this network: %s", nb_params)
 
 # Try to load stored model
 logger_RNN.info(' Network built. Trying to load stored model: %s', model_load)

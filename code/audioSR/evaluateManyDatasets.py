@@ -31,14 +31,15 @@ from readData import *
 
 
 class modelEvaluator:
-    def __init__(self, model_dataset):
+    def __init__(self, model_dataset="combined"):
         ###########################
 
         # network parameters
-        nbMFCCs = 39  # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
+        nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
         nbPhonemes = 39
-        N_HIDDEN_LIST = [100, 100]
+        N_HIDDEN_LIST = [32, 32, 32, 32, 32, 32, 32, 32]
         BIDIRECTIONAL = True
+        ADD_DENSE_LAYERS = False
         batch_size = 32
 
         # MODEL and log locations
@@ -51,33 +52,17 @@ class modelEvaluator:
         # where preprocessed data will be stored in PKL format
         data_store_dir = os.path.expanduser("~/TCDTIMIT/audioSR/dataPreparedForEvaluation/batch_size32/")
 
-        # get all the wavDirs
-        evaluate_datasets = ['TCDTIMIT', 'TIMIT', 'combined']
-        dataNames = ['/TEST','/TRAIN']
-
-        # test = evaluate_dataset + '/TEST'
-        # train = evaluate_dataset + '/TRAIN'
-        # # dataDir_root = os.path.expanduser('~/TCDTIMIT/audioSR/TCDTIMIT/fixed39_nonSplit/')
-        # lipspeakers = 'TCDTIMIT/lipspeakers'
-        # Lipspkr1 = 'TCDTIMIT/lipspeakers/Lipspkr1'
-        # volunteers = 'TCDTIMIT/volunteers'
-        # volunteer10M = 'TCDTIMIT/volunteers/10M'
-
-        wavDirs = []
-        for evaluate_dataset in evaluate_datasets:
-            for dataName in dataNames:
-                wavDirs.append(os.path.expanduser(
-                    "~/TCDTIMIT/audioSR/" + evaluate_dataset + "/fixed39/") + evaluate_dataset + dataName)
-
-        wavDirs.append(os.path.expanduser('~/TCDTIMIT/audioSR/TCDTIMIT/fixed39_nonSplit/TCDTIMIT/lipspeakers'))
-
+        # get all the wavDirs'
+        evaluate_datasets = ['TIMIT','TCDTIMIT']
+        dataNames = ['/TEST']#,'/TRAIN']
 
 
         #################
         # locations for LOG, PARAMETERS, TRAIN info (automatically generated)
         model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) \
                      + "_nbMFCC" + str(nbMFCCs) + (
-                         "_bidirectional" if BIDIRECTIONAL else "_unidirectional") + "_" + model_dataset
+                         "_bidirectional" if BIDIRECTIONAL else "_unidirectional") + (
+        "_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + model_dataset
 
         store_dir = store_dir + os.sep + model_name
         if not os.path.exists(store_dir): os.makedirs(store_dir)
@@ -87,11 +72,16 @@ class modelEvaluator:
         #### BUIDING MODEL ####
         logger_evaluate.info('* Building network ...')
         self.RNN_network = NeuralNetwork('RNN', batch_size=batch_size, num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
-                                    num_output_units=nbPhonemes, bidirectional=BIDIRECTIONAL, seed=0,
+                                    num_output_units=nbPhonemes, bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS, seed=0,
                                     logger=logger_evaluate)
         # Try to load stored model
         logger_evaluate.info(' Network built. Trying to load stored model: %s', model_load)
         self.RNN_network.load_model(model_load, logger=logger_evaluate)
+
+        # print number of parameters
+        nb_params = lasagne.layers.count_params(self.RNN_network.network_output_layer)
+        logger_evaluate.info(" Number of parameters of this network: %s", nb_params )
+
         ##### COMPILING FUNCTIONS #####
         logger_evaluate.info("* Compiling functions ...")
         self.RNN_network.build_functions(debug=False, train=False, logger=logger_evaluate)
@@ -109,11 +99,15 @@ class modelEvaluator:
                 self.evaluateModel(BIDIRECTIONAL, N_HIDDEN_LIST, batch_size, dataName, wavDir, data_store_dir, meanStd_path, model_load,
                                  nbMFCCs, store_dir, force_overwrite=True)
 
-        # evaluate TCDTIMIT lipspeakers
-        dataName = 'TCDTIMIT/lipspeakers'
-        wavDir = os.path.expanduser('~/TCDTIMIT/audioSR/TCDTIMIT/fixed39_nonSplit/TCDTIMIT/lipspeakers')
-        self.evaluateModel(BIDIRECTIONAL, N_HIDDEN_LIST, batch_size, dataName, wavDir, data_store_dir, meanStd_path,
-                           model_load, nbMFCCs, store_dir, force_overwrite=True)
+        # # evaluate TCDTIMIT lipspeakers
+        # dataName = 'TCDTIMIT/lipspeakers'
+        # # lipspeakers = 'TCDTIMIT/lipspeakers'
+        # # Lipspkr1 = 'TCDTIMIT/lipspeakers/Lipspkr1'
+        # # volunteers = 'TCDTIMIT/volunteers'
+        # # volunteer10M = 'TCDTIMIT/volunteers/10M'
+        # wavDir = os.path.expanduser('~/TCDTIMIT/audioSR/TCDTIMIT/fixed39_nonSplit/TCDTIMIT/lipspeakers')
+        # self.evaluateModel(BIDIRECTIONAL, N_HIDDEN_LIST, batch_size, dataName, wavDir, data_store_dir, meanStd_path,
+        #                    model_load, nbMFCCs, store_dir, force_overwrite=True)
 
 
     def evaluateModel(self, BIDIRECTIONAL, N_HIDDEN_LIST, batch_size, dataName, wavDir, data_store_dir, meanStd_path, model_load,
@@ -163,7 +157,7 @@ class modelEvaluator:
             def preprocessLabeledWavs(wavDir, store_dir, name):
                 # fixWavs -> suppose this is done
                 # convert to pkl
-                X, y, valid_frames = preprocessWavs.preprocess_dataset(source_path=wavDir, logger=logger_evaluate)
+                X, y, valid_frames = preprocessWavs.preprocess_dataset(source_path=wavDir, nbMFCCs=nbMFCCs,logger=logger_evaluate)
 
                 X_data_type = 'float32'
                 X = preprocessWavs.set_type(X, X_data_type)
@@ -177,7 +171,7 @@ class modelEvaluator:
             def preprocessUnlabeledWavs(wavDir, store_dir, name):
                 # fixWavs -> suppose this is done
                 # convert to pkl
-                X = preprocessWavs.preprocess_unlabeled_dataset(source_path=wavDir, logger=logger_evaluate)
+                X = preprocessWavs.preprocess_unlabeled_dataset(source_path=wavDir, nbMFCCs=nbMFCCs, logger=logger_evaluate)
 
                 X_data_type = 'float32'
                 X = preprocessWavs.set_type(X, X_data_type)
@@ -324,4 +318,4 @@ class modelEvaluator:
         logger_evaluate.removeHandler(fh)
 
 
-evaluator = modelEvaluator(model_dataset="TIMIT")
+evaluator = modelEvaluator()

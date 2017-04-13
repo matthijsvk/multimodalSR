@@ -38,7 +38,7 @@ batch_size = 32
 
 
 # MODEL and log locations
-model_dataset = "TCDTIMIT"  # the dataset the model has been trained on
+model_dataset = "combined"  # the dataset the model has been trained on
 model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/"+model_dataset+"/results/")
 meanStd_path = os.path.expanduser("~/TCDTIMIT/audioSR/" + model_dataset + "/binary39/" + model_dataset + "MeanStd.pkl")
 store_dir = os.path.expanduser("~/TCDTIMIT/audioSR/" + model_dataset + "/evaluations")
