@@ -31,13 +31,13 @@ from readData import *
 
 
 class modelEvaluator:
-    def __init__(self, model_dataset="combined"):
+    def __init__(self, model_dataset="TCDTIMIT"):
         ###########################
 
         # network parameters
         nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
         nbPhonemes = 39
-        N_HIDDEN_LIST = [32, 32, 32, 32, 32, 32, 32, 32]
+        N_HIDDEN_LIST = [64,64]
         BIDIRECTIONAL = True
         ADD_DENSE_LAYERS = False
         batch_size = 32
@@ -255,22 +255,20 @@ class modelEvaluator:
             totAcc = 0
             n_batches = 0
             logger_evaluate.info("Getting predictions and calculating accuracy...")
-            inputs_padded = []
-            targets_padded = []
-            for input_batch, target_batch, mask_batch, seq_length_batch in tqdm(
+            for inputs_batch, targets_batch, masks_batch, seq_length_batch, valid_frames_batch in tqdm(
                     iterate_minibatches(inputs, targets, valid_frames,
                                         batch_size=batch_size, shuffle=False),
                     total=int(len(inputs) / batch_size)):
                 # get predictions
-                nb_inputs = len(input_batch)  # usually batch size, but could be lower
-                seq_len = len(input_batch[0])
-                prediction = self.predictions_fn(input_batch, mask_batch)
+                nb_inputs = len(inputs_batch)  # usually batch size, but could be lower
+                seq_len = len(inputs_batch[0])
+                prediction = self.predictions_fn(inputs_batch, masks_batch)
                 prediction = np.reshape(prediction, (nb_inputs, -1))
                 prediction = list(prediction)
                 predictions = predictions + prediction
 
                 # get error and accuracy
-                error, accuracy = self.validate_fn(input_batch, mask_batch, target_batch)
+                error, accuracy = self.validate_fn(inputs_batch, masks_batch, targets_batch)
                 # import pdb;pdb.set_trace()
                 totError += error
                 totAcc += accuracy
@@ -283,7 +281,7 @@ class modelEvaluator:
             inputs = inputs_bak
             targets = targets_bak
             valid_frames = valid_frames_bak
-            general_tools.saveToPkl(predictions_path, [inputs, predictions, targets, valid_frames, avg_Acc])
+            #general_tools.saveToPkl(predictions_path, [inputs, predictions, targets, valid_frames, avg_Acc])
 
         else:
             # TODO make sure this works when you don't give targets and valid_frames
@@ -299,7 +297,7 @@ class modelEvaluator:
                 predictions = predictions + prediction
 
             inputs = inputs_bak
-            general_tools.saveToPkl(predictions_path, [inputs, predictions])
+            #general_tools.saveToPkl(predictions_path, [inputs, predictions])
         logger_evaluate.info("* Done")
         end_evaluation_time = time.time()
         eval_duration = end_evaluation_time - program_start_time
