@@ -52,13 +52,13 @@ def create_mfcc(method, filename, type=2):
             for i in range(1, derivative.shape[0] - 1):
                 derivative2[i, :] = derivative[i + 1, :] - derivative[i - 1, :]
 
-            out = np.concatenate((out, derivative2), axis=1)
+            out = np.concatenate((mfcc, derivative, derivative2), axis=1)
             if type > 39:
                 derivative3 = np.zeros(derivative2.shape)
                 for i in range(1, derivative2.shape[0] - 1):
                     derivative3[i, :] = derivative2[i + 1, :] - derivative2[i - 1, :]
 
-                out = np.concatenate((out, derivative3), axis=1)
+                out = np.concatenate((mfcc, derivative, derivative2, derivative3), axis=1)
 
     return out, out.shape[0]
 
@@ -92,7 +92,7 @@ def set_type(X, type):
     return X
 
 
-def preprocess_dataset(source_path, nbMFCCs=13, logger=None, debug=None, verbose=False):
+def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose=False):
     """Preprocess data, ignoring compressed files and files starting with 'SA'"""
     X = []
     y = []
