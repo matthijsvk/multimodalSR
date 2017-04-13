@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import time
-
+from tqdm import tqdm
 import lasagne
 import numpy as np
 
@@ -57,14 +57,14 @@ def train(train_fn, val_fn,
     def train_epoch(X, y, LR):
         loss = 0
         # print("training with a batchsize of: ", batch_size)
-        batches = len(X) / batch_size
+        nb_batches = len(X) / batch_size
         # print("len X: ", len(X))
         # print("so number of batches per epoch: ", batches)
 
-        for i in range(batches):
+        for i in tqdm(range(nb_batches),total=nb_batches):
             loss += train_fn(X[i * batch_size:(i + 1) * batch_size], y[i * batch_size:(i + 1) * batch_size], LR)
 
-        loss /= batches
+        loss /= nb_batches
 
         return loss
 

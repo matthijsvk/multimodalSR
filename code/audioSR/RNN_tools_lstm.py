@@ -58,7 +58,7 @@ def iterate_minibatches(inputs, targets, valid_frames, batch_size, shuffle=False
         input_iter = pad_sequences_X(input_iter)
         target_iter = pad_sequences_y(target_iter)
 
-        yield input_iter, target_iter, mask_iter, seq_lengths
+        yield input_iter, target_iter, mask_iter, seq_lengths, valid_frames_iter
         #  it's convention that data is presented in the shape (batch_size, n_time_steps, n_features) -> (batch_size, None, 26)
 
 # used for evaluating, when there are no targets
@@ -367,8 +367,6 @@ class NeuralNetwork:
         # LSTM in lasagne: see https://github.com/craffel/Lasagne-tutorial/blob/master/examples/recurrent.py
         target_var = T.imatrix('targets')
 
-        # net_out = self.network['l7_out']
-        network_output = L.get_output(self.network_output_layer)
 
         # Get the first layer of the network
         l_in = self.network['l1_in']
@@ -377,7 +375,8 @@ class NeuralNetwork:
         if debug:  self.print_network_structure()
 
         # Function to get the output of the network
-        #output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
+        network_output = L.get_output(self.network_output_layer)
+        self.output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
         if debug:
             logger.debug('l_in.input_var.type: \t%s', l_in.input_var.type)
             logger.debug('l_in.input_var.shape:\t%s', l_in.input_var.shape)
@@ -391,43 +390,66 @@ class NeuralNetwork:
 
         ## from https://groups.google.com/forum/#!topic/lasagne-users/os0j3f_Th5Q
         # Pad your vector of labels and then mask the cost:
-        # cost = lasagne.objectives.categorical_crossentropy(predictions, targets)
-        # cost = lasagne.objectives.aggregate(cost, mask.flatten())
-        # The latter will do (cost * mask).mean().
         # It's important to pad the label vectors with something valid such as zeros,
         # since they will still have to give valid costs that can be multiplied by the mask.
         # The shape of predictions, targets and mask should match:
         # (predictions as (batch_size*max_seq_len, n_features), the other two as (batch_size*max_seq_len,)).
-        # cost_pointwise = lasagne.objectives.categorical_crossentropy(network_output, target_var.flatten())
-        # cost = (cost_pointwise * l_mask.input_var.flatten()).mean()
         cost_pointwise = lasagne.objectives.categorical_crossentropy(network_output, target_var.flatten())
         cost = lasagne.objectives.aggregate(cost_pointwise, l_mask.input_var.flatten())
 
         # Function to determine the number of correct classifications
+        eqs = T.neq(l_mask.input_var.flatten(), T.zeros((1,)))
+        valid_indices = eqs.nonzero()[0]
+        valid_indices_fn = theano.function([l_mask.input_var], valid_indices, name='valid_indices_fn')
+        valid_predictions = network_output[valid_indices,:]
+        self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions, name='valid_predictions_fn')
+       
+        if debug:
+            import pdb
+            try:
+                out = self.output_fn(self.X, self.masks)
+                #masked_output = maskedOutput_fn(self.X, self.masks)
+                #logger.debug('masked_output_fn(X).shape: %s', masked_output.shape)
+                #logger.debug('masked_output_fn(X)[0], value: \n%s', masked_output[0])
+                valid_inds = valid_indices_fn(self.masks)
+                logger.debug('valid_inds(masks).shape: %s', valid_inds.shape)
+                logger.debug('valid_inds(masks): %s', valid_inds)
+                valid_preds = self.valid_predictions_fn(self.X, self.masks)
+                logger.debug('valid_preds(X,masks).shape: %s', valid_preds.shape)
+                logger.debug('valid_preds(X,masks)[0], value: \n%s', valid_preds[0])
+                pdb.set_trace()
+            except Exception as error:
+                print('caught this error: ' + repr(error)); import pdb;  pdb.set_trace()
+            predicted = self.valid_predictions_fn(self.X, self.masks)
+            logger.debug('predictions_fn(X).shape: %s', predicted.shape)
+            logger.debug('predictions_fn(X)[0], value: \n%s', predicted[0])
+        # predictedPhonemes = [phoneme_list[predictedClass] for predictedClass in predictions]
+        # validPredictions = [predictedPhonemes[frame] for frame in valid_frames]
+
         predictions = (T.argmax(network_output, axis=1))
-        predictions_fn = theano.function([l_in.input_var, l_mask.input_var], predictions, name='predictions_fn')
+        self.predictions_fn = theano.function([l_in.input_var, l_mask.input_var], predictions, name='predictions_fn')
         if debug and train:
-            predicted = predictions_fn(self.X, self.masks)
+            predicted = self.predictions_fn(self.X, self.masks)
             logger.debug('predictions_fn(X).shape: %s', predicted.shape)
             logger.debug('predictions_fn(X)[0], value: \n%s', predicted[0])
 
-        # TODO: only use the output at the middle of each phoneme interval (get better accuracy)
+        # only use the output at the middle of each phoneme interval (get better accuracy)
         # Accuracy => # (correctly predicted & valid frames) / #valid frames
         validAndCorrect = T.sum(T.eq(predictions, target_var.flatten()) * l_mask.input_var.flatten())
         nbValidFrames = T.sum(l_mask.input_var.flatten())
         accuracy =  validAndCorrect / nbValidFrames
 
         # Functions for computing cost and training
-        validate_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
+        self.validate_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
                                       [cost, accuracy], name='validate_fn')
-        cost_pointwise_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
+        self.cost_pointwise_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
                                             cost_pointwise, name='cost_pointwise_fn')
         if debug and train:
             logger.debug('%s', self.Y.flatten())
 
-            logger.debug('%s', cost_pointwise_fn(self.X, self.masks, self.Y))
+            logger.debug('%s', self.cost_pointwise_fn(self.X, self.masks, self.Y))
 
-            evaluate_cost = validate_fn(self.X, self.masks, self.Y)
+            evaluate_cost = self.validate_fn(self.X, self.masks, self.Y)
             logger.debug('%s %s', type(evaluate_cost), len(evaluate_cost))
             logger.debug('%s', evaluate_cost)
             logger.debug('cost:     {:.3f}'.format(float(evaluate_cost[0])))
@@ -439,13 +461,9 @@ class NeuralNetwork:
             # Retrieve all trainable parameters from the network
             all_params = L.get_all_params(self.network_output_layer, trainable=True)
             self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
-            train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
+            self.train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
                                        [cost, accuracy], updates=self.updates, name='train_fn')
-            self.train_fn = train_fn
 
-        #self.out_fn = output_fn
-        self.predictions_fn = predictions_fn
-        self.validate_fn = validate_fn
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
               compute_confusion=False, debug=False, logger=logger_RNNtools):
@@ -480,14 +498,15 @@ class NeuralNetwork:
             logger.info("CURRENT EPOCH: %s", self.curr_epoch)
 
             logger.info("Pass over Training Set")
-            for inputs, targets, masks, seq_lengths in tqdm(
+            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(
                     iterate_minibatches(X_train, y_train, valid_frames_train, batch_size, shuffle=True),
                     total=math.ceil(len(X_train) / batch_size)):
 
                 # if debug:
                 #     logger.debug('%s %s', inputs.shape, targets.shape)
                 #     logger.debug('%s %s', inputs[0].shape, targets[0].shape)
-
+                valid_predictions = self.valid_predictions_fn(inputs, masks)
+                import pdb;pdb.set_trace()
                 error, accuracy = train_fn(inputs, masks, targets, LR)
                 if debug: logger.debug('%s %s', error, accuracy)
                 train_error[epoch] += error
@@ -496,14 +515,14 @@ class NeuralNetwork:
                 # pdb.set_trace()
 
             logger.info("Pass over Validation Set")
-            for inputs, targets, masks, seq_lengths in tqdm(iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False),total=math.ceil(len(X_val)/batch_size)):
+            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False),total=math.ceil(len(X_val)/batch_size)):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 validation_error[epoch] += error
                 validation_accuracy[epoch] += accuracy
                 validation_batches[epoch] += 1
 
             logger.info("Pass over Test Set")
-            for inputs, targets, masks, seq_lengths in tqdm(iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False),total=math.ceil(len(X_test)/batch_size)):
+            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False),total=math.ceil(len(X_test)/batch_size)):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 test_error[epoch] += error
                 test_accuracy[epoch] += accuracy
@@ -589,4 +608,3 @@ class NeuralNetwork:
         else:
             self.epochsNotImproved = max(self.epochsNotImproved - 1, 0)  #reduce by 1, minimum 0
             return LR
-                              

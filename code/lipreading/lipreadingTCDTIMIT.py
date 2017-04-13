@@ -39,7 +39,7 @@ import buildNetworks
 
 def main():
     # BN parameters
-    batch_size = 8
+    batch_size = 4
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
@@ -70,9 +70,9 @@ def main():
     print('Loading TCDTIMIT dataset...')
     nbClasses = 12
     # database in binary format (pkl files)
-    database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binaryViseme'))
-    train_set, valid_set, test_set = load_dataset(database_binary_location, 0.8, 0.1, 0.1,
-                                                  nbClasses)  # location, %train, %valid, %test
+    database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binaryViseme'))
+    train_set, valid_set, test_set = load_dataset(datapath=database_binary_location, trainFraction=0.8, validFraction=0.1, testFraction=0.1,
+                                                  nbClasses=nbClasses, type="lipspeakers")
 
     print("the number of training examples is: ", len(train_set.X))
     print("the number of valid examples is: ", len(valid_set.X))
@@ -146,7 +146,7 @@ def unpickle(file):
 
 
 def load_dataset(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8,
-                 validFraction=0.1, testFraction=0.1, nbClasses=39):
+                 validFraction=0.1, testFraction=0.1, nbClasses=39, type="all"):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
@@ -161,9 +161,12 @@ def load_dataset(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/database_b
     img_size = np.prod(img_shape)
 
     # prepare data to load
-    fnamesLipspkrs = []  # ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
-    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1, 5)]  # some volunteers
-    fnames = fnamesLipspkrs + fnamesVolunteers
+    fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
+    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1, 55)]  # some volunteers
+    if type=="lipspeakers": fnames = fnamesLipspkrs
+    elif type=="volunteers": fnames = fnamesVolunteers
+    elif type =="all": fnames = fnamesLipspkrs + fnamesVolunteers
+    else: raise Exception("wrong type of dataset entered")
 
     datasets = {}
     for name in fnames:

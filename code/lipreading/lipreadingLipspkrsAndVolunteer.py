@@ -64,7 +64,7 @@ def main():
     print("shuffle_parts = " + str(shuffle_parts))
 
     print('Loading TCDTIMIT dataset...')
-    database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary'))
+    database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/lipspeaking/database_binary'))
     train_set, valid_set, test_set = load_dataset(database_binary_location, 0.85, 0.1,
                                                   0.05)  # location, %train, %valid, %test
 
@@ -137,7 +137,7 @@ def unpickle(file):
     return dict
 
 
-def load_dataset(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8,
+def load_dataset(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipspeaking/database_binary')), trainFraction=0.8,
                  validFraction=0.1, testFraction=0.1):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10

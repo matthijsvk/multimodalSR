@@ -18,22 +18,22 @@ def unpickle(file):
 
 # print overview with results of 1 evaluated file. ! column TARGETS, 1 columnt PREDICTIONS
 # both phoneme class numbers and the phoneme itself
-def print_results(wav_filename, input, prediction, target, valid_frame, logger=logger_readData, only_final_accuracy=False):
+def print_results(wav_filenames, inputs, predictions, targets, valid_frames, logger=logger_readData, only_final_accuracy=False):
 
     try:
-        Tfull, Treduced, Tvalid = convertPredictions(target, valid_frames=valid_frame, outputType = "phonemes")
-        Pfull, Preduced, Pvalid = convertPredictions(prediction, valid_frames=valid_frame, outputType = "phonemes")
+        Tfull, Treduced, Tvalid = convertPredictions(targets, valid_frames=valid_frames, outputType = "phonemes")
+        Pfull, Preduced, Pvalid = convertPredictions(predictions, valid_frames=valid_frames, outputType = "phonemes")
     except: pdb.set_trace()
 
     try:
-        TfullClass, TreducedClass, TvalidClass = convertPredictions(target, valid_frames=valid_frame, outputType="classes")
-        PfullClass, PreducedClass, PvalidClass = convertPredictions(prediction, valid_frames=valid_frame, outputType="classes")
+        TfullClass, TreducedClass, TvalidClass = convertPredictions(targets, valid_frames=valid_frames, outputType="classes")
+        PfullClass, PreducedClass, PvalidClass = convertPredictions(predictions, valid_frames=valid_frames, outputType="classes")
     except: pdb.set_trace()
 
     assert len(Tfull) == len(Pfull)
 
     # print valid predictions, formatted
-    logger.debug(wav_filename)
+    logger.debug(wav_filenames)
     logger.debug("    TARGETS \t     PREDICTIONS")
     totalCorrect = 0
     for i in range(len(Tvalid)):
@@ -57,13 +57,15 @@ def printEvaluation(wav_filenames, inputs, predictions, targets, valid_frames, a
         if not only_final_accuracy: logger.info("\n    RESULTS FOR FILE AT INDEX ", index)
 
         assert (index >= 0 and index < len(inputs))
-        wav_filename = wav_filenames[index]
-        input       = inputs[index]
-        prediction  = predictions[index]
-        target      = targets[index]
-        valid_frame = valid_frames[index]
+        video_wav_filenames = wav_filenames[index]
+        video_inputs     = inputs[index]
+        video_predictions = predictions[index]
+        video_targets      = targets[index]
+        video_valid_frames = valid_frames[index]
 
-        try:n_phonemes, n_correct = print_results(wav_filename, input, prediction, target, valid_frame, logger, only_final_accuracy=False)
+        # for each video, print the results
+        try:n_phonemes, n_correct = print_results(video_wav_filenames, video_inputs, video_predictions, video_targets,
+                                                  video_valid_frames, logger, only_final_accuracy=False)
         except:   import pdb;pdb.set_trace()
         totalSeen += n_phonemes
         totalCorrect += n_correct
