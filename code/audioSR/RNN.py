@@ -120,7 +120,7 @@ logger_RNN.info('  %s %s', type(valid_frames_train[0][0]), valid_frames_train[0]
 ##### BUIDING MODEL #####
 logger_RNN.info('\n* Building network ...')
 RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size, num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
-                            num_output_units=nbPhonemes, max_seq_length = MAX_SEQ_LENGTH, bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS, seed=0, debug=False)
+                            num_output_units=nbPhonemes, bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS, seed=0, debug=False)
 # print number of parameters
 nb_params = lasagne.layers.count_params(RNN_network.network_output_layer)
 logger_RNN.info(" Number of parameters of this network: %s", nb_params)
