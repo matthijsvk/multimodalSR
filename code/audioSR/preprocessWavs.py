@@ -159,7 +159,7 @@ def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose
         # append the target array to our y
         if -1 in y_vals:
             logger.warning("%s", phn_name)
-            logger.warning('WARNING: -1 detected in TARGET: %s', y_val)
+            logger.warning('WARNING: -1 detected in TARGET: %s', y_vals)
             pdb.set_trace()
 
         y.append(y_vals.astype('int32'))
@@ -175,10 +175,10 @@ def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose
             logger.debug('X_val.shape: \t\t %s', X_val.shape)
             logger.debug('type(X_val[0][0]):\t %s', type(X_val[0][0]))
 
-            logger.debug('type(y_val): \t\t %s', type(y_val))
-            logger.debug('y_val.shape: \t\t %s', y_val.shape)
-            logger.debug('type(y_val[0]):\t %s', type(y_val[0]))
-            logger.debug('y_val: \t\t %s', (y_val))
+            logger.debug('type(y_val): \t\t %s', type(y_vals))
+            logger.debug('y_val.shape: \t\t %s', y_vals.shape)
+            logger.debug('type(y_val[0]):\t %s', type(y_vals[0]))
+            logger.debug('y_val: \t\t %s', (y_vals))
 
         processed+=1
         if debug!=None and processed >= debug:

@@ -35,12 +35,13 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 40
+batch_size = 32
 num_epochs = 50
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 nbPhonemes = 39  # number output neurons
 N_HIDDEN_LIST = [64,64]
+MAX_SEQ_LENGTH = 1000
 
 BIDIRECTIONAL = True
 ADD_DENSE_LAYERS = False
@@ -56,7 +57,7 @@ logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-dataset = "combined"
+dataset = "TIMIT"
 dataDir = os.path.expanduser("~/TCDTIMIT/audioSR/" + dataset + "/binary") + str(nbPhonemes) + os.sep + dataset
 data_path = os.path.join(dataDir, os.path.basename(dataDir) + '_' + str(nbMFCCs) + '_ch.pkl');
 
@@ -65,7 +66,7 @@ model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for l
              + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + \
 ("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset
 
-store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/"+dataset+"/resultsTEST")
+store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/"+dataset+"/results")
 if not os.path.exists(store_dir): os.makedirs(store_dir)
 
 # model parameters and network_training_info
@@ -93,6 +94,10 @@ logger_RNN.info('  model target: ' + model_save + '.npz')
 
 dataset = load_dataset(data_path)
 X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
+# these are lists of np arrays, because the time sequences are different for each example
+# X shape: (example, time_sequence, mfcc_feature,)
+# y shape: (example, time_sequence,)
+
 
 # Print some information
 logger_RNN.info("\n* Data information")
@@ -116,7 +121,7 @@ debug = False
 ##### BUIDING MODEL #####
 logger_RNN.info('\n* Building network ...')
 RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size, num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
-                            num_output_units=nbPhonemes, bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS, seed=0, debug=False)
+                            num_output_units=nbPhonemes, max_seq_length = MAX_SEQ_LENGTH, bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS, seed=0, debug=False)
 # print number of parameters
 nb_params = lasagne.layers.count_params(RNN_network.network_output_layer)
 logger_RNN.info(" Number of parameters of this network: %s", nb_params)
@@ -127,7 +132,7 @@ RNN_network.load_model(model_load)
 
 ##### COMPILING FUNCTIONS #####
 logger_RNN.info("\n* Compiling functions ...")
-RNN_network.build_functions(train=True, debug=debug)
+RNN_network.build_functions(train=True, debug=False)
 
 ##### TRAINING #####
 logger_RNN.info("\n* Training ...")

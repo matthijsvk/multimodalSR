@@ -112,7 +112,7 @@ def pad_sequences_y(sequences, maxlen=None, padding='post', truncating='post', v
     return y
 
 
-def generate_masks(inputs, valid_frames=None, batch_size=1, logger=logger_GeneralTools):  # inputs = X. valid_frames = list of frames when we need to extract the phoneme
+def generate_masks(inputs, valid_frames=None, batch_size=1, max_length = 1000, logger=logger_GeneralTools):  # inputs = X. valid_frames = list of frames when we need to extract the phoneme
     ## all recurrent layers in lasagne accept a separate mask input which has shape
     # (batch_size, n_time_steps), which is populated such that mask[i, j] = 1 when j <= (length of sequence i) and mask[i, j] = 0 when j > (length
     # of sequence i). When no mask is provided, it is assumed that all sequences in the minibatch are of length n_time_steps.
@@ -122,18 +122,25 @@ def generate_masks(inputs, valid_frames=None, batch_size=1, logger=logger_Genera
     logger.debug('%s %s', type(inputs[0][0]), inputs[0][0].shape)
     logger.debug('%s', type(inputs[0][0][0]))
 
-    max_input_length = max([len(inputs[i]) for i in range(len(inputs))])
+    # max_input_length = max([len(inputs[i]) for i in range(len(inputs))])
+    max_length = max([len(inputs[i]) for i in range(len(inputs))])
+
     input_dim = len(inputs[0][0])
 
-    logger.debug("max_seq_len: %d", max_input_length)
+    logger.debug("max_seq_len: %d", max_length)
     logger.debug("input_dim: %d", input_dim)
 
     # X = np.zeros((batch_size, max_input_length, input_dim))
-    input_mask = np.zeros((batch_size, max_input_length), dtype='float32')
+    input_mask = np.zeros((batch_size, max_length), dtype='int32')
 
     for example_id in range(len(inputs)):
         try:
-            if valid_frames == None:
+            if valid_frames != None:
+                # Sometimes phonemes are so close to each other that all are mapped to last frame -> gives error
+                if valid_frames[example_id][-1] == max_length: valid_frames[example_id][-1] = max_length - 1
+                if valid_frames[example_id][-2] == max_length: valid_frames[example_id][-1] = max_length - 1
+                input_mask[example_id, valid_frames[example_id]] = 1
+            else:
                 logger.warning("NO VALID FRAMES SPECIFIED!!!")
                 #raise Exception("NO VALID FRAMES SPECIFIED!!!")
 
@@ -141,11 +148,6 @@ def generate_masks(inputs, valid_frames=None, batch_size=1, logger=logger_Genera
                 curr_seq_len = len(inputs[example_id])
                 logger.debug('%d', curr_seq_len)
                 input_mask[example_id, :curr_seq_len] = 1
-            else:
-                #Sometimes phonemes are so close to each other that all are mapped to last frame -> gives error
-                if valid_frames[example_id][-1] == max_input_length : valid_frames[example_id][-1] = max_input_length - 1
-                if valid_frames[example_id][-2] == max_input_length: valid_frames[example_id][-1] = max_input_length - 1
-                input_mask[example_id,valid_frames[example_id]] = 1
         except Exception as e:
             print("Couldn't do it: %s" % e)
             import pdb;  pdb.set_trace()

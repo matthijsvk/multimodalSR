@@ -18,81 +18,6 @@ logger_RNNtools.setLevel(logging.DEBUG)
 from general_tools import *
 
 
-def iterate_minibatches(inputs, targets, valid_frames, batch_size, shuffle=False):
-    """
-    Helper function that returns an iterator over the training data of a particular
-    size, optionally in a random order.
-    """
-    assert len(inputs) == len(targets) == len(valid_frames)
-    if len(inputs) < batch_size:
-        batch_size = len(inputs)
-
-    # slice to only use multiple of batch_size. If some files are left, they won't be considered
-    # inputs = inputs[:-(len(inputs) % batch_size) or None]
-    # targets = targets[:-(len(targets) % batch_size) or None]
-    # valid_frames = valid_frames[:-(len(valid_frames) % batch_size) or None]
-
-    if shuffle:
-        indices = np.arange(len(inputs))
-        np.random.shuffle(indices)
-
-    for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
-        if shuffle:
-            excerpt = indices[start_idx:start_idx + batch_size]
-        else:
-            excerpt = range(start_idx, start_idx + batch_size, 1)
-
-        input_iter = [inputs[i] for i in excerpt]
-        target_iter = [targets[i] for i in excerpt]
-        valid_frames_iter = [valid_frames[i] for i in excerpt]
-        mask_iter = generate_masks(input_iter, valid_frames=valid_frames_iter, batch_size=batch_size)
-
-# line 145, in generate_masks
-#     input_mask[example_id,valid_frames[example_id]] = 1
-# IndexError: index 677 is out of bounds for axis 1 with size 677
-
-
-        seq_lengths = np.sum(mask_iter, axis=1)
-
-        # now pad inputs and target to maxLen
-        input_iter = pad_sequences_X(input_iter)
-        target_iter = pad_sequences_y(target_iter)
-
-        yield input_iter, target_iter, mask_iter, seq_lengths, valid_frames_iter
-        #  it's convention that data is presented in the shape (batch_size, n_time_steps, n_features) -> (batch_size, None, 26)
-
-# used for evaluating, when there are no targets
-def iterate_minibatches_noTargets(inputs, valid_frames, batch_size=1, shuffle=False):
-    """
-    Helper function that returns an iterator over the training data of a particular
-    size, optionally in a random order.
-    """
-    if len(inputs) < batch_size:
-        batch_size = len(inputs)
-        print("INPUTS < Batch_size")
-
-    # slice to only use multiple of batch_size. If some files are left, they won't be considered
-
-    if shuffle:
-        indices = np.arange(len(inputs))
-        np.random.shuffle(indices)
-
-    for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
-        if shuffle:
-            excerpt = indices[start_idx:start_idx + batch_size]
-        else:
-            excerpt = range(start_idx, start_idx + batch_size, 1)
-
-        input_iter = [inputs[i] for i in excerpt]
-        mask_iter = generate_masks(input_iter, valid_frames=valid_frames, batch_size = batch_size)
-        seq_lengths = np.sum(mask_iter, axis=1)
-
-        # now pad inputs and target to maxLen
-        input_iter = pad_sequences_X(input_iter)
-
-        yield input_iter, mask_iter, seq_lengths
-
-
 class NeuralNetwork:
     network = None
     training_fn = None
@@ -104,12 +29,13 @@ class NeuralNetwork:
 
     network_train_info = [[], [], []]
 
-    def __init__(self, architecture, dataset=None, batch_size=1, num_features=26, n_hidden_list=(100,), num_output_units=61,
+    def __init__(self, architecture, dataset=None, batch_size=1, max_seq_length=1000, num_features=26, n_hidden_list=(100,), num_output_units=61,
                  bidirectional=False, addDenseLayers=False, seed=int(time.time()), debug=False, logger=logger_RNNtools):
         self.num_output_units = num_output_units
         self.num_features = num_features
         self.batch_size = batch_size
-        self.epochsNotImproved = 0  #keep track, to now then to stop training
+        self.max_seq_length = max_seq_length #TODO currently unused
+        self.epochsNotImproved = 0  #keep track, to know when to stop training
         self.updates = {}
 
         if architecture == 'RNN':
@@ -118,8 +44,8 @@ class NeuralNetwork:
 
                 X = X_train[:batch_size]
                 y = y_train[:batch_size]
-                valid_frames = valid_frames_train[:batch_size]
-                self.masks = generate_masks(X, valid_frames=valid_frames,batch_size=len(X))
+                self.valid_frames = valid_frames_train[:batch_size]
+                self.masks = generate_masks(X, valid_frames=self.valid_frames, batch_size=len(X))
 
                 self.X = pad_sequences_X(X)
                 self.Y = pad_sequences_y(y)
@@ -136,13 +62,15 @@ class NeuralNetwork:
 
             logger.info("NUM FEATURES: %s", num_features)
 
-            self.build_RNN(batch_size, num_features, n_hidden_list, num_output_units, bidirectional, addDenseLayers,
-                           seed, debug)
+            self.build_RNN(n_hidden_list=n_hidden_list,  bidirectional=bidirectional, addDenseLayers=addDenseLayers,
+                           seed=seed, debug=debug, logger=logger)
         else:
             print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
 
-    def build_RNN(self, batch_size=1, num_features=26, n_hidden_list=(100,), num_output_units=61, bidirectional=False, addDenseLayers=False,
+    def build_RNN(self, n_hidden_list=(100,), bidirectional=False, addDenseLayers=False,
                   seed=int(time.time()), debug=False, logger=logger_RNNtools):
+        # some inspiration from http://colinraffel.com/talks/hammer2015recurrent.pdf
+
         if debug:
             logger_RNNtools.debug('\nInputs:');
             logger_RNNtools.debug('  X.shape:    %s', self.X[0].shape)
@@ -155,18 +83,23 @@ class NeuralNetwork:
                                   self.Y[0][:5])
             logger_RNNtools.debug('Layers: ')
 
-        # seed np for weight initialization
-        np.random.seed(seed)
+        # fix these at initialization because it allows for compiler opimizations
+        num_output_units = self.num_output_units
+        num_features = self.num_features
+        batch_size = self.batch_size
+
+        audio_inputs = T.tensor3('audio_inputs')
+        audio_masks = T.imatrix('audio_masks')
 
         net = {}
-        #n_hidden = n_hidden_list[0]
-        # some inspiration from http://colinraffel.com/talks/hammer2015recurrent.pdf
-        # shape = (batch_size, max_seq_length, num_features)
-        net['l1_in'] = L.InputLayer(shape=(None, None, num_features))
+        # shape = (batch_size, batch_max_seq_length, num_features)
+        net['l1_in'] = L.InputLayer(shape=(batch_size, None, num_features),input_var=audio_inputs)
+        # We could do this and set all input_vars to None, but that is slower -> fix batch_size and num_features at initialization
+        # batch_size, n_time_steps, n_features = net['l1_in'].input_var.shape
 
         # This input will be used to provide the network with masks.
-        # Masks are expected to be matrices of shape (batch_size, n_time_steps);
-        net['l1_mask'] = L.InputLayer(shape=(None, None))
+        # Masks are matrices of shape (batch_size, n_time_steps);
+        net['l1_mask'] = L.InputLayer(shape=(batch_size, None), input_var=audio_masks)
 
         if debug:
             get_l_in = L.get_output(net['l1_in'])
@@ -242,8 +175,13 @@ class NeuralNetwork:
                 # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
                 net['l2_lstm'].append(lasagne.layers.ElemwiseSumLayer([net['l2_lstm'][-2], net['l2_lstm'][-1]]))
 
-
+        # we need to convert (batch_size,seq_length, num_features) to (batch_size * seq_length, num_features) because Dense networks can't deal with 2 unknown sizes
         net['l3_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'][-1], (-1, n_hidden_list[-1]))
+        if debug:
+            get_l_reshape = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
+                                            L.get_output(net['l3_reshape']))
+            l_reshape_val = get_l_reshape(self.X, self.masks)
+            logger.debug('  l_reshape size: %s', l_reshape_val.shape)
 
         if debug:
             # Forwards LSTM
@@ -257,25 +195,22 @@ class NeuralNetwork:
             dropoutLayer = L.DropoutLayer(net['l4_dense'], p=0.3)
             net['l5_dense'] = L.DenseLayer(dropoutLayer, nonlinearity=lasagne.nonlinearities.rectify, num_units=64)
             # Now we can apply feed-forward layers as usual for classification
-            net['l6_dense'] = L.DenseLayer(net['l5_dense'], num_units=num_output_units,
+            net['l7_dense_reshaped'] = L.DenseLayer(net['l5_dense'], num_units=num_output_units,
                                            nonlinearity=lasagne.nonlinearities.softmax)
         else:
             # Now we can apply feed-forward layers as usual for classification
-            net['l6_dense'] = L.DenseLayer(net['l3_reshape'], num_units=num_output_units,
+            net['l7_dense_reshaped'] = L.DenseLayer(net['l3_reshape'], num_units=num_output_units,
                                            nonlinearity=lasagne.nonlinearities.softmax)
 
-        # Now, the shape will be (n_batch * n_timesteps, num_output_units. We can then reshape to
-        # n_batch to get num_output_units values for each timestep from each sequence
-        net['l7_out'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (-1, num_output_units))
+        # # Now, the shape will be (n_batch * n_timesteps, num_output_units). We can then reshape to
+        # # n_batch to get num_output_units values for each timestep from each sequence
+        try:net['l8_out'] = lasagne.layers.ReshapeLayer(net['l7_dense_reshaped'], (batch_size, -1, num_output_units))
+        except: import pdb; pdb.set_trace()
 
-        if debug:
-            get_l_reshape = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
-                                            L.get_output(net['l3_reshape']))
-            l_reshape_val = get_l_reshape(self.X, self.masks)
-            logger.debug('  l_reshape size: %s', l_reshape_val.shape)
 
         if debug:   self.print_network_structure(net)
-        self.network_output_layer = net['l7_out']
+        self.network_output_layer_flattened = net['l7_dense_reshaped']
+        self.network_output_layer = net['l8_out']
         self.network = net
 
     def print_network_structure(self, net=None, logger=logger_RNNtools):
@@ -283,7 +218,7 @@ class NeuralNetwork:
 
         logger.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
         for key in sorted(net.keys()):
-            if key == 'l2_lstm':
+            if 'lstm' in key:
                 for layer in net['l2_lstm']:
                     try:
                         logger.debug('Layer: %12s | in: %s | out: %s', key, layer.input_shape, layer.output_shape)
@@ -335,6 +270,7 @@ class NeuralNetwork:
             os.makedirs(os.path.dirname(model_name))
         np.savez(model_name + '.npz', self.best_param)
 
+        # also restore the updates variables to continue training. LR should also be saved and restored...
         # updates_vals = [p.get_value() for p in self.best_updates.keys()]
         # np.savez(model_name + '_updates.npz', updates_vals)
 
@@ -363,77 +299,79 @@ class NeuralNetwork:
         return conf_img, y_pred, y_actu
 
     def build_functions(self, train=False, debug=False, logger=logger_RNNtools):
-        
+
         # LSTM in lasagne: see https://github.com/craffel/Lasagne-tutorial/blob/master/examples/recurrent.py
-        target_var = T.imatrix('targets')
+        # and also         http://colinraffel.com/talks/hammer2015recurrent.pdf
+        target_var = T.imatrix('targets') # matrix because (example, time_seq)
 
         # Get the first layer of the network
         l_in = self.network['l1_in']
         l_mask = self.network['l1_mask']
 
-        if debug:  self.print_network_structure()
+        if debug:  import pdb; self.print_network_structure()
 
         # Function to get the output of the network
-        network_output = L.get_output(self.network_output_layer)
+        network_output = L.get_output(self.network_output_layer)                     # (batch_size, batch_max_seq_length, nb_phonemes)
+        network_output_flattened = L.get_output(self.network_output_layer_flattened) # (batch_size * batch_max_seq_length, nb_phonemes)
+        if debug:
+            self.output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
+            n_out = self.output_fn(self.X, self.masks)
+            logger.debug('network_output[0]:     \n%s', n_out[0]);
+            logger.debug('network_output.shape: \t%s', n_out.shape);
+
+        # compare targets with highest output probability. Take maximum of all probs (3rd axis (index 2) of output: 1=batch_size (input files), 2 = time_seq (frames), 3 = n_features (phonemes)
+        # network_output.shape = (len(X), 39) -> (nb_inputs, nb_classes)
+        try:  predictions = (T.argmax(network_output, axis=2))
+        except: print('caught this error: ' + traceback.format_exc());  pdb.set_trace()
+        self.predictions_fn = theano.function([l_in.input_var, l_mask.input_var], predictions, name='predictions_fn')
 
         if debug:
-            logger.debug('l_in.input_var.type: \t%s', l_in.input_var.type)
-            logger.debug('l_in.input_var.shape:\t%s', l_in.input_var.shape)
+            predicted = self.predictions_fn(self.X, self.masks)
+            logger.debug('predictions_fn(X).shape: %s', predicted.shape)
+            logger.debug('predictions_fn(X)[0], value: %s', predicted[0])
 
-            logger.debug('network_output[0]:     \n%s', network_output[0]);
-            logger.debug('network_output, shape: \t%s', network_output.shape);
+        # Function to determine the number of correct classifications
+        valid_indices_example, valid_indices_seqNr = l_mask.input_var.nonzero()
+        valid_indices_fn = theano.function([l_mask.input_var], [valid_indices_example, valid_indices_seqNr], name='valid_indices_fn')
 
-            self.output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
-
-
-        # compare targets with highest output probability. Take maximum of all probs (3rd axis of output: 1=batch_size (input files), 2 = time_seq (frames), 3 = n_features (phonemes)
-        # network_output.shape = (len(X), 39) -> (nb_inputs, nb_classes)
+        # this gets all the valid predictions of all examples of this batch after each other (so not one row per example)
+        # if you want to get the valid predictions per example, you need to use the valid_frames list (it tells you the number of valid frames per wav, so where to split this valid_predictions array)
+        # of course this is trivial for batch_size_audio = 1, as all valid_predictions will belong to the one input wav
+        valid_predictions = predictions[valid_indices_example, valid_indices_seqNr]
+        valid_targets = target_var[valid_indices_example, valid_indices_seqNr]
+        self.valid_targets_fn = theano.function([l_mask.input_var, target_var], valid_targets, name='valid_targets_fn')
+        self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions, name='valid_predictions_fn')
 
         ## from https://groups.google.com/forum/#!topic/lasagne-users/os0j3f_Th5Q
         # Pad your vector of labels and then mask the cost:
         # It's important to pad the label vectors with something valid such as zeros,
         # since they will still have to give valid costs that can be multiplied by the mask.
         # The shape of predictions, targets and mask should match:
-        # (predictions as (batch_size*max_seq_len, n_features), the other two as (batch_size*max_seq_len,)).
-        cost_pointwise = lasagne.objectives.categorical_crossentropy(network_output, target_var.flatten())
+        # (predictions as (batch_size*max_seq_len, n_features), the other two as (batch_size*max_seq_len,)) -> we need to get the flattened output of the network for this
+        cost_pointwise = lasagne.objectives.categorical_crossentropy(network_output_flattened, target_var.flatten())
         cost = lasagne.objectives.aggregate(cost_pointwise, l_mask.input_var.flatten())
-
-        # Function to determine the number of correct classifications
-        eqs = T.neq(l_mask.input_var.flatten(), T.zeros((1,)))
-        valid_indices = eqs.nonzero()[0]
-        valid_indices_fn = theano.function([l_mask.input_var], valid_indices, name='valid_indices_fn')
-        valid_predictions = network_output[valid_indices,:]
-        self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions, name='valid_predictions_fn')
        
         if debug:
-            import pdb
             try:
-                out = self.output_fn(self.X, self.masks)
-                valid_inds = valid_indices_fn(self.masks)
-                logger.debug('valid_inds(masks).shape: %s', valid_inds.shape)
-                logger.debug('valid_inds(masks): %s', valid_inds)
+                valid_example, valid_seqNr = valid_indices_fn(self.masks)
+                logger.debug('valid_inds(masks).shape: %s', valid_example.shape)
                 valid_preds = self.valid_predictions_fn(self.X, self.masks)
+                logger.debug("all valid predictions of this batch: ")
                 logger.debug('valid_preds(X,masks).shape: %s', valid_preds.shape)
-                logger.debug('valid_preds(X,masks)[0], value: \n%s', valid_preds[0])
-            except Exception as error:
-                print('caught this error: ' + repr(error)); import pdb;  pdb.set_trace()
-            predicted = self.valid_predictions_fn(self.X, self.masks)
-            logger.debug('predictions_fn(X).shape: %s', predicted.shape)
-            logger.debug('predictions_fn(X)[0], value: \n%s', predicted[0])
-        # predictedPhonemes = [phoneme_list[predictedClass] for predictedClass in predictions]
-        # validPredictions = [predictedPhonemes[frame] for frame in valid_frames]
+                logger.debug('valid_preds(X,masks)[0], value: \n%s', valid_preds)
 
-        predictions = (T.argmax(network_output, axis=1))
-        self.predictions_fn = theano.function([l_in.input_var, l_mask.input_var], predictions, name='predictions_fn')
-        if debug and train:
-            predicted = self.predictions_fn(self.X, self.masks)
-            logger.debug('predictions_fn(X).shape: %s', predicted.shape)
-            logger.debug('predictions_fn(X)[0], value: \n%s', predicted[0])
+                valid_targs = self.valid_targets_fn(self.masks, self.Y)
+                logger.debug("all valid targets of this batch: ")
+                logger.debug('valid_targets(X,masks).shape: %s', valid_targs.shape)
+                logger.debug('valid_targets(X,masks)[0], value: \n%s', valid_targs)
+                #pdb.set_trace()
+            except Exception as error:
+                print('caught this error: ' + traceback.format_exc()); pdb.set_trace()
 
         # only use the output at the middle of each phoneme interval (get better accuracy)
         # Accuracy => # (correctly predicted & valid frames) / #valid frames
-        validAndCorrect = T.sum(T.eq(predictions, target_var.flatten()) * l_mask.input_var.flatten())
-        nbValidFrames = T.sum(l_mask.input_var.flatten())
+        validAndCorrect = T.sum(T.eq(valid_predictions, valid_targets),dtype='float32')
+        nbValidFrames = T.sum(l_mask.input_var)
         accuracy =  validAndCorrect / nbValidFrames
 
         # Functions for computing cost and training
@@ -441,18 +379,18 @@ class NeuralNetwork:
                                       [cost, accuracy], name='validate_fn')
         self.cost_pointwise_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
                                             cost_pointwise, name='cost_pointwise_fn')
-        if debug and train:
-            logger.debug('%s', self.Y.flatten())
+        if debug:
+            logger.debug('cost pointwise: %s', self.cost_pointwise_fn(self.X, self.masks, self.Y))
 
-            logger.debug('%s', self.cost_pointwise_fn(self.X, self.masks, self.Y))
-
-            evaluate_cost = self.validate_fn(self.X, self.masks, self.Y)
-            logger.debug('%s %s', type(evaluate_cost), len(evaluate_cost))
+            try:evaluate_cost = self.validate_fn(self.X, self.masks, self.Y)
+            except:
+                print('caught this error: ' + traceback.format_exc()); pdb.set_trace()
+            logger.debug('evaluate_cost: %s %s', type(evaluate_cost), len(evaluate_cost))
             logger.debug('%s', evaluate_cost)
             logger.debug('cost:     {:.3f}'.format(float(evaluate_cost[0])))
             logger.debug('accuracy: {:.3f}'.format(float(evaluate_cost[1])))
+            #pdb.set_trace()
 
-        # pdb.set_trace()
         if train:
             LR = T.scalar('LR', dtype=theano.config.floatX)
             # Retrieve all trainable parameters from the network
@@ -460,6 +398,75 @@ class NeuralNetwork:
             self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
             self.train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
                                        [cost, accuracy], updates=self.updates, name='train_fn')
+
+    def iterate_minibatches(self, inputs, targets, valid_frames, batch_size, shuffle=False):
+        """
+        Helper function that returns an iterator over the training data of a particular
+        size, optionally in a random order.
+        """
+        assert len(inputs) == len(targets) == len(valid_frames)
+        if len(inputs) < batch_size:
+            batch_size = len(inputs)
+
+        # slice to only use multiple of batch_size. If some files are left, they won't be considered
+        # inputs = inputs[:-(len(inputs) % batch_size) or None]
+        # targets = targets[:-(len(targets) % batch_size) or None]
+        # valid_frames = valid_frames[:-(len(valid_frames) % batch_size) or None]
+
+        if shuffle:
+            indices = np.arange(len(inputs))
+            np.random.shuffle(indices)
+
+        for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
+            if shuffle:
+                excerpt = indices[start_idx:start_idx + batch_size]
+            else:
+                excerpt = range(start_idx, start_idx + batch_size, 1)
+
+            input_iter = [inputs[i] for i in excerpt]
+            target_iter = [targets[i] for i in excerpt]
+            valid_frames_iter = [valid_frames[i] for i in excerpt]
+            mask_iter = generate_masks(input_iter, valid_frames=valid_frames_iter, batch_size=batch_size)
+
+            seq_lengths = np.sum(mask_iter, axis=1)
+
+            # now pad inputs and target to maxLen
+            input_iter = pad_sequences_X(input_iter)
+            target_iter = pad_sequences_y(target_iter)
+
+            yield input_iter, target_iter, mask_iter, seq_lengths, valid_frames_iter
+            #  it's convention that data is presented in the shape (batch_size, n_time_steps, n_features) -> (batch_size, None, 26)
+
+    # used for evaluating, when there are no targets
+    def iterate_minibatches_noTargets(self, inputs, valid_frames, batch_size=1, shuffle=False):
+        """
+        Helper function that returns an iterator over the training data of a particular
+        size, optionally in a random order.
+        """
+        if len(inputs) < batch_size:
+            batch_size = len(inputs)
+            print("INPUTS < Batch_size")
+
+        # slice to only use multiple of batch_size. If some files are left, they won't be considered
+
+        if shuffle:
+            indices = np.arange(len(inputs))
+            np.random.shuffle(indices)
+
+        for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
+            if shuffle:
+                excerpt = indices[start_idx:start_idx + batch_size]
+            else:
+                excerpt = range(start_idx, start_idx + batch_size, 1)
+
+            input_iter = [inputs[i] for i in excerpt]
+            mask_iter = generate_masks(input_iter, valid_frames=valid_frames, batch_size=batch_size)
+            seq_lengths = np.sum(mask_iter, axis=1)
+
+            # now pad inputs and target to maxLen
+            input_iter = pad_sequences_X(input_iter)
+
+            yield input_iter, mask_iter, seq_lengths
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
               compute_confusion=False, debug=False, logger=logger_RNNtools):
@@ -490,19 +497,23 @@ class NeuralNetwork:
         for epoch in range(num_epochs):
             self.curr_epoch += 1
             epoch_time = time.time()
-
             logger.info("CURRENT EPOCH: %s", self.curr_epoch)
 
             logger.info("Pass over Training Set")
             for inputs, targets, masks, seq_lengths, valid_frames in tqdm(
-                    iterate_minibatches(X_train, y_train, valid_frames_train, batch_size, shuffle=True),
+                    self.iterate_minibatches(X_train, y_train, valid_frames_train, batch_size, shuffle=True),
                     total=math.ceil(len(X_train) / batch_size)):
 
-                # if debug:
-                #     logger.debug('%s %s', inputs.shape, targets.shape)
-                #     logger.debug('%s %s', inputs[0].shape, targets[0].shape)
-                valid_predictions = self.valid_predictions_fn(inputs, masks)
-                #import pdb;pdb.set_trace()
+
+                # # some tests of valid predictions functions (this works :) )
+                # valid_predictions = self.valid_predictions_fn(inputs, masks)
+                # logger.debug("valid predictions: ", valid_predictions.shape)
+                #
+                # # get valid predictions for video 0
+                # self.get_validPredictions_video(valid_predictions, valid_frames, 0)
+                # # and the targets for video 0
+                # targets[0][valid_frames[0]]
+
                 error, accuracy = train_fn(inputs, masks, targets, LR)
                 if debug: logger.debug('%s %s', error, accuracy)
                 train_error[epoch] += error
@@ -511,14 +522,14 @@ class NeuralNetwork:
                 # pdb.set_trace()
 
             logger.info("Pass over Validation Set")
-            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False),total=math.ceil(len(X_val)/batch_size)):
+            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(self.iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False),total=math.ceil(len(X_val)/batch_size)):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 validation_error[epoch] += error
                 validation_accuracy[epoch] += accuracy
                 validation_batches[epoch] += 1
 
             logger.info("Pass over Test Set")
-            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False),total=math.ceil(len(X_test)/batch_size)):
+            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(self.iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False),total=math.ceil(len(X_test)/batch_size)):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 test_error[epoch] += error
                 test_accuracy[epoch] += accuracy
@@ -590,6 +601,22 @@ class NeuralNetwork:
             if self.epochsNotImproved >= 5:
                 logging.warning("\n\nNo more improvements, stopping training...")
                 break
+
+    def get_validPredictions_video(self, valid_predictions, valid_frames, videoIndexInBatch):
+        # get indices of the valid frames for each video, using the valid_frames
+        nbValidsPerVideo = [len(el) for el in valid_frames]
+
+        # each el is the sum of the els before. -> for example video 3, you need valid_predictions from indices[2] (inclusive) till indices[3] (not inclusive)
+        indices = [0] + [np.sum(nbValidsPerVideo[:i + 1]) for i in range(len(nbValidsPerVideo))]
+
+        # make a 2D list. Each el of the list is a list with the valid frames per video.
+        videoPreds = [range(indices[videoIndex], indices[videoIndex + 1]) for videoIndex in range(
+                len(valid_frames))]
+        #assert len(videoPreds) == len(inputs) == len(valid_frames)
+
+        # now you can get the frames for a specific video:
+        return valid_predictions[videoPreds[videoIndexInBatch]]
+
 
     def updateLR(self, LR, LR_decay, logger=logger_RNNtools):
         this_error = self.network_train_info[1][-1]
