@@ -47,9 +47,9 @@ def iterate_minibatches(inputs, targets, valid_frames, batch_size, shuffle=False
         valid_frames_iter = [valid_frames[i] for i in excerpt]
         mask_iter = generate_masks(input_iter, valid_frames=valid_frames_iter, batch_size=batch_size)
 
-# line 145, in generate_masks
-#     input_mask[example_id,valid_frames[example_id]] = 1
-# IndexError: index 677 is out of bounds for axis 1 with size 677
+        # line 145, in generate_masks
+        #     input_mask[example_id,valid_frames[example_id]] = 1
+        # IndexError: index 677 is out of bounds for axis 1 with size 677
 
 
         seq_lengths = np.sum(mask_iter, axis=1)
@@ -60,6 +60,7 @@ def iterate_minibatches(inputs, targets, valid_frames, batch_size, shuffle=False
 
         yield input_iter, target_iter, mask_iter, seq_lengths, valid_frames_iter
         #  it's convention that data is presented in the shape (batch_size, n_time_steps, n_features) -> (batch_size, None, 26)
+
 
 # used for evaluating, when there are no targets
 def iterate_minibatches_noTargets(inputs, valid_frames, batch_size=1, shuffle=False):
@@ -84,7 +85,7 @@ def iterate_minibatches_noTargets(inputs, valid_frames, batch_size=1, shuffle=Fa
             excerpt = range(start_idx, start_idx + batch_size, 1)
 
         input_iter = [inputs[i] for i in excerpt]
-        mask_iter = generate_masks(input_iter, valid_frames=valid_frames, batch_size = batch_size)
+        mask_iter = generate_masks(input_iter, valid_frames=valid_frames, batch_size=batch_size)
         seq_lengths = np.sum(mask_iter, axis=1)
 
         # now pad inputs and target to maxLen
@@ -104,22 +105,23 @@ class NeuralNetwork:
 
     network_train_info = [[], [], []]
 
-    def __init__(self, architecture, dataset=None, batch_size=1, num_features=26, n_hidden_list=(100,), num_output_units=61,
+    def __init__(self, architecture, audio_dataset=None, batch_size=1, num_features=26, n_hidden_list=(100,),
+                 num_output_units=61,
                  bidirectional=False, addDenseLayers=False, seed=int(time.time()), debug=False, logger=logger_RNNtools):
         self.num_output_units = num_output_units
         self.num_features = num_features
         self.batch_size = batch_size
-        self.epochsNotImproved = 0  #keep track, to now then to stop training
+        self.epochsNotImproved = 0  # keep track, to now then to stop training
         self.updates = {}
 
         if architecture == 'RNN':
-            if dataset != None:
-                X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
+            if audio_dataset != None:
+                X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = audio_dataset
 
                 X = X_train[:batch_size]
                 y = y_train[:batch_size]
                 valid_frames = valid_frames_train[:batch_size]
-                self.masks = generate_masks(X, valid_frames=valid_frames,batch_size=len(X))
+                self.masks = generate_masks(X, valid_frames=valid_frames, batch_size=len(X))
 
                 self.X = pad_sequences_X(X)
                 self.Y = pad_sequences_y(y)
@@ -136,12 +138,15 @@ class NeuralNetwork:
 
             logger.info("NUM FEATURES: %s", num_features)
 
-            self.build_RNN(batch_size, num_features, n_hidden_list, num_output_units, bidirectional, addDenseLayers,
+            self.audioNetwork = self.build_audioNetwork(batch_size, num_features, n_hidden_list, num_output_units, bidirectional, addDenseLayers,
                            seed, debug)
+            self.lipreadingNetwork = self.build_lipreadingNetwork()
+            self.combinedNetwork = self.build_combinedNetwork(audioNetwork, lipreadingNetwork)
         else:
             print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
 
-    def build_RNN(self, batch_size=1, num_features=26, n_hidden_list=(100,), num_output_units=61, bidirectional=False, addDenseLayers=False,
+    def build_audioNetwork(self, batch_size=1, num_features=26, n_hidden_list=(100,), num_output_units=61, bidirectional=False,
+                  addDenseLayers=False,
                   seed=int(time.time()), debug=False, logger=logger_RNNtools):
         if debug:
             logger_RNNtools.debug('\nInputs:');
@@ -159,7 +164,7 @@ class NeuralNetwork:
         np.random.seed(seed)
 
         net = {}
-        #n_hidden = n_hidden_list[0]
+        # n_hidden = n_hidden_list[0]
         # some inspiration from http://colinraffel.com/talks/hammer2015recurrent.pdf
         # shape = (batch_size, max_seq_length, num_features)
         net['l1_in'] = L.InputLayer(shape=(None, None, num_features))
@@ -204,8 +209,10 @@ class NeuralNetwork:
         for i in range(len(n_hidden_list)):
             n_hidden = n_hidden_list[i]
 
-            if i==0: input = net['l1_in']
-            else:    input = net['l2_lstm'][i-1]
+            if i == 0:
+                input = net['l1_in']
+            else:
+                input = net['l2_lstm'][i - 1]
 
             nextForwardLSTMLayer = lasagne.layers.recurrent.LSTMLayer(
                     input, n_hidden,
@@ -242,7 +249,6 @@ class NeuralNetwork:
                 # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
                 net['l2_lstm'].append(lasagne.layers.ElemwiseSumLayer([net['l2_lstm'][-2], net['l2_lstm'][-1]]))
 
-
         net['l3_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'][-1], (-1, n_hidden_list[-1]))
 
         if debug:
@@ -253,7 +259,8 @@ class NeuralNetwork:
             logger_RNNtools.debug('  l2_lstm size: %s', l_lstm_val.shape);
 
         if addDenseLayers:
-            net['l4_dense'] = L.DenseLayer(net['l3_reshape'], nonlinearity =lasagne.nonlinearities.rectify, num_units=256)
+            net['l4_dense'] = L.DenseLayer(net['l3_reshape'], nonlinearity=lasagne.nonlinearities.rectify,
+                                           num_units=256)
             dropoutLayer = L.DropoutLayer(net['l4_dense'], p=0.3)
             net['l5_dense'] = L.DenseLayer(dropoutLayer, nonlinearity=lasagne.nonlinearities.rectify, num_units=64)
             # Now we can apply feed-forward layers as usual for classification
@@ -278,8 +285,16 @@ class NeuralNetwork:
         self.network_output_layer = net['l7_out']
         self.network = net
 
+    def build_combined(self):
+        # we have the output of the audio network as (validFrames, predictions)
+        # we have the output of the lipreading network as (validFrames, predictions)
+        # now, conatenate them
+
+        # TODO: need to fix  audio_validFrames and video_validFrames so they have the same values? How does concatenation work?
+        concatLayer = L.ConcatLayer([self.audioNetwork, self.lipreadingNetwork], axis=1)  #concat the features so we get (validFrames, 39+39=78)
+
     def print_network_structure(self, net=None, logger=logger_RNNtools):
-        if net==None: net = self.network
+        if net == None: net = self.network
 
         logger.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
         for key in sorted(net.keys()):
@@ -338,32 +353,8 @@ class NeuralNetwork:
         # updates_vals = [p.get_value() for p in self.best_updates.keys()]
         # np.savez(model_name + '_updates.npz', updates_vals)
 
-    def create_confusion(self, X, y, debug=False, logger=logger_RNNtools):
-        argmax_fn = self.training_fn[1]
-
-        y_pred = []
-        for X_obs in X:
-            for x in argmax_fn(X_obs):
-                for j in x:
-                    y_pred.append(j)
-
-        y_actu = []
-        for Y in y:
-            for y in Y:
-                y_actu.append(y)
-
-        conf_img = np.zeros([61, 61])
-        assert (len(y_pred) == len(y_actu))
-
-        for i in range(len(y_pred)):
-            row_idx = y_actu[i]
-            col_idx = y_pred[i]
-            conf_img[row_idx, col_idx] += 1
-
-        return conf_img, y_pred, y_actu
-
     def build_functions(self, train=False, debug=False, logger=logger_RNNtools):
-        
+
         # LSTM in lasagne: see https://github.com/craffel/Lasagne-tutorial/blob/master/examples/recurrent.py
         target_var = T.imatrix('targets')
 
@@ -375,16 +366,13 @@ class NeuralNetwork:
 
         # Function to get the output of the network
         network_output = L.get_output(self.network_output_layer)
-
+        self.output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
         if debug:
             logger.debug('l_in.input_var.type: \t%s', l_in.input_var.type)
             logger.debug('l_in.input_var.shape:\t%s', l_in.input_var.shape)
 
             logger.debug('network_output[0]:     \n%s', network_output[0]);
             logger.debug('network_output, shape: \t%s', network_output.shape);
-
-            self.output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
-
 
         # compare targets with highest output probability. Take maximum of all probs (3rd axis of output: 1=batch_size (input files), 2 = time_seq (frames), 3 = n_features (phonemes)
         # network_output.shape = (len(X), 39) -> (nb_inputs, nb_classes)
@@ -402,9 +390,10 @@ class NeuralNetwork:
         eqs = T.neq(l_mask.input_var.flatten(), T.zeros((1,)))
         valid_indices = eqs.nonzero()[0]
         valid_indices_fn = theano.function([l_mask.input_var], valid_indices, name='valid_indices_fn')
-        valid_predictions = network_output[valid_indices,:]
-        self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions, name='valid_predictions_fn')
-       
+        valid_predictions = network_output[valid_indices, :]
+        self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions,
+                                                    name='valid_predictions_fn')
+
         if debug:
             import pdb
             try:
@@ -416,7 +405,9 @@ class NeuralNetwork:
                 logger.debug('valid_preds(X,masks).shape: %s', valid_preds.shape)
                 logger.debug('valid_preds(X,masks)[0], value: \n%s', valid_preds[0])
             except Exception as error:
-                print('caught this error: ' + repr(error)); import pdb;  pdb.set_trace()
+                print('caught this error: ' + repr(error));
+                import pdb;
+                pdb.set_trace()
             predicted = self.valid_predictions_fn(self.X, self.masks)
             logger.debug('predictions_fn(X).shape: %s', predicted.shape)
             logger.debug('predictions_fn(X)[0], value: \n%s', predicted[0])
@@ -434,38 +425,27 @@ class NeuralNetwork:
         # Accuracy => # (correctly predicted & valid frames) / #valid frames
         validAndCorrect = T.sum(T.eq(predictions, target_var.flatten()) * l_mask.input_var.flatten())
         nbValidFrames = T.sum(l_mask.input_var.flatten())
-        accuracy =  validAndCorrect / nbValidFrames
+        accuracy = validAndCorrect / nbValidFrames
 
         # Functions for computing cost and training
         self.validate_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
-                                      [cost, accuracy], name='validate_fn')
+                                           [cost, accuracy], name='validate_fn')
         self.cost_pointwise_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
-                                            cost_pointwise, name='cost_pointwise_fn')
-        if debug and train:
-            logger.debug('%s', self.Y.flatten())
+                                                 cost_pointwise, name='cost_pointwise_fn')
 
-            logger.debug('%s', self.cost_pointwise_fn(self.X, self.masks, self.Y))
-
-            evaluate_cost = self.validate_fn(self.X, self.masks, self.Y)
-            logger.debug('%s %s', type(evaluate_cost), len(evaluate_cost))
-            logger.debug('%s', evaluate_cost)
-            logger.debug('cost:     {:.3f}'.format(float(evaluate_cost[0])))
-            logger.debug('accuracy: {:.3f}'.format(float(evaluate_cost[1])))
-
-        # pdb.set_trace()
         if train:
             LR = T.scalar('LR', dtype=theano.config.floatX)
             # Retrieve all trainable parameters from the network
             all_params = L.get_all_params(self.network_output_layer, trainable=True)
             self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
             self.train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
-                                       [cost, accuracy], updates=self.updates, name='train_fn')
+                                            [cost, accuracy], updates=self.updates, name='train_fn')
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
               compute_confusion=False, debug=False, logger=logger_RNNtools):
 
         X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
-        #output_fn = self.out_fn
+        # output_fn = self.out_fn
         predictions_fn = self.predictions_fn
         train_fn = self.train_fn
         validate_fn = self.validate_fn
@@ -502,7 +482,8 @@ class NeuralNetwork:
                 #     logger.debug('%s %s', inputs.shape, targets.shape)
                 #     logger.debug('%s %s', inputs[0].shape, targets[0].shape)
                 valid_predictions = self.valid_predictions_fn(inputs, masks)
-                #import pdb;pdb.set_trace()
+                import pdb;
+                pdb.set_trace()
                 error, accuracy = train_fn(inputs, masks, targets, LR)
                 if debug: logger.debug('%s %s', error, accuracy)
                 train_error[epoch] += error
@@ -511,14 +492,18 @@ class NeuralNetwork:
                 # pdb.set_trace()
 
             logger.info("Pass over Validation Set")
-            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False),total=math.ceil(len(X_val)/batch_size)):
+            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(
+                    iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False),
+                    total=math.ceil(len(X_val) / batch_size)):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 validation_error[epoch] += error
                 validation_accuracy[epoch] += accuracy
                 validation_batches[epoch] += 1
 
             logger.info("Pass over Test Set")
-            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False),total=math.ceil(len(X_test)/batch_size)):
+            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(
+                    iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False),
+                    total=math.ceil(len(X_test) / batch_size)):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 test_error[epoch] += error
                 test_accuracy[epoch] += accuracy
@@ -593,8 +578,10 @@ class NeuralNetwork:
 
     def updateLR(self, LR, LR_decay, logger=logger_RNNtools):
         this_error = self.network_train_info[1][-1]
-        try:last_error = self.network_train_info[1][-2]
-        except: last_error = 10*this_error #first time it will fail because there is only 1 result stored
+        try:
+            last_error = self.network_train_info[1][-2]
+        except:
+            last_error = 10 * this_error  # first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
         if this_error / float(last_error) >= 0.98:
@@ -602,5 +589,5 @@ class NeuralNetwork:
             self.epochsNotImproved += 1
             return LR * LR_decay
         else:
-            self.epochsNotImproved = max(self.epochsNotImproved - 1, 0)  #reduce by 1, minimum 0
+            self.epochsNotImproved = max(self.epochsNotImproved - 1, 0)  # reduce by 1, minimum 0
             return LR

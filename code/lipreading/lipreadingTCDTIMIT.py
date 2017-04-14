@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import os
+import os, sys
 
 import numpy as np
 
@@ -36,6 +36,9 @@ import train_lipreadingTCDTIMIT  # load training functions
 import datasetClass  # load the binary dataset in proper format
 import buildNetworks
 
+import lasagne.layers as L
+import lasagne.objectives as LO
+
 
 def main():
     # BN parameters
@@ -52,7 +55,7 @@ def main():
     print("activation = T.nnet.relu")
 
     # Training parameters
-    num_epochs = 40
+    num_epochs = 20
     print("num_epochs = " + str(num_epochs))
 
     # Decaying LR
@@ -68,71 +71,75 @@ def main():
     print("shuffle_parts = " + str(shuffle_parts))
 
     print('Loading TCDTIMIT dataset...')
-    nbClasses = 12
+    nbClasses = 39
+    oneHot = False
     # database in binary format (pkl files)
-    database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binaryViseme'))
-    train_set, valid_set, test_set = load_dataset(datapath=database_binary_location, trainFraction=0.8, validFraction=0.1, testFraction=0.1,
-                                                  nbClasses=nbClasses, type="lipspeakers")
+    database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binary'))
+    train_X, train_y, valid_X, valid_y, test_X, test_y = load_datasetImages(datapath=database_binary_location, trainFraction=0.8, validFraction=0.1, testFraction=0.1,
+                                                  nbClasses=nbClasses, onehot=oneHot, type="lipspeakers", nbLip=1, verbose=True)
 
-    print("the number of training examples is: ", len(train_set.X))
-    print("the number of valid examples is: ", len(valid_set.X))
-    print("the number of test examples is: ", len(test_set.X))
+    print("the number of training examples is: ", len(train_X))
+    print("the number of valid examples is: ", len(valid_X))
+    print("the number of test examples is: ", len(test_X))
 
     print('Building the CNN...')
 
     # Prepare Theano variables for inputs and targets
-    input = T.tensor4('inputs')
-    target = T.matrix('targets')
+    inputs = T.tensor4('inputs')
+    if oneHot: targets = T.matrix('targets')
+    else: targets = T.ivector('targets')
+
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
     # get the network structure
-    cnn = buildNetworks.build_network_google(activation, alpha, epsilon, input, nbClasses)  # 7176231 params
-    # cnn = buildNetworks.build_network_cifar10(activation, alpha, epsilon, input, nbClasses) # 123644839,
-    # without 2x FC1024: 23634855
-
-    ## resnet50; replace cnn by cnn['prob'] everywhere             # 9074087 params
-    # cnn = buildNetworks.build_network_resnet50(input, nbClasses)
-
     print("Using Google network")
+    cnnDict, l_out = buildNetworks.build_network_google(activation, alpha, epsilon, inputs, nbClasses)  # 7.176.231 params
+
     # print("Using CIFAR10 network")
+    # cnn. l_out = buildNetworks.build_network_cifar10(activation, alpha, epsilon, input, nbClasses) # 9.074.087 params,    # with 2x FC1024: 23.634.855
+
     # print("Using ResNet50 network")
+    # cnn, l_out = buildNetworks.build_network_resnet50(input, nbClasses)
 
     # print het amount of network parameters
-    print("The number of parameters of this network: ", lasagne.layers.count_params(cnn))
+    print("The number of parameters of this network: ", L.count_params(l_out))
 
-    # get output layer, for calculating loss etc
-    train_output = lasagne.layers.get_output(cnn, deterministic=False)
 
-    # squared hinge loss
-    loss = T.mean(T.sqr(T.maximum(0., 1. - target * train_output)))
+    print("* COMPILING FUNCTIONS...")
+
+    # for validation: disable dropout etc layers -> deterministic
+    test_network_output = L.get_output(l_out, inputs, deterministic=True)
+    test_err = T.mean(T.neq(T.argmax(test_network_output, axis=1), targets), dtype=theano.config.floatX)
+    test_loss = LO.aggregate(LO.categorical_crossentropy(test_network_output, targets))
+    val_fn = theano.function([inputs, targets], [test_loss, test_err])
+
+    # For training, use nondeterministic output
+    network_output = L.get_output(l_out, deterministic=False)
+    # cross-entropy loss
+    loss = T.mean(LO.categorical_crossentropy(network_output, targets))
+    # error
+    err = T.mean(T.neq(T.argmax(network_output, axis=1), targets), dtype=theano.config.floatX)
 
     # set all params to trainable
-    params = lasagne.layers.get_all_params(cnn, trainable=True)
+    params = L.get_all_params(l_out, trainable=True)
     updates = lasagne.updates.adam(loss_or_grads=loss, params=params, learning_rate=LR)
-
-    test_output = lasagne.layers.get_output(cnn, deterministic=True)
-
-    test_loss = T.mean(T.sqr(T.maximum(0., 1. - target * test_output)))
-    test_err = T.mean(T.neq(T.argmax(test_output, axis=1), T.argmax(target, axis=1)), dtype=theano.config.floatX)
-
     # Compile a function performing a training step on a mini-batch (by giving the updates dictionary)
     # and returning the corresponding training loss:
-    train_fn = theano.function([input, target, LR], loss, updates=updates)
+    train_fn = theano.function([inputs, targets, LR], loss, updates=updates)
 
-    # Compile a second function computing the validation loss and accuracy:
-    val_fn = theano.function([input, target], [test_loss, test_err])
+
 
     print('Training...')
 
     train_lipreadingTCDTIMIT.train(
             train_fn, val_fn,
-            cnn,
+            l_out,
             batch_size,
             LR_start, LR_decay,
             num_epochs,
-            train_set.X, train_set.y,
-            valid_set.X, valid_set.y,
-            test_set.X, test_set.y,
+            train_X, train_y,
+            valid_X, valid_y,
+            test_X, test_y,
             save_path="./TCDTIMITBestModel",
             shuffle_parts=shuffle_parts)
 
@@ -145,8 +152,8 @@ def unpickle(file):
     return dict
 
 
-def load_dataset(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/database_binary')), trainFraction=0.8,
-                 validFraction=0.1, testFraction=0.1, nbClasses=39, type="all"):
+def load_datasetImages(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binary')), trainFraction=0.8,
+                 validFraction=0.1, testFraction=0.1, nbClasses=39, onehot=False, type="all", nbLip=1, nbVol=54,verbose=False):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
@@ -156,13 +163,13 @@ def load_dataset(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/database_b
     # total Lipspeakers:  14500 + 13000 + 14000 = 42477
 
     dtype = 'uint8'
-    ntotal = 150000  # estimate, for initialization. takes some safty margin
+    memAvaliableMB = 6000; memAvaliable = memAvaliableMB * 1024
     img_shape = (1, 120, 120)
     img_size = np.prod(img_shape)
 
     # prepare data to load
-    fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1,4)]  # all 3 lipsteakers
-    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1, 55)]  # some volunteers
+    fnamesLipspkrs = ['Lipspkr%i.pkl' % i for i in range(1,nbLip+1)]  # all 3 lipsteakers
+    fnamesVolunteers = ['Volunteer%i.pkl' % i for i in range(1, nbVol+1)]  # some volunteers
     if type=="lipspeakers": fnames = fnamesLipspkrs
     elif type=="volunteers": fnames = fnamesVolunteers
     elif type =="all": fnames = fnamesLipspkrs + fnamesVolunteers
@@ -177,18 +184,9 @@ def load_dataset(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/database_b
 
     # load the images
     # first initialize the matrices
-    lenx = ntotal
-    xtrain = np.zeros((lenx, img_size), dtype=dtype)
-    xvalid = np.zeros((lenx, img_size), dtype=dtype)
-    xtest = np.zeros((lenx, img_size), dtype=dtype)
-
-    ytrain = np.zeros((lenx, 1), dtype=dtype)
-    yvalid = np.zeros((lenx, 1), dtype=dtype)
-    ytest = np.zeros((lenx, 1), dtype=dtype)
-
-    # memory issues: print size
-    memTot = xtrain.nbytes + xvalid.nbytes + xtest.nbytes + ytrain.nbytes + yvalid.nbytes + ytest.nbytes
-    # print("Empty matrices, memory required: ", memTot / 1000000, " MB")
+    train_X = []; train_y = []
+    valid_X = []; valid_y = []
+    test_X = []; test_y = []
 
     # now load train data
     trainLoaded = 0
@@ -196,124 +194,128 @@ def load_dataset(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/database_b
     testLoaded = 0
 
     for i, fname in enumerate(fnames):
-        print("Total loaded till now: ", trainLoaded + validLoaded + testLoaded, " out of ", ntotal)
-        print("nbTrainLoaded: ", trainLoaded)
-        print("nbValidLoaded: ", validLoaded)
-        print("nbTestLoaded: ", testLoaded)
+
+        if verbose:
+            print("Total loaded till now: ", trainLoaded + validLoaded + testLoaded)
+            print("nbTrainLoaded: ", trainLoaded)
+            print("nbValidLoaded: ", validLoaded)
+            print("nbTestLoaded: ", testLoaded)
 
         print('loading file %s' % datasets[fname])
         data = unpickle(datasets[fname])
-
         thisN = data['data'].shape[0]
-        print("This dataset contains ", thisN, " images")
-
         thisTrain = int(trainFraction * thisN)
         thisValid = int(validFraction * thisN)
-        thisTest = thisN - thisTrain - thisValid  # compensates for rounding
-        print("now loading : nbTrain, nbValid, nbTest")
-        print("              ", thisTrain, thisValid, thisTest)
+        thisTest = thisN - thisTrain - thisValid  # compensates for rounding\
+        if verbose:
+            print("This dataset contains ", thisN, " images")
+            print("now loading : nbTrain, nbValid, nbTest")
+            print("              ", thisTrain, thisValid, thisTest)
 
-        xtrain[trainLoaded:trainLoaded + thisTrain, :] = data['data'][0:thisTrain]
-        xvalid[validLoaded:validLoaded + thisValid, :] = data['data'][thisTrain:thisTrain + thisValid]
-        xtest[testLoaded:testLoaded + thisTest, :] = data['data'][thisTrain + thisValid:thisN]
+        train_X = train_X + list(data['data'][0:thisTrain])
+        valid_X = valid_X + list(data['data'][thisTrain:thisTrain + thisValid])
+        test_X = test_X + list(data['data'][thisTrain + thisValid:thisN])
 
-        ytrain[trainLoaded:trainLoaded + thisTrain, 0] = data['labels'][0:thisTrain]
-        yvalid[validLoaded:validLoaded + thisValid, 0] = data['labels'][thisTrain:thisTrain + thisValid]
-        ytest[testLoaded:testLoaded + thisTest, 0] = data['labels'][thisTrain + thisValid:thisN]
+        train_y = train_y + list(data['labels'][0:thisTrain])
+        valid_y = valid_y + list(data['labels'][thisTrain:thisTrain + thisValid])
+        test_y = test_y + list(data['labels'][thisTrain + thisValid:thisN])
 
         trainLoaded += thisTrain
         validLoaded += thisValid
         testLoaded += thisTest
+        if verbose:
+            print("nbTrainLoaded: ", trainLoaded)
+            print("nbValidLoaded: ", validLoaded)
+            print("nbTestLoaded: ", testLoaded)
+            print("Total loaded till now: ", trainLoaded + validLoaded + testLoaded)
 
-        if (trainLoaded + validLoaded + testLoaded) >= ntotal:
-            print("loaded too many?")
+        # estimate as float32 = 4* memory as uint8
+        memEstimate = 4*(sys.getsizeof(train_X) + sys.getsizeof(valid_X) + sys.getsizeof(test_X) + \
+                      sys.getsizeof(train_y) + sys.getsizeof(valid_y) + sys.getsizeof(test_y))
+        if verbose: print("memory estaimate: ", memEstimate/1000.0, "MB")
+        if memEstimate > 0.6 * memAvaliable:
+            print("loaded too many for memory, stopping loading...")
             break
 
-    ntest = testLoaded
-    nvalid = validLoaded
-    ntrain = trainLoaded
-    print("Total loaded till now: ", trainLoaded + validLoaded + testLoaded, " out of ", ntotal)
-    print("nbTrainLoaded: ", trainLoaded)
-    print("nbValidLoaded: ", validLoaded)
-    print("nbTestLoaded: ", testLoaded)
+    # cast to numpy array, correct datatype
+    dtypeX = 'float32'
+    dtypeY = 'int32'  #needed for
+    if isinstance(train_X, list):       train_X = np.asarray(train_X).astype(dtypeX);
+    if isinstance(train_y, list):       train_y = np.asarray(train_y).astype(dtypeY);
+    if isinstance(valid_X, list):       valid_X = np.asarray(valid_X).astype(dtypeX);
+    if isinstance(valid_y, list):       valid_y = np.asarray(valid_y).astype(dtypeY);
+    if isinstance(test_X, list):        test_X = np.asarray(test_X).astype(dtypeX);
+    if isinstance(test_y, list):        test_y = np.asarray(test_y).astype(dtypeY);
 
-    # remove unneeded rows
-    xtrain = xtrain[0:trainLoaded]
-    xvalid = xvalid[0:validLoaded]
-    xtest = xtest[0:testLoaded]
-    ytrain = ytrain[0:trainLoaded]
-    yvalid = yvalid[0:validLoaded]
-    ytest = ytest[0:testLoaded]
+    if verbose:
+        print("TRAIN: ", train_X.shape, train_X[0][0].dtype)
+        print(train_y.shape, train_y[0].dtype)
+        print("VALID: ", valid_X.shape)
+        print(valid_y.shape)
+        print("TEST: ", test_X.shape)
+        print(test_y.shape)
 
-    memTot = xtrain.nbytes + xvalid.nbytes + xtest.nbytes + ytrain.nbytes + yvalid.nbytes + ytest.nbytes
-    # print("Total memory size required: ", memTot / 1000000, " MB")
-
-    # process this data, remove all zero rows (http://stackoverflow.com/questions/18397805/how-do-i-delete-a-row-in-a-np-array-which-contains-a-zero)
-    # cast to numpy array
-    if isinstance(ytrain, list):
-        ytrain = np.asarray(ytrain).astype(dtype)
-    if isinstance(yvalid, list):
-        yvalid = np.asarray(yvalid).astype(dtype)
-    if isinstance(ytest, list):
-        ytest = np.asarray(ytest).astype(dtype)
+    memTot = train_X.nbytes + valid_X.nbytes + test_X.nbytes + train_y.nbytes + valid_y.nbytes + test_y.nbytes
+    print("Total memory size required as float32: ", memTot / 1000000, " MB")
 
     # fix labels (labels start at 1, but the library expects them to start at 0)
-    ytrain = ytrain - 1
-    yvalid = yvalid - 1
-    ytest = ytest - 1
+    train_y = train_y - 1
+    valid_y = valid_y - 1
+    test_y = test_y - 1
 
-    # now, make objects with these matrices
-    train_set = datasetClass.CIFAR10(xtrain, ytrain, img_shape)
-    valid_set = datasetClass.CIFAR10(xvalid, yvalid, img_shape)
-    test_set = datasetClass.CIFAR10(xtest, ytest, img_shape)
+    # rescale to interval [-1,1], cast to float32 for GPU use
+    train_X = np.multiply(2. / 255., train_X, dtype = 'float32')
+    train_X = np.subtract(train_X, 1., dtype='float32');
+    valid_X = np.multiply(2. / 255., valid_X, dtype='float32')
+    valid_X = np.subtract(valid_X, 1., dtype='float32');
+    test_X = np.multiply(2. / 255., test_X, dtype='float32')
+    test_X = np.subtract(test_X, 1., dtype='float32');
 
-    # Inputs in the range [-1,+1]
-    # def f1 (x):
-    #     f = function([], sandbox.cuda.basic_ops.gpu_from_host(x * 2.0 / 255 - 1))
-    #     return f()
-    #
-    # def scaleOnGpu (matrix):
-    #     nbRows = matrix.shape[0]
-    #     done = 0
-    #     batchLength = 100
-    #     thisBatchLength = batchLength
-    #     i = 0
-    #     while done != 1:
-    #         if i + thisBatchLength > nbRows:
-    #             done = 1
-    #             thisBatchLength = nbRows - i
-    #         # do the scaling on GPU
-    #         matrix[i:(i + thisBatchLength), :] = f1(
-    #                 shared(matrix[i:(i + thisBatchLength), :]))
-    #         i += batchLength
-    #     return matrix
-    #
-    # train_set.X = scaleOnGpu(train_set.X )
-    # valid_set.X = scaleOnGpu(valid_set.X )
-    # test_set.X = scaleOnGpu(test_set.X)
+    if verbose:
+        print("Train: ", train_X.shape, train_X[0][0].dtype)
+        print("Valid: ", valid_X.shape, valid_X[0][0].dtype)
+        print("Test: ", test_X.shape, test_X[0][0].dtype)
 
-    train_set.X = np.subtract(np.multiply(2. / 255., train_set.X), 1.)
-    valid_set.X = np.subtract(np.multiply(2. / 255., valid_set.X), 1.)
-    test_set.X = np.subtract(np.multiply(2. / 255., test_set.X), 1.)
+    # reshape to get one image per row
+    train_X = np.reshape(train_X, (-1, 1, 120, 120))
+    valid_X = np.reshape(valid_X, (-1, 1, 120, 120))
+    test_X = np.reshape(test_X, (-1, 1, 120, 120))
 
-    train_set.X = np.reshape(train_set.X, (-1, 1, 120, 120))
-    valid_set.X = np.reshape(valid_set.X, (-1, 1, 120, 120))
-    test_set.X = np.reshape(test_set.X, (-1, 1, 120, 120))
+    # also flatten targets to get one target per row
+    # train_y = np.hstack(train_y)
+    # valid_y = np.hstack(valid_y)
+    # test_y = np.hstack(test_y)
 
-    # flatten targets
-    train_set.y = np.hstack(train_set.y)
-    valid_set.y = np.hstack(valid_set.y)
-    test_set.y = np.hstack(test_set.y)
     # Onehot the targets
-    train_set.y = np.float32(np.eye(nbClasses)[train_set.y])
-    valid_set.y = np.float32(np.eye(nbClasses)[valid_set.y])
-    test_set.y = np.float32(np.eye(nbClasses)[test_set.y])
-    # for hinge loss
-    train_set.y = 2 * train_set.y - 1.
-    valid_set.y = 2 * valid_set.y - 1.
-    test_set.y = 2 * test_set.y - 1.
+    if onehot:
+        train_y = np.float32(np.eye(nbClasses)[train_y])
+        valid_y = np.float32(np.eye(nbClasses)[valid_y])
+        test_y = np.float32(np.eye(nbClasses)[test_y])
 
-    return train_set, valid_set, test_set
+    # for hinge loss
+    train_y = 2 * train_y - 1.
+    valid_y = 2 * valid_y - 1.
+    test_y = 2 * test_y - 1.
+
+    # cast to correct datatype, just to be sure. Everything needs to be float32 for GPU processing
+    dtypeX = 'float32'
+    dtypeY = 'int32'
+    train_X = train_X.astype(dtypeX);
+    train_y = train_y.astype(dtypeY);
+    valid_X = valid_X.astype(dtypeX);
+    valid_y = valid_y.astype(dtypeY);
+    test_X = test_X.astype(dtypeX);
+    test_y = test_y.astype(dtypeY);
+    if verbose:
+        print("\n Final datatype: ")
+        print("TRAIN: ", train_X.shape, train_X[0][0].dtype)
+        print(train_y.shape, train_y[0].dtype)
+        print("VALID: ", valid_X.shape)
+        print(valid_y.shape)
+        print("TEST: ", test_X.shape)
+        print(test_y.shape)
+
+    return train_X, train_y, valid_X, valid_y, test_X, test_y
 
 
 if __name__ == "__main__":

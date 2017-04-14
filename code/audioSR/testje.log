@@ -1,8 +1,0 @@
-[testlogging.py:25][INFO ]: This is some info 
-[testlogging.py:26][DEBUG]: debug 
-[testlogging.py:27][CRITICAL]: Critical 
-[testlogging.py:28][INFO ]: More info 
-[testlogging2.py:8][INFO ]: This is some info 
-[testlogging2.py:9][DEBUG]: debug 
-[testlogging2.py:10][CRITICAL]: Critical 
-[testlogging2.py:11][INFO ]: More info 
