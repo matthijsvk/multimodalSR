@@ -203,6 +203,7 @@ def build_network_resnet50(input, nbClasses):
 # network from Oxford & Google BBC paper
 def build_network_google(activation, alpha, epsilon, input, nbClasses):
     # input
+    # store each layer of the network in a dict, for quickly retrieving any layer
     cnnDict = {}
     cnnDict['l_in'] = lasagne.layers.InputLayer(
             shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
