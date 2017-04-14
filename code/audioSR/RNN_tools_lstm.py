@@ -128,7 +128,7 @@ class NeuralNetwork:
         batch_size = self.batch_size
 
         audio_inputs = T.tensor3('audio_inputs')
-        audio_masks = T.imatrix('audio_masks')
+        audio_masks = T.matrix('audio_masks')       #TODO set MATRIX, not iMatrix!! Otherwise all mask calculations are done by CPU, and everything will be ~2x slowed down!! Also in general_tools.generate_masks()
 
         net = {}
         # shape = (batch_size, batch_max_seq_length, num_features)
@@ -244,11 +244,11 @@ class NeuralNetwork:
         # # Now, the shape will be (n_batch * n_timesteps, num_output_units). We can then reshape to
         # # n_batch to get num_output_units values for each timestep from each sequence
         net['l7_out_flattened'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (-1, num_output_units))
-        # net['l7_out'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (batch_size, -1, num_output_units))
+        net['l7_out'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (batch_size, -1, num_output_units))
 
         if debug:   self.print_network_structure(net)
         self.network_output_layer = net['l7_out_flattened']
-        # self.network_output_layer_batch = net['l7_out']
+        self.network_output_layer_batch = net['l7_out']
         self.network = net
 
     def print_network_structure(self, net=None, logger=logger_RNNtools):
@@ -348,44 +348,86 @@ class NeuralNetwork:
 
         if debug:  import pdb; self.print_network_structure()
 
-        # Function to get the output of the network
-        # network_output_batch = L.get_output(self.network_output_layer_batch)                     # (batch_size, batch_max_seq_length, nb_phonemes)
-        network_output_flattened = L.get_output(self.network_output_layer) # (batch_size * batch_max_seq_length, nb_phonemes)
-        if debug:
-            self.output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
-            n_out = self.output_fn(self.X, self.masks)
-            logger.debug('network_output[0]:     \n%s', n_out[0]);
-            logger.debug('network_output.shape: \t%s', n_out.shape);
+        batch = True
+        if batch:
+            network_output = L.get_output(self.network_output_layer_batch)
+            network_output_flattened = L.get_output( self.network_output_layer)  # (batch_size * batch_max_seq_length, nb_phonemes)
 
-        # compare targets with highest output probability. Take maximum of all probs (3rd axis (index 2) of output: 1=batch_size (input files), 2 = time_seq (frames), 3 = n_features (phonemes)
-        # network_output.shape = (len(X), 39) -> (nb_inputs, nb_classes)
-        # predictions = (T.argmax(network_output_batch, axis=2))
-        # self.predictions_fn = theano.function([l_in.input_var, l_mask.input_var], predictions, name='predictions_fn')
+            # compare targets with highest output probability. Take maximum of all probs (3rd axis (index 2) of output: 1=batch_size (input files), 2 = time_seq (frames), 3 = n_features (phonemes)
+            # network_output.shape = (len(X), 39) -> (nb_inputs, nb_classes)
+            predictions = (T.argmax(network_output, axis=2))
+            self.predictions_fn = theano.function([l_in.input_var, l_mask.input_var], predictions,
+                                                  name='predictions_fn')
 
-        if debug:
-            predicted = self.predictions_fn(self.X, self.masks)
-            logger.debug('predictions_fn(X).shape: %s', predicted.shape)
-            logger.debug('predictions_fn(X)[0], value: %s', predicted[0])
+            if debug:
+                predicted = self.predictions_fn(self.X, self.masks)
+                logger.debug('predictions_fn(X).shape: %s', predicted.shape)
+                logger.debug('predictions_fn(X)[0], value: %s', predicted[0])
 
-        # # Function to determine the number of correct classifications
-        # valid_indices_example, valid_indices_seqNr = l_mask.input_var.nonzero()
-        # valid_indices_fn = theano.function([l_mask.input_var], [valid_indices_example, valid_indices_seqNr], name='valid_indices_fn')
-        #
-        # # this gets all the valid predictions of all examples of this batch after each other (so not one row per example)
-        # # if you want to get the valid predictions per example, you need to use the valid_frames list (it tells you the number of valid frames per wav, so where to split this valid_predictions array)
-        # # of course this is trivial for batch_size_audio = 1, as all valid_predictions will belong to the one input wav
-        # valid_predictions = predictions[valid_indices_example, valid_indices_seqNr]
-        # valid_targets = target_var[valid_indices_example, valid_indices_seqNr]
-        # self.valid_targets_fn = theano.function([l_mask.input_var, target_var], valid_targets, name='valid_targets_fn')
-        # self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions, name='valid_predictions_fn')
+            if debug:
+                self.output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
+                n_out = self.output_fn(self.X, self.masks)
+                logger.debug('network_output[0]:     \n%s', n_out[0]);
+                logger.debug('network_output.shape: \t%s', n_out.shape);
 
-        # flattened version
-        eqs = T.neq(l_mask.input_var.flatten(), T.zeros((1,)))
-        valid_indices = eqs.nonzero()[0]
-        valid_indices_fn = theano.function([l_mask.input_var], valid_indices, name='valid_indices_fn')
-        valid_predictions = network_output_flattened[valid_indices, :]
-        self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions,
-                                                    name='valid_predictions_fn')
+            # # Function to determine the number of correct classifications
+            valid_indices_example, valid_indices_seqNr = l_mask.input_var.nonzero()
+            valid_indices_fn = theano.function([l_mask.input_var], [valid_indices_example, valid_indices_seqNr], name='valid_indices_fn')
+
+            # this gets a FLATTENED array of all the valid predictions of all examples of this batch (so not one row per example)
+            # if you want to get the valid predictions per example, you need to use the valid_frames list (it tells you the number of valid frames per wav, so where to split this valid_predictions array)
+            # of course this is trivial for batch_size_audio = 1, as all valid_predictions will belong to the one input wav
+            valid_predictions = predictions[valid_indices_example, valid_indices_seqNr]
+            valid_targets = target_var[valid_indices_example, valid_indices_seqNr]
+            self.valid_targets_fn = theano.function([l_mask.input_var, target_var], valid_targets, name='valid_targets_fn')
+            self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions, name='valid_predictions_fn')
+
+            if debug:
+                try:
+                    valid_example, valid_seqNr = valid_indices_fn(self.masks)
+                    logger.debug('valid_inds(masks).shape: %s', valid_example.shape)
+                    valid_preds = self.valid_predictions_fn(self.X, self.masks)
+                    logger.debug("all valid predictions of this batch: ")
+                    logger.debug('valid_preds(X,masks).shape: %s', valid_preds.shape)
+                    logger.debug('valid_preds(X,masks)[0], value: \n%s', valid_preds)
+
+                    valid_targs = self.valid_targets_fn(self.masks, self.Y)
+                    logger.debug("all valid targets of this batch: ")
+                    logger.debug('valid_targets(X,masks).shape: %s', valid_targs.shape)
+                    logger.debug('valid_targets(X,masks)[0], value: \n%s', valid_targs)
+                    # pdb.set_trace()
+                except Exception as error:
+                    print('caught this error: ' + traceback.format_exc());
+                    pdb.set_trace()
+
+            # only use the output at the middle of each phoneme interval (get better accuracy)
+            # Accuracy => # (correctly predicted & valid frames) / #valid frames
+            validAndCorrect = T.sum(T.eq(valid_predictions, valid_targets),dtype='float32')
+            nbValidFrames = T.sum(l_mask.input_var)
+            accuracy =  validAndCorrect / nbValidFrames
+
+        else:
+            # Function to get the output of the network
+            # network_output = L.get_output(self.network_output_layer_batch)                     # (batch_size, batch_max_seq_length, nb_phonemes)
+            network_output_flattened = L.get_output(self.network_output_layer) # (batch_size * batch_max_seq_length, nb_phonemes)
+
+            # valid predictions
+            eqs = T.neq(l_mask.input_var.flatten(), T.zeros((1,)))
+            valid_indices = eqs.nonzero()[0]
+            valid_indices_fn = theano.function([l_mask.input_var], valid_indices, name='valid_indices_fn')
+            valid_predictions = network_output_flattened[valid_indices, :]
+            self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions,
+                                                        name='valid_predictions_fn')
+
+            # the flattened version; faster because we need flattened stuff anyway when calculating loss.
+            # If we used the batched version here, we would need to calculate both batched and flattened predictions, which is double work.
+            predictions_flattened = (T.argmax(network_output_flattened, axis=1))
+            self.predictions_fn = theano.function([l_in.input_var, l_mask.input_var], predictions_flattened,
+                                                  name='predictions_fn')
+            validAndCorrect = T.sum(T.eq(predictions_flattened, target_var.flatten()) * l_mask.input_var.flatten())
+            nbValidFrames = T.sum(l_mask.input_var.flatten())
+            accuracy = validAndCorrect / nbValidFrames
+
 
         ## from https://groups.google.com/forum/#!topic/lasagne-users/os0j3f_Th5Q
         # Pad your vector of labels and then mask the cost:
@@ -395,38 +437,6 @@ class NeuralNetwork:
         # (predictions as (batch_size*max_seq_len, n_features), the other two as (batch_size*max_seq_len,)) -> we need to get the flattened output of the network for this
         cost_pointwise = lasagne.objectives.categorical_crossentropy(network_output_flattened, target_var.flatten())
         cost = lasagne.objectives.aggregate(cost_pointwise, l_mask.input_var.flatten())
-       
-        if debug:
-            try:
-                valid_example, valid_seqNr = valid_indices_fn(self.masks)
-                logger.debug('valid_inds(masks).shape: %s', valid_example.shape)
-                valid_preds = self.valid_predictions_fn(self.X, self.masks)
-                logger.debug("all valid predictions of this batch: ")
-                logger.debug('valid_preds(X,masks).shape: %s', valid_preds.shape)
-                logger.debug('valid_preds(X,masks)[0], value: \n%s', valid_preds)
-
-                valid_targs = self.valid_targets_fn(self.masks, self.Y)
-                logger.debug("all valid targets of this batch: ")
-                logger.debug('valid_targets(X,masks).shape: %s', valid_targs.shape)
-                logger.debug('valid_targets(X,masks)[0], value: \n%s', valid_targs)
-                #pdb.set_trace()
-            except Exception as error:
-                print('caught this error: ' + traceback.format_exc()); pdb.set_trace()
-
-        # only use the output at the middle of each phoneme interval (get better accuracy)
-        # Accuracy => # (correctly predicted & valid frames) / #valid frames
-
-        # validAndCorrect = T.sum(T.eq(valid_predictions, valid_targets),dtype='float32')
-        # nbValidFrames = T.sum(l_mask.input_var)
-        # accuracy =  validAndCorrect / nbValidFrames
-
-        # the flattened version; faster because we need flattened stuff anyway when calculating loss.
-        # If we used the batched version here, we would need to calculate both batched and flattened predictions, which is double work.
-        predictions_flattened = (T.argmax(network_output_flattened, axis=1))
-        self.predictions_fn = theano.function([l_in.input_var, l_mask.input_var],predictions_flattened, name='predictions_fn')
-        validAndCorrect = T.sum(T.eq(predictions_flattened, target_var.flatten()) * l_mask.input_var.flatten())
-        nbValidFrames = T.sum(l_mask.input_var.flatten())
-        accuracy = validAndCorrect / nbValidFrames
 
         # Functions for computing cost and training
         self.validate_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
@@ -452,7 +462,6 @@ class NeuralNetwork:
             self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
             self.train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
                                        [cost, accuracy], updates=self.updates, name='train_fn')
-
 
 
     # used for evaluating, when there are no targets

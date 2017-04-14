@@ -130,7 +130,7 @@ def generate_masks(inputs, valid_frames=None, batch_size=1, max_length = 1000, l
     logger.debug("input_dim: %d", input_dim)
 
     # X = np.zeros((batch_size, max_input_length, input_dim))
-    input_mask = np.zeros((batch_size, max_length), dtype='int32')
+    input_mask = np.zeros((batch_size, max_length), dtype='float32')
 
     for example_id in range(len(inputs)):
         try:
