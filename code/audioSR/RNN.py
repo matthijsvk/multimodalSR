@@ -57,7 +57,7 @@ logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-dataset = "TIMIT"
+dataset = "combined"
 dataDir = os.path.expanduser("~/TCDTIMIT/audioSR/" + dataset + "/binary") + str(nbPhonemes) + os.sep + dataset
 data_path = os.path.join(dataDir, os.path.basename(dataDir) + '_' + str(nbMFCCs) + '_ch.pkl');
 
@@ -117,7 +117,6 @@ logger_RNN.info('  %s %s', type(valid_frames_train), len(valid_frames_train))
 logger_RNN.info('  %s %s', type(valid_frames_train[0]), valid_frames_train[0].shape)
 logger_RNN.info('  %s %s', type(valid_frames_train[0][0]), valid_frames_train[0][0].shape)
 
-debug = False
 ##### BUIDING MODEL #####
 logger_RNN.info('\n* Building network ...')
 RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size, num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
@@ -138,7 +137,7 @@ RNN_network.build_functions(train=True, debug=False)
 logger_RNN.info("\n* Training ...")
 RNN_network.train(dataset, model_save, num_epochs=num_epochs,
                   batch_size=batch_size, LR_start=LR_start, LR_decay=LR_decay,
-                  compute_confusion=False, debug=debug)
+                  compute_confusion=False, debug=False)
 
 logger_RNN.info("\n* Done")
 logger_RNN.info('Total time: {:.3f}'.format(time.time() - program_start_time))
