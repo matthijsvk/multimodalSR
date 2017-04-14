@@ -18,6 +18,45 @@ logger_RNNtools.setLevel(logging.DEBUG)
 from general_tools import *
 
 
+def iterate_minibatches(inputs, targets, valid_frames, batch_size, shuffle=False):
+    """
+    Helper function that returns an iterator over the training data of a particular
+    size, optionally in a random order.
+    """
+    assert len(inputs) == len(targets) == len(valid_frames)
+    if len(inputs) < batch_size:
+        batch_size = len(inputs)
+
+    # slice to only use multiple of batch_size. If some files are left, they won't be considered
+    # inputs = inputs[:-(len(inputs) % batch_size) or None]
+    # targets = targets[:-(len(targets) % batch_size) or None]
+    # valid_frames = valid_frames[:-(len(valid_frames) % batch_size) or None]
+
+    if shuffle:
+        indices = np.arange(len(inputs))
+        np.random.shuffle(indices)
+
+    for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
+        if shuffle:
+            excerpt = indices[start_idx:start_idx + batch_size]
+        else:
+            excerpt = range(start_idx, start_idx + batch_size, 1)
+
+        input_iter = [inputs[i] for i in excerpt]
+        target_iter = [targets[i] for i in excerpt]
+        valid_frames_iter = [valid_frames[i] for i in excerpt]
+        mask_iter = generate_masks(input_iter, valid_frames=valid_frames_iter, batch_size=batch_size)
+
+        seq_lengths = np.sum(mask_iter, axis=1)
+
+        # now pad inputs and target to maxLen
+        input_iter = pad_sequences_X(input_iter)
+        target_iter = pad_sequences_y(target_iter)
+
+        yield input_iter, target_iter, mask_iter, seq_lengths, valid_frames_iter
+        #  it's convention that data is presented in the shape (batch_size, n_time_steps, n_features) -> (batch_size, None, 26)
+
+
 class NeuralNetwork:
     network = None
     training_fn = None
@@ -195,22 +234,21 @@ class NeuralNetwork:
             dropoutLayer = L.DropoutLayer(net['l4_dense'], p=0.3)
             net['l5_dense'] = L.DenseLayer(dropoutLayer, nonlinearity=lasagne.nonlinearities.rectify, num_units=64)
             # Now we can apply feed-forward layers as usual for classification
-            net['l7_dense_reshaped'] = L.DenseLayer(net['l5_dense'], num_units=num_output_units,
+            net['l6_dense'] = L.DenseLayer(net['l5_dense'], num_units=num_output_units,
                                            nonlinearity=lasagne.nonlinearities.softmax)
         else:
             # Now we can apply feed-forward layers as usual for classification
-            net['l7_dense_reshaped'] = L.DenseLayer(net['l3_reshape'], num_units=num_output_units,
+            net['l6_dense'] = L.DenseLayer(net['l3_reshape'], num_units=num_output_units,
                                            nonlinearity=lasagne.nonlinearities.softmax)
 
         # # Now, the shape will be (n_batch * n_timesteps, num_output_units). We can then reshape to
         # # n_batch to get num_output_units values for each timestep from each sequence
-        try:net['l8_out'] = lasagne.layers.ReshapeLayer(net['l7_dense_reshaped'], (batch_size, -1, num_output_units))
-        except: import pdb; pdb.set_trace()
-
+        net['l7_out_flattened'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (-1, num_output_units))
+        # net['l7_out'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (batch_size, -1, num_output_units))
 
         if debug:   self.print_network_structure(net)
-        self.network_output_layer_flattened = net['l7_dense_reshaped']
-        self.network_output_layer = net['l8_out']
+        self.network_output_layer = net['l7_out_flattened']
+        # self.network_output_layer_batch = net['l7_out']
         self.network = net
 
     def print_network_structure(self, net=None, logger=logger_RNNtools):
@@ -311,8 +349,8 @@ class NeuralNetwork:
         if debug:  import pdb; self.print_network_structure()
 
         # Function to get the output of the network
-        network_output = L.get_output(self.network_output_layer)                     # (batch_size, batch_max_seq_length, nb_phonemes)
-        network_output_flattened = L.get_output(self.network_output_layer_flattened) # (batch_size * batch_max_seq_length, nb_phonemes)
+        # network_output_batch = L.get_output(self.network_output_layer_batch)                     # (batch_size, batch_max_seq_length, nb_phonemes)
+        network_output_flattened = L.get_output(self.network_output_layer) # (batch_size * batch_max_seq_length, nb_phonemes)
         if debug:
             self.output_fn = theano.function([l_in.input_var, l_mask.input_var], network_output, name='output_fn')
             n_out = self.output_fn(self.X, self.masks)
@@ -321,26 +359,33 @@ class NeuralNetwork:
 
         # compare targets with highest output probability. Take maximum of all probs (3rd axis (index 2) of output: 1=batch_size (input files), 2 = time_seq (frames), 3 = n_features (phonemes)
         # network_output.shape = (len(X), 39) -> (nb_inputs, nb_classes)
-        try:  predictions = (T.argmax(network_output, axis=2))
-        except: print('caught this error: ' + traceback.format_exc());  pdb.set_trace()
-        self.predictions_fn = theano.function([l_in.input_var, l_mask.input_var], predictions, name='predictions_fn')
+        # predictions = (T.argmax(network_output_batch, axis=2))
+        # self.predictions_fn = theano.function([l_in.input_var, l_mask.input_var], predictions, name='predictions_fn')
 
         if debug:
             predicted = self.predictions_fn(self.X, self.masks)
             logger.debug('predictions_fn(X).shape: %s', predicted.shape)
             logger.debug('predictions_fn(X)[0], value: %s', predicted[0])
 
-        # Function to determine the number of correct classifications
-        valid_indices_example, valid_indices_seqNr = l_mask.input_var.nonzero()
-        valid_indices_fn = theano.function([l_mask.input_var], [valid_indices_example, valid_indices_seqNr], name='valid_indices_fn')
+        # # Function to determine the number of correct classifications
+        # valid_indices_example, valid_indices_seqNr = l_mask.input_var.nonzero()
+        # valid_indices_fn = theano.function([l_mask.input_var], [valid_indices_example, valid_indices_seqNr], name='valid_indices_fn')
+        #
+        # # this gets all the valid predictions of all examples of this batch after each other (so not one row per example)
+        # # if you want to get the valid predictions per example, you need to use the valid_frames list (it tells you the number of valid frames per wav, so where to split this valid_predictions array)
+        # # of course this is trivial for batch_size_audio = 1, as all valid_predictions will belong to the one input wav
+        # valid_predictions = predictions[valid_indices_example, valid_indices_seqNr]
+        # valid_targets = target_var[valid_indices_example, valid_indices_seqNr]
+        # self.valid_targets_fn = theano.function([l_mask.input_var, target_var], valid_targets, name='valid_targets_fn')
+        # self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions, name='valid_predictions_fn')
 
-        # this gets all the valid predictions of all examples of this batch after each other (so not one row per example)
-        # if you want to get the valid predictions per example, you need to use the valid_frames list (it tells you the number of valid frames per wav, so where to split this valid_predictions array)
-        # of course this is trivial for batch_size_audio = 1, as all valid_predictions will belong to the one input wav
-        valid_predictions = predictions[valid_indices_example, valid_indices_seqNr]
-        valid_targets = target_var[valid_indices_example, valid_indices_seqNr]
-        self.valid_targets_fn = theano.function([l_mask.input_var, target_var], valid_targets, name='valid_targets_fn')
-        self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions, name='valid_predictions_fn')
+        # flattened version
+        eqs = T.neq(l_mask.input_var.flatten(), T.zeros((1,)))
+        valid_indices = eqs.nonzero()[0]
+        valid_indices_fn = theano.function([l_mask.input_var], valid_indices, name='valid_indices_fn')
+        valid_predictions = network_output_flattened[valid_indices, :]
+        self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions,
+                                                    name='valid_predictions_fn')
 
         ## from https://groups.google.com/forum/#!topic/lasagne-users/os0j3f_Th5Q
         # Pad your vector of labels and then mask the cost:
@@ -370,9 +415,18 @@ class NeuralNetwork:
 
         # only use the output at the middle of each phoneme interval (get better accuracy)
         # Accuracy => # (correctly predicted & valid frames) / #valid frames
-        validAndCorrect = T.sum(T.eq(valid_predictions, valid_targets),dtype='float32')
-        nbValidFrames = T.sum(l_mask.input_var)
-        accuracy =  validAndCorrect / nbValidFrames
+
+        # validAndCorrect = T.sum(T.eq(valid_predictions, valid_targets),dtype='float32')
+        # nbValidFrames = T.sum(l_mask.input_var)
+        # accuracy =  validAndCorrect / nbValidFrames
+
+        # the flattened version; faster because we need flattened stuff anyway when calculating loss.
+        # If we used the batched version here, we would need to calculate both batched and flattened predictions, which is double work.
+        predictions_flattened = (T.argmax(network_output_flattened, axis=1))
+        self.predictions_fn = theano.function([l_in.input_var, l_mask.input_var],predictions_flattened, name='predictions_fn')
+        validAndCorrect = T.sum(T.eq(predictions_flattened, target_var.flatten()) * l_mask.input_var.flatten())
+        nbValidFrames = T.sum(l_mask.input_var.flatten())
+        accuracy = validAndCorrect / nbValidFrames
 
         # Functions for computing cost and training
         self.validate_fn = theano.function([l_in.input_var, l_mask.input_var, target_var],
@@ -399,43 +453,7 @@ class NeuralNetwork:
             self.train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
                                        [cost, accuracy], updates=self.updates, name='train_fn')
 
-    def iterate_minibatches(self, inputs, targets, valid_frames, batch_size, shuffle=False):
-        """
-        Helper function that returns an iterator over the training data of a particular
-        size, optionally in a random order.
-        """
-        assert len(inputs) == len(targets) == len(valid_frames)
-        if len(inputs) < batch_size:
-            batch_size = len(inputs)
 
-        # slice to only use multiple of batch_size. If some files are left, they won't be considered
-        # inputs = inputs[:-(len(inputs) % batch_size) or None]
-        # targets = targets[:-(len(targets) % batch_size) or None]
-        # valid_frames = valid_frames[:-(len(valid_frames) % batch_size) or None]
-
-        if shuffle:
-            indices = np.arange(len(inputs))
-            np.random.shuffle(indices)
-
-        for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
-            if shuffle:
-                excerpt = indices[start_idx:start_idx + batch_size]
-            else:
-                excerpt = range(start_idx, start_idx + batch_size, 1)
-
-            input_iter = [inputs[i] for i in excerpt]
-            target_iter = [targets[i] for i in excerpt]
-            valid_frames_iter = [valid_frames[i] for i in excerpt]
-            mask_iter = generate_masks(input_iter, valid_frames=valid_frames_iter, batch_size=batch_size)
-
-            seq_lengths = np.sum(mask_iter, axis=1)
-
-            # now pad inputs and target to maxLen
-            input_iter = pad_sequences_X(input_iter)
-            target_iter = pad_sequences_y(target_iter)
-
-            yield input_iter, target_iter, mask_iter, seq_lengths, valid_frames_iter
-            #  it's convention that data is presented in the shape (batch_size, n_time_steps, n_features) -> (batch_size, None, 26)
 
     # used for evaluating, when there are no targets
     def iterate_minibatches_noTargets(self, inputs, valid_frames, batch_size=1, shuffle=False):
@@ -500,10 +518,8 @@ class NeuralNetwork:
             logger.info("CURRENT EPOCH: %s", self.curr_epoch)
 
             logger.info("Pass over Training Set")
-            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(
-                    self.iterate_minibatches(X_train, y_train, valid_frames_train, batch_size, shuffle=True),
+            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_train, y_train, valid_frames_train, batch_size, shuffle=True),
                     total=math.ceil(len(X_train) / batch_size)):
-
 
                 # # some tests of valid predictions functions (this works :) )
                 # valid_predictions = self.valid_predictions_fn(inputs, masks)
@@ -522,14 +538,14 @@ class NeuralNetwork:
                 # pdb.set_trace()
 
             logger.info("Pass over Validation Set")
-            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(self.iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False),total=math.ceil(len(X_val)/batch_size)):
+            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False),total=math.ceil(len(X_val)/batch_size)):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 validation_error[epoch] += error
                 validation_accuracy[epoch] += accuracy
                 validation_batches[epoch] += 1
 
             logger.info("Pass over Test Set")
-            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(self.iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False),total=math.ceil(len(X_test)/batch_size)):
+            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False),total=math.ceil(len(X_test)/batch_size)):
                 error, accuracy = validate_fn(inputs, masks, targets)
                 test_error[epoch] += error
                 test_accuracy[epoch] += accuracy

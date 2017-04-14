@@ -124,7 +124,6 @@ def generate_masks(inputs, valid_frames=None, batch_size=1, max_length = 1000, l
 
     # max_input_length = max([len(inputs[i]) for i in range(len(inputs))])
     max_length = max([len(inputs[i]) for i in range(len(inputs))])
-
     input_dim = len(inputs[0][0])
 
     logger.debug("max_seq_len: %d", max_length)
