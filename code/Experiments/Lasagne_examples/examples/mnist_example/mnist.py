@@ -236,6 +236,8 @@ def main(model='mlp', num_epochs=500):
     print("Loading data...")
     X_train, y_train, X_val, y_val, X_test, y_test = load_dataset()
 
+    import pdb;pdb.set_trace()
+
     # Prepare Theano variables for inputs and targets
     input_var = T.tensor4('inputs')
     target_var = T.ivector('targets')
@@ -265,8 +267,7 @@ def main(model='mlp', num_epochs=500):
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     params = lasagne.layers.get_all_params(network, trainable=True)
-    updates = lasagne.updates.nesterov_momentum(
-            loss, params, learning_rate=0.01, momentum=0.9)
+    updates = lasagne.updates.nesterov_momentum(loss, params, learning_rate=0.01, momentum=0.9)
 
     # Create a loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the network,
@@ -296,6 +297,7 @@ def main(model='mlp', num_epochs=500):
         start_time = time.time()
         for batch in iterate_minibatches(X_train, y_train, 500, shuffle=True):
             inputs, targets = batch
+            pdb.set_trace()
             train_err += train_fn(inputs, targets)
             train_batches += 1
 

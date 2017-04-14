@@ -27,7 +27,7 @@ import time
 program_start_time = time.time()
 
 print("\n * Importing libraries...")
-from RNN_tools_lstm import *
+from combinedNN_tools import *
 from general_tools import *
 
 
@@ -35,7 +35,7 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 40
+batch_size = 1
 num_epochs = 50
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase

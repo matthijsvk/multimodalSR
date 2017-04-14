@@ -197,81 +197,87 @@ def build_network_resnet50(input, nbClasses):
                                nonlinearity=None)  # number output units = nbClasses (global variable)
     net['prob'] = NonlinearityLayer(net['fc1000'], nonlinearity=softmax)
 
-    return net
+    return net, net['prob']
 
 
 # network from Oxford & Google BBC paper
 def build_network_google(activation, alpha, epsilon, input, nbClasses):
     # input
-    cnn = lasagne.layers.InputLayer(
+    cnnDict = {}
+    cnnDict['l_in'] = lasagne.layers.InputLayer(
             shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
             input_var=input)
-    # conv 1
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn,
+
+    cnnDict['l1_conv1'] = []
+    cnnDict['l1_conv1'].append(lasagne.layers.Conv2DLayer(
+            cnnDict['l_in'],
             num_filters=128,
             filter_size=(3, 3),
             pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
+            nonlinearity=lasagne.nonlinearities.identity))
+    cnnDict['l1_conv1'].append(lasagne.layers.MaxPool2DLayer(cnnDict['l1_conv1'][-1], pool_size=(2, 2)))
+    cnnDict['l1_conv1'].append(lasagne.layers.BatchNormLayer(
+            cnnDict['l1_conv1'][-1],
             epsilon=epsilon,
-            alpha=alpha)
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
+            alpha=alpha))
+    cnnDict['l1_conv1'].append(lasagne.layers.NonlinearityLayer(
+            cnnDict['l1_conv1'][-1],
+            nonlinearity=activation))
 
     # conv 2
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn,
+    cnnDict['l2_conv2'] = []
+    cnnDict['l2_conv2'].append(lasagne.layers.Conv2DLayer(
+            cnnDict['l1_conv1'][-1],
             num_filters=256,
             filter_size=(3, 3),
             stride=(2, 2),
             pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
+            nonlinearity=lasagne.nonlinearities.identity))
+    cnnDict['l2_conv2'].append(lasagne.layers.MaxPool2DLayer(cnnDict['l2_conv2'][-1], pool_size=(2, 2)))
+    cnnDict['l2_conv2'].append(lasagne.layers.BatchNormLayer(
+            cnnDict['l2_conv2'][-1],
             epsilon=epsilon,
-            alpha=alpha)
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
+            alpha=alpha))
+    cnnDict['l2_conv2'].append(lasagne.layers.NonlinearityLayer(
+            cnnDict['l2_conv2'][-1],
+            nonlinearity=activation))
 
     # conv3
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn,
+    cnnDict['l3_conv3'] = []
+    cnnDict['l3_conv3'].append(lasagne.layers.Conv2DLayer(
+            cnnDict['l2_conv2'][-1],
             num_filters=512,
             filter_size=(3, 3),
             pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
+            nonlinearity=lasagne.nonlinearities.identity))
+    cnnDict['l3_conv3'].append(lasagne.layers.NonlinearityLayer(
+            cnnDict['l3_conv3'][-1],
+            nonlinearity=activation))
 
     # conv 4
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn,
+    cnnDict['l4_conv4'] = []
+    cnnDict['l4_conv4'].append(lasagne.layers.Conv2DLayer(
+            cnnDict['l3_conv3'][-1],
             num_filters=512,
             filter_size=(3, 3),
             pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
+            nonlinearity=lasagne.nonlinearities.identity))
+    cnnDict['l4_conv4'].append(lasagne.layers.NonlinearityLayer(
+            cnnDict['l4_conv4'][-1],
+            nonlinearity=activation))
 
     # conv 5
-    cnn = lasagne.layers.Conv2DLayer(
-            cnn,
+    cnnDict['l5_conv5'] = []
+    cnnDict['l5_conv5'].append(lasagne.layers.Conv2DLayer(
+            cnnDict['l4_conv4'][-1],
             num_filters=512,
             filter_size=(3, 3),
             pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
+            nonlinearity=lasagne.nonlinearities.identity))
+    cnnDict['l5_conv5'].append(lasagne.layers.MaxPool2DLayer(cnnDict['l5_conv5'][-1], pool_size=(2, 2)))
+    cnnDict['l5_conv5'].append(lasagne.layers.NonlinearityLayer(
+            cnnDict['l5_conv5'][-1],
+            nonlinearity=activation))
 
     # FC layer
     # cnn = lasagne.layers.DenseLayer(
@@ -283,8 +289,8 @@ def build_network_google(activation, alpha, epsilon, input, nbClasses):
     #         cnn,
     #         nonlinearity=activation)
 
-    cnn = lasagne.layers.DenseLayer(
-            cnn,
+    cnnDict['l6_out'] = lasagne.layers.DenseLayer(
+            cnnDict['l5_conv5'][-1],
             nonlinearity=lasagne.nonlinearities.softmax,
             num_units=nbClasses)
 
@@ -293,7 +299,7 @@ def build_network_google(activation, alpha, epsilon, input, nbClasses):
     #       epsilon=epsilon,
     #       alpha=alpha)
 
-    return cnn
+    return cnnDict, cnnDict['l6_out']
 
 
 # default network for cifar10
@@ -448,7 +454,7 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
     #         epsilon=epsilon,
     #         alpha=alpha)
 
-    return cnn
+    return {}, cnn
 
 
 ################## BINARY NETWORKS ###################
