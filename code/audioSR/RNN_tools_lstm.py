@@ -56,6 +56,37 @@ def iterate_minibatches(inputs, targets, valid_frames, batch_size, shuffle=False
         yield input_iter, target_iter, mask_iter, seq_lengths, valid_frames_iter
         #  it's convention that data is presented in the shape (batch_size, n_time_steps, n_features) -> (batch_size, None, 26)
 
+# used for evaluating, when there are no targets
+def iterate_minibatches_noTargets(self, inputs, valid_frames, batch_size=1, shuffle=False):
+    """
+    Helper function that returns an iterator over the training data of a particular
+    size, optionally in a random order.
+    """
+    if len(inputs) < batch_size:
+        batch_size = len(inputs)
+        print("INPUTS < Batch_size")
+
+    # slice to only use multiple of batch_size. If some files are left, they won't be considered
+
+    if shuffle:
+        indices = np.arange(len(inputs))
+        np.random.shuffle(indices)
+
+    for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
+        if shuffle:
+            excerpt = indices[start_idx:start_idx + batch_size]
+        else:
+            excerpt = range(start_idx, start_idx + batch_size, 1)
+
+        input_iter = [inputs[i] for i in excerpt]
+        mask_iter = generate_masks(input_iter, valid_frames=valid_frames, batch_size=batch_size)
+        seq_lengths = np.sum(mask_iter, axis=1)
+
+        # now pad inputs and target to maxLen
+        input_iter = pad_sequences_X(input_iter)
+
+        yield input_iter, mask_iter, seq_lengths
+
 
 class NeuralNetwork:
     network = None
@@ -463,37 +494,6 @@ class NeuralNetwork:
             self.train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
                                        [cost, accuracy], updates=self.updates, name='train_fn')
 
-
-    # used for evaluating, when there are no targets
-    def iterate_minibatches_noTargets(self, inputs, valid_frames, batch_size=1, shuffle=False):
-        """
-        Helper function that returns an iterator over the training data of a particular
-        size, optionally in a random order.
-        """
-        if len(inputs) < batch_size:
-            batch_size = len(inputs)
-            print("INPUTS < Batch_size")
-
-        # slice to only use multiple of batch_size. If some files are left, they won't be considered
-
-        if shuffle:
-            indices = np.arange(len(inputs))
-            np.random.shuffle(indices)
-
-        for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
-            if shuffle:
-                excerpt = indices[start_idx:start_idx + batch_size]
-            else:
-                excerpt = range(start_idx, start_idx + batch_size, 1)
-
-            input_iter = [inputs[i] for i in excerpt]
-            mask_iter = generate_masks(input_iter, valid_frames=valid_frames, batch_size=batch_size)
-            seq_lengths = np.sum(mask_iter, axis=1)
-
-            # now pad inputs and target to maxLen
-            input_iter = pad_sequences_X(input_iter)
-
-            yield input_iter, mask_iter, seq_lengths
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
               compute_confusion=False, debug=False, logger=logger_RNNtools):

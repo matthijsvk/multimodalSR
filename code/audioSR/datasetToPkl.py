@@ -37,22 +37,21 @@ values = [i for i in range(0, len(phoneme_set_list))]
 phoneme_classes = dict(zip(phoneme_set_list, values))
 
 ############### DATA LOCATIONS  ###################
-# TODO: set dataPreSplit and fill in the correct paths
 dataPreSplit = True #some datasets have a pre-defined TEST set (eg TIMIT)
 FRAC_VAL = 0.1 # fraction of training data to be used for validation
+root = os.path.expanduser("~/TCDTIMIT/audioSR/") # ( keep the trailing slash)
 if dataPreSplit:
-    dataset = "TCDTIMIT" #TIMIT, TCDTIMIT or combined
+    dataset = "TIMIT" #eg TIMIT. You can also manually split up TCDTIMIT according to train/test split in Harte, N.; Gillen, E., "TCD-TIMIT: An Audio-Visual Corpus of Continuous Speech," doi: 10.1109/TMM.2015.2407694
     ## eg TIMIT ##
-    dataRootDir       = os.path.expanduser("~/TCDTIMIT/audioSR/"+dataset+"/fixed") + str(nbPhonemes) + "/"+dataset
+    dataRootDir       = root+dataset+"/fixed" + str(nbPhonemes) + os.sep + dataset
     train_source_path = os.path.join(dataRootDir, 'TRAIN')
     test_source_path  = os.path.join(dataRootDir, 'TEST')
-    outputDir         = os.path.expanduser("~/TCDTIMIT/audioSR/"+dataset+"/binary") + str(nbPhonemes) \
-                        + os.sep + dataset
+    outputDir         = root + dataset + "/binary" + str(nbPhonemes) + os.sep + dataset
 else:
-    ## eg TCDTIMIT ## ->
-    dataRootDir = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMIT/fixed" + str(nbPhonemes) + "_nonSplit" +"/TCDTIMIT")
-    outputDir     = os.path.expanduser("~/TCDTIMIT/audioSR/TCDTIMIT/binary") + str(nbPhonemes) \
-                                       + os.sep + os.path.basename(dataRootDir)
+    ## just a bunch of wav and phn files, not split up in train and test -> create the split yourself.
+    dataset = "TCDTIMIT"
+    dataRootDir = root + dataset + "/fixed" + str(nbPhonemes) + "_nonSplit" + os.sep + dataset
+    outputDir     = root + dataset + "/binary" + str(nbPhonemes) + os.sep + os.path.basename(dataRootDir)
     FRAC_TRAINING = 0.9  # TOTAL = TRAINING + TEST = TRAIN + VALIDATION + TEST
 
 
@@ -86,7 +85,7 @@ else:
 logger.info('Preprocessing data ...')
 
 # FIRST, gather the WAV and PHN files, generate MFCCs, extract labels to make inputs and targets for the network
-# dataset containing no TRAIN/TEST subdivistion, just a bunch of wavs. Select random files
+# for a dataset containing no TRAIN/TEST subdivision, just a bunch of wavs -> choose training set yourself
 def processDataset(FRAC_TRAINING, data_source_path, logger=None):
     logger.info('  Data: %s ', data_source_path)
     X_all, y_all, valid_frames_all = preprocessWavs.preprocess_dataset(source_path=data_source_path, nbMFCCs=nbMFCCs, logger=logger, debug=debug_size)
@@ -151,7 +150,7 @@ else:    X_training, y_training, valid_frames_training, X_test, y_test, valid_fr
 total_training_size = len(X_training)
 val_size = int(math.ceil(total_training_size * FRAC_VAL))
 train_size = total_training_size - val_size
-val_idx = random.sample(range(0, total_training_size), val_size)
+val_idx = random.sample(range(0, total_training_size), val_size) # choose random indices to be validation data
 val_idx = [int(i) for i in val_idx]
 
 logger.info('Length of training')
@@ -194,6 +193,7 @@ logger.info("  test X: %s", len(X_test))
 logger.info("  test y: %s", len(y_test))
 logger.info("  test valid_frames: %s", len(valid_frames_test))
 
+
 ### NORMALIZE data ###
 logger.info('Normalizing data ...')
 logger.info('    Each channel mean=0, sd=1 ...')
@@ -203,7 +203,6 @@ mean_val, std_val, _ = preprocessWavs.calc_norm_param(X_train)
 X_train = preprocessWavs.normalize(X_train, mean_val, std_val)
 X_val = preprocessWavs.normalize(X_val, mean_val, std_val)
 X_test = preprocessWavs.normalize(X_test, mean_val, std_val)
-
 
 
 logger.debug('X train')
