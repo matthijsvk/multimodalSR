@@ -1,6 +1,6 @@
 In order to create and train a network on a dataset, you need to:  
 
-1. Generate a binary file from the source dataset. Your data is expected to be structured as the TIMIT dataset:  
+1. Generate a binary file from the source dataset. It's easiest if you structure your data as in the TIMIT dataset, although that's not really needed. Just make sure that the wav and its corresponding phn file have the same path except for the extension. Otherwise they won't get matched and your labels will be off.    
     - WAV files, 16kHz sampling rate, folder structure `dataset/TRAIN/speakerName/videoName/`. 
         Each videoName/ directory contains a `videoName.wav` and `videoName.phn`. 
         The phn contains the audio sample (@16kHz) numbers where each phoneme starts and ends.   
