@@ -30,4 +30,7 @@ In order to create and train a network on a dataset, you need to:
 The TIMIT dataset is non-free and available from [https://catalog.ldc.upenn.edu/LDC93S19](https://catalog.ldc.upenn.edu/LDC93S1).    
 The TCDTIMIT dataset is publicly available from [https://sigmedia.tcd.ie/TCDTIMIT/](https://sigmedia.tcd.ie/TCDTIMIT/).  
 I recommend to use my repo [TCDTIMITprocessing](https://github.com/matthijsvk/TCDTIMITprocessing) to download, exctract the database. You can use `extractTCDTIMITaudio.py` to get the phoneme and wav files.
+
 It also contains scripts for lipreading: extract faces, mouths etc from the video depending on label files.  
+It also contains scripts for lipreading: extract faces, mouths etc from the video depending on label files.  
+``
