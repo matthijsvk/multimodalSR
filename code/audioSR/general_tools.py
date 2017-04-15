@@ -1,5 +1,5 @@
 import logging
-import sys
+import sys, os
 
 import numpy as np
 from six.moves import cPickle
@@ -190,9 +190,11 @@ def query_yes_no(question, default="yes"):
 
 
 def saveToPkl(target_path, dataList):
+    if not os.path.exists(os.path.dirname(target_path)):
+        os.makedirs(os.path.dirname(target_path))
     with open(target_path, 'wb') as cPickle_file:
         cPickle.dump(
-            dataList,
-            cPickle_file,
-            protocol=cPickle.HIGHEST_PROTOCOL)
+                dataList,
+                cPickle_file,
+                protocol=cPickle.HIGHEST_PROTOCOL)
     return 0

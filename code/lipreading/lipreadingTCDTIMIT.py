@@ -28,12 +28,12 @@ import numpy as np
 
 import logging
 from pylearn2.datasets import cache
+import general_tools
 
 _logger = logging.getLogger(__name__)
 
 # User - created files
 import train_lipreadingTCDTIMIT  # load training functions
-import datasetClass  # load the binary dataset in proper format
 import buildNetworks
 
 import lasagne.layers as L
@@ -42,7 +42,7 @@ import lasagne.objectives as LO
 
 def main():
     # BN parameters
-    batch_size = 4
+    batch_size = 10
     print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
@@ -73,10 +73,22 @@ def main():
     print('Loading TCDTIMIT dataset...')
     nbClasses = 39
     oneHot = False
+
+    network_type = "google"
+
     # database in binary format (pkl files)
-    database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binary'))
-    train_X, train_y, valid_X, valid_y, test_X, test_y = load_datasetImages(datapath=database_binary_location, trainFraction=0.8, validFraction=0.1, testFraction=0.1,
-                                                  nbClasses=nbClasses, onehot=oneHot, type="all", verbose=True)
+    rootDir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/'))
+    database_binaryDir = rootDir + 'database_binary'
+    dataset = "lipspeakers"
+    pkl_path = database_binaryDir + "processed" + os.sep + dataset + ".pkl"
+    if not os.path.exists(pkl_path):
+        print("dataset not yet processed. Processing...")
+        processdataset_images(data_path = database_binaryDir, store_path=pkl_path, trainFraction = 0.8, validFraction = 0.1, testFraction = 0.1,
+        nbClasses = nbClasses, onehot = oneHot, type = dataset, verbose = True)
+    train_X, train_y, valid_X, valid_y, test_X, test_y = general_tools.unpickle(pkl_path)
+
+    model_name = dataset + "_" + network_type
+    model_store_path = rootDir + "results/" + model_name
 
     print("the number of training examples is: ", len(train_X))
     print("the number of valid examples is: ", len(valid_X))
@@ -92,16 +104,16 @@ def main():
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
     # get the network structure
-    print("Using Google network")
-    cnnDict, l_out = buildNetworks.build_network_google(activation, alpha, epsilon, inputs, nbClasses)  # 7.176.231 params
+    if network_type == "google":
+        cnnDict, l_out = buildNetworks.build_network_google(activation, alpha, epsilon, inputs, nbClasses)  # 7.176.231 params
+    elif network_type == "cifar10":
+        cnn, l_out = buildNetworks.build_network_cifar10(activation, alpha, epsilon, inputs, nbClasses) # 9.074.087 params,    # with 2x FC1024: 23.634.855
+    elif network_type == "resnet50":
+        cnn, l_out = buildNetworks.build_network_resnet50(inputs, nbClasses)
 
-    # print("Using CIFAR10 network")
-    # cnn. l_out = buildNetworks.build_network_cifar10(activation, alpha, epsilon, input, nbClasses) # 9.074.087 params,    # with 2x FC1024: 23.634.855
-
-    # print("Using ResNet50 network")
-    # cnn, l_out = buildNetworks.build_network_resnet50(input, nbClasses)
 
     # print het amount of network parameters
+    print("Using the ", network_type, " network")
     print("The number of parameters of this network: ", L.count_params(l_out))
 
 
@@ -128,7 +140,6 @@ def main():
     train_fn = theano.function([inputs, targets, LR], loss, updates=updates)
 
 
-
     print('Training...')
 
     train_lipreadingTCDTIMIT.train(
@@ -140,20 +151,21 @@ def main():
             train_X, train_y,
             valid_X, valid_y,
             test_X, test_y,
-            save_path="./TCDTIMITBestModel",
-            shuffle_parts=shuffle_parts)
+            save_path="./TCDTIMITBestModel")
 
 
 def unpickle(file):
     import cPickle
     fo = open(file, 'rb')
-    dict = cPickle.load(fo)
+    a = cPickle.load(fo)
     fo.close()
-    return dict
+    return a
 
 
-def load_datasetImages(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binary')), trainFraction=0.8,
-                 validFraction=0.1, testFraction=0.1, nbClasses=39, onehot=False, type="all", nbLip=1, nbVol=54,verbose=False):
+def processdataset_images(data_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binary')),
+                          store_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binaryprocessed/dataset.pkl')),
+                          type="all", nbLip=3, nbVol=54, trainFraction=0.8, validFraction=0.1, testFraction=0.1,
+                          nbClasses=39, onehot=False, verbose=False):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
@@ -177,7 +189,7 @@ def load_datasetImages(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipr
 
     datasets = {}
     for name in fnames:
-        fname = os.path.join(datapath, name)
+        fname = os.path.join(data_path, name)
         if not os.path.exists(fname):
             raise IOError(fname + " was not found.")
         datasets[name] = cache.datasetCache.cache_file(fname)
@@ -293,9 +305,9 @@ def load_datasetImages(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipr
         test_y = np.float32(np.eye(nbClasses)[test_y])
 
     # for hinge loss
-    train_y = 2 * train_y - 1.
-    valid_y = 2 * valid_y - 1.
-    test_y = 2 * test_y - 1.
+    # train_y = 2 * train_y - 1.
+    # valid_y = 2 * valid_y - 1.
+    # test_y = 2 * test_y - 1.
 
     # cast to correct datatype, just to be sure. Everything needs to be float32 for GPU processing
     dtypeX = 'float32'
@@ -317,13 +329,7 @@ def load_datasetImages(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipr
 
     ### STORE DATA ###
     dataList = [train_X, train_y, valid_X, valid_y, test_X, test_y]
-    general_tools.saveToPkl(target_path, dataList)
-
-    # these can be used to evaluate new data, so you don't have to load the whole dataset just to normalize
-    meanStd_path = os.path.dirname(outputDir) + os.sep + os.path.basename(dataRootDir) + "MeanStd.pkl"
-    logger.info('Saving Mean and Std_val to %s', meanStd_path)
-    dataList = [mean_val, std_val]
-    general_tools.saveToPkl(meanStd_path, dataList)
+    general_tools.saveToPkl(store_path, dataList)
 
     return train_X, train_y, valid_X, valid_y, test_X, test_y
 
