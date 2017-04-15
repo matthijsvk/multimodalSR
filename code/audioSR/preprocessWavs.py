@@ -181,7 +181,7 @@ def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose
     return X, y, valid_frames
 
 
-def preprocess_unlabeled_dataset(source_path, verbose=False, logger=None): # TODO
+def preprocess_unlabeled_dataset(source_path, nbMFCCs=39,verbose=False, logger=None): # TODO
     wav_files = transform.loadWavs(source_path)
     logger.debug("Found %d WAV files" % len(wav_files))
     assert len(wav_files) != 0
@@ -189,7 +189,7 @@ def preprocess_unlabeled_dataset(source_path, verbose=False, logger=None): # TOD
     X = []
     for i in tqdm(range(len(wav_files))):
         wav_name = str(wav_files[i])
-        X_val, total_frames = create_mfcc('DUMMY', wav_name)
+        X_val, total_frames = create_mfcc('DUMMY', wav_name, nbMFCCs)
         X.append(X_val)
 
         if verbose:

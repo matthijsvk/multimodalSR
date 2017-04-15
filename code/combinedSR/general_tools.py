@@ -1,5 +1,5 @@
 import logging
-import sys
+import sys, os
 
 import numpy as np
 from six.moves import cPickle
@@ -14,11 +14,34 @@ def path_reader(filename):
     return path_list
 
 
-def load_dataset(file_path):
+def unpickle(file_path):
     with open(file_path, 'rb') as cPickle_file:
         a = cPickle.load(cPickle_file)
     return a
 
+# find all files of a type under a directory, recursive
+def load_wavPhn(rootDir):
+    wavs = loadWavs(rootDir)
+    phns = loadPhns(rootDir)
+    return wavs, phns
+
+
+def loadWavs(rootDir):
+    wav_files = []
+    for dirpath, dirs, files in os.walk(rootDir):
+        for f in files:
+            if (f.lower().endswith(".wav")):
+                wav_files.append(os.path.join(dirpath, f))
+    return sorted(wav_files)
+
+
+def loadPhns(rootDir):
+    phn_files = []
+    for dirpath, dirs, files in os.walk(rootDir):
+        for f in files:
+            if (f.lower().endswith(".phn")):
+                phn_files.append(os.path.join(dirpath, f))
+    return sorted(phn_files)
 
 def pad_sequences_X(sequences, maxlen=None, padding='post', truncating='post', value=0.):
     """

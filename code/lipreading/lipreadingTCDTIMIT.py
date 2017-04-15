@@ -76,7 +76,7 @@ def main():
     # database in binary format (pkl files)
     database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binary'))
     train_X, train_y, valid_X, valid_y, test_X, test_y = load_datasetImages(datapath=database_binary_location, trainFraction=0.8, validFraction=0.1, testFraction=0.1,
-                                                  nbClasses=nbClasses, onehot=oneHot, type="lipspeakers", nbLip=1, verbose=True)
+                                                  nbClasses=nbClasses, onehot=oneHot, type="all", verbose=True)
 
     print("the number of training examples is: ", len(train_X))
     print("the number of valid examples is: ", len(valid_X))
@@ -232,10 +232,10 @@ def load_datasetImages(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipr
         # estimate as float32 = 4* memory as uint8
         memEstimate = 4*(sys.getsizeof(train_X) + sys.getsizeof(valid_X) + sys.getsizeof(test_X) + \
                       sys.getsizeof(train_y) + sys.getsizeof(valid_y) + sys.getsizeof(test_y))
-        if verbose: print("memory estaimate: ", memEstimate/1000.0, "MB")
-        if memEstimate > 0.6 * memAvaliable:
-            print("loaded too many for memory, stopping loading...")
-            break
+        if verbose: print("memory estimate: ", memEstimate/1000.0, "MB")
+        # if memEstimate > 0.6 * memAvaliable:
+        #     print("loaded too many for memory, stopping loading...")
+        #     break
 
     # cast to numpy array, correct datatype
     dtypeX = 'float32'
@@ -314,6 +314,16 @@ def load_datasetImages(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipr
         print(valid_y.shape)
         print("TEST: ", test_X.shape)
         print(test_y.shape)
+
+    ### STORE DATA ###
+    dataList = [train_X, train_y, valid_X, valid_y, test_X, test_y]
+    general_tools.saveToPkl(target_path, dataList)
+
+    # these can be used to evaluate new data, so you don't have to load the whole dataset just to normalize
+    meanStd_path = os.path.dirname(outputDir) + os.sep + os.path.basename(dataRootDir) + "MeanStd.pkl"
+    logger.info('Saving Mean and Std_val to %s', meanStd_path)
+    dataList = [mean_val, std_val]
+    general_tools.saveToPkl(meanStd_path, dataList)
 
     return train_X, train_y, valid_X, valid_y, test_X, test_y
 

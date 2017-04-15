@@ -88,8 +88,6 @@ class modelEvaluator:
         ##### COMPILING FUNCTIONS #####
         logger_evaluate.info("* Compiling functions ...")
         self.RNN_network.build_functions(debug=False, train=False, logger=logger_evaluate)
-        self.validate_fn = self.RNN_network.validate_fn
-        self.predictions_fn = self.RNN_network.predictions_fn
 
 
         ## EVALUATION TIME :) ##
@@ -254,36 +252,13 @@ class modelEvaluator:
             valid_frames_bak = copy.deepcopy(valid_frames)
 
         logger_evaluate.info("* Evaluating: pass over Evaluation Set")
-        predictions = []
-        if calculateAccuracy:
-            # if .phn files are provided, we can check our predictions
-            totError = 0
-            totAcc = 0
-            n_batches = 0
+
+        if calculateAccuracy:  # if .phn files are provided, we can check our predictions
             logger_evaluate.info("Getting predictions and calculating accuracy...")
-            for inputs_batch, targets_batch, masks_batch, seq_length_batch, valid_frames_batch in tqdm(
-                    iterate_minibatches(inputs, targets, valid_frames,
-                                        batch_size=batch_size, shuffle=False),
-                    total=int(len(inputs) / batch_size)):
-                # get predictions
-                nb_inputs = len(inputs_batch)  # usually batch size, but could be lower
-                seq_len = len(inputs_batch[0])
-                prediction = self.predictions_fn(inputs_batch, masks_batch)
-                #prediction = np.reshape(prediction, (nb_inputs, -1))  #only needed if predictions_fn is the flattened and not the batched version (see RNN_tools_lstm.py)
-                prediction = list(prediction)
-                predictions = predictions + prediction
+            avg_error, avg_acc, predictions = self.RNN_network.run_epoch(X=inputs, y=targets, valid_frames=valid_frames, \
+                                                                         get_predictions=True, batch_size=batch_size)
 
-                # get error and accuracy
-                error, accuracy = self.validate_fn(inputs_batch, masks_batch, targets_batch)
-                # import pdb;pdb.set_trace()
-                totError += error
-                totAcc += accuracy
-                n_batches += 1
-
-            avg_error = totError / n_batches * 100
-            avg_Acc = totAcc / n_batches * 100
-
-            logger_evaluate.info("All batches, avg Accuracy: %s", avg_Acc)
+            logger_evaluate.info("All batches, avg Accuracy: %s", avg_acc)
             inputs = inputs_bak
             targets = targets_bak
             valid_frames = valid_frames_bak
@@ -299,7 +274,7 @@ class modelEvaluator:
                 # get predictions
                 nb_inputs = len(inputs)  # usually batch size, but could be lower
                 seq_len = len(inputs[0])
-                prediction = self.predictions_fn(inputs, masks)
+                prediction = self.RNN_network.predictions_fn(inputs, masks)
                 prediction = np.reshape(prediction, (nb_inputs, -1))
                 prediction = list(prediction)
                 predictions = predictions + prediction
@@ -315,7 +290,7 @@ class modelEvaluator:
         logger_evaluate.info('Total time: {:.3f}'.format(eval_duration))
         # Print the results
         try:
-            printEvaluation(wav_filenames, inputs, predictions, targets, valid_frames, avg_Acc, range(len(inputs)),
+            printEvaluation(wav_filenames, inputs, predictions, targets, valid_frames, avg_acc, range(len(inputs)),
                             logger=logger_evaluate, only_final_accuracy=True)
         except:
             pdb.set_trace()

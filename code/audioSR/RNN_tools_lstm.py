@@ -18,76 +18,6 @@ logger_RNNtools.setLevel(logging.DEBUG)
 from general_tools import *
 
 
-def iterate_minibatches(inputs, targets, valid_frames, batch_size, shuffle=False):
-    """
-    Helper function that returns an iterator over the training data of a particular
-    size, optionally in a random order.
-    """
-    assert len(inputs) == len(targets) == len(valid_frames)
-    if len(inputs) < batch_size:
-        batch_size = len(inputs)
-
-    # slice to only use multiple of batch_size. If some files are left, they won't be considered
-    # inputs = inputs[:-(len(inputs) % batch_size) or None]
-    # targets = targets[:-(len(targets) % batch_size) or None]
-    # valid_frames = valid_frames[:-(len(valid_frames) % batch_size) or None]
-
-    if shuffle:
-        indices = np.arange(len(inputs))
-        np.random.shuffle(indices)
-
-    for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
-        if shuffle:
-            excerpt = indices[start_idx:start_idx + batch_size]
-        else:
-            excerpt = range(start_idx, start_idx + batch_size, 1)
-
-        input_iter = [inputs[i] for i in excerpt]
-        target_iter = [targets[i] for i in excerpt]
-        valid_frames_iter = [valid_frames[i] for i in excerpt]
-        mask_iter = generate_masks(input_iter, valid_frames=valid_frames_iter, batch_size=batch_size)
-
-        seq_lengths = np.sum(mask_iter, axis=1)
-
-        # now pad inputs and target to maxLen
-        input_iter = pad_sequences_X(input_iter)
-        target_iter = pad_sequences_y(target_iter)
-
-        yield input_iter, target_iter, mask_iter, seq_lengths, valid_frames_iter
-        #  it's convention that data is presented in the shape (batch_size, n_time_steps, n_features) -> (batch_size, None, 26)
-
-# used for evaluating, when there are no targets
-def iterate_minibatches_noTargets(self, inputs, valid_frames, batch_size=1, shuffle=False):
-    """
-    Helper function that returns an iterator over the training data of a particular
-    size, optionally in a random order.
-    """
-    if len(inputs) < batch_size:
-        batch_size = len(inputs)
-        print("INPUTS < Batch_size")
-
-    # slice to only use multiple of batch_size. If some files are left, they won't be considered
-
-    if shuffle:
-        indices = np.arange(len(inputs))
-        np.random.shuffle(indices)
-
-    for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
-        if shuffle:
-            excerpt = indices[start_idx:start_idx + batch_size]
-        else:
-            excerpt = range(start_idx, start_idx + batch_size, 1)
-
-        input_iter = [inputs[i] for i in excerpt]
-        mask_iter = generate_masks(input_iter, valid_frames=valid_frames, batch_size=batch_size)
-        seq_lengths = np.sum(mask_iter, axis=1)
-
-        # now pad inputs and target to maxLen
-        input_iter = pad_sequences_X(input_iter)
-
-        yield input_iter, mask_iter, seq_lengths
-
-
 class NeuralNetwork:
     network = None
     training_fn = None
@@ -104,7 +34,7 @@ class NeuralNetwork:
         self.num_output_units = num_output_units
         self.num_features = num_features
         self.batch_size = batch_size
-        self.max_seq_length = max_seq_length #TODO currently unused
+        self.max_seq_length = max_seq_length #currently unused
         self.epochsNotImproved = 0  #keep track, to know when to stop training
         self.updates = {}
 
@@ -494,28 +424,84 @@ class NeuralNetwork:
             self.train_fn = theano.function([l_in.input_var, l_mask.input_var, target_var, LR],
                                        [cost, accuracy], updates=self.updates, name='train_fn')
 
+    def shuffle(X, y, valid_frames):
+
+        chunk_size = len(X)
+        shuffled_range = range(chunk_size)
+
+        X_buffer = np.copy(X[0:chunk_size])
+        y_buffer = np.copy(y[0:chunk_size])
+        valid_frames_buffer = np.copy(valid_frames[0:chunk_size])
+
+        np.random.shuffle(shuffled_range)
+
+        for i in range(chunk_size):
+            X_buffer[i] = X[shuffled_range[i]]
+            y_buffer[i] = y[shuffled_range[i]]
+            valid_frames_buffer[i] = valid_frames[shuffled_range[i]]
+
+        X[0: chunk_size] = X_buffer
+        y[0: chunk_size] = y_buffer
+        valid_frames[0: chunk_size] = valid_frames_buffer
+
+        return X, y, valid_frames
+
+    # This function trains the model a full epoch (on the whole dataset)
+    def run_epoch(self, X, y, valid_frames, get_predictions= False, LR=None, batch_size = -1):
+        if batch_size == -1: batch_size= self.batch_size
+
+        cost = 0; accuracy = 0
+        nb_batches = len(X) / batch_size
+
+        predictions = [] #only used if get_predictions = True
+        for i in tqdm(range(nb_batches), total=nb_batches):
+            batch_X = X[i * batch_size:(i + 1) * batch_size]
+            batch_y = y[i * batch_size:(i + 1) * batch_size]
+            batch_valid_frames = valid_frames[i * batch_size:(i + 1) * batch_size]
+            batch_masks = generate_masks(batch_X, valid_frames=batch_valid_frames, batch_size=batch_size)
+            # now pad inputs and target to maxLen
+            batch_X = pad_sequences_X(batch_X)
+            batch_y = pad_sequences_y(batch_y)
+            # print("batch_X.shape: ", batch_X.shape)
+            # print("batch_y.shape: ", batch_y.shape)
+            if LR != None: cst, acc = self.train_fn(batch_X, batch_masks, batch_y, LR)  # training
+            else:          cst, acc = self.validate_fn(batch_X, batch_masks, batch_y)   # validation
+            cost += cst; accuracy += acc
+
+            if get_predictions:
+                prediction = self.predictions_fn(batch_X, batch_masks)
+                # prediction = np.reshape(prediction, (nb_inputs, -1))  #only needed if predictions_fn is the flattened and not the batched version (see RNN_tools_lstm.py)
+                prediction = list(prediction)
+                predictions = predictions + prediction
+            # # some tests of valid predictions functions (this works :) )
+            #     # valid_predictions = self.valid_predictions_fn(inputs, masks)
+            #     # logger.debug("valid predictions: ", valid_predictions.shape)
+            #     #
+            #     # # get valid predictions for video 0
+            #     # self.get_validPredictions_video(valid_predictions, valid_frames, 0)
+            #     # # and the targets for video 0
+            #     # targets[0][valid_frames[0]]
+            
+        cost /= nb_batches; accuracy /= nb_batches
+        if get_predictions:
+            return cost, accuracy, predictions
+        return cost, accuracy
+
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
               compute_confusion=False, debug=False, logger=logger_RNNtools):
 
         X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
-        #output_fn = self.out_fn
-        predictions_fn = self.predictions_fn
-        train_fn = self.train_fn
-        validate_fn = self.validate_fn
 
         # Initiate some vectors used for tracking performance
-        train_error = np.zeros([num_epochs])
+        train_cost = np.zeros([num_epochs])
         train_accuracy = np.zeros([num_epochs])
-        train_batches = np.zeros([num_epochs])
 
-        validation_error = np.zeros([num_epochs])
+        validation_cost = np.zeros([num_epochs])
         validation_accuracy = np.zeros([num_epochs])
-        validation_batches = np.zeros([num_epochs])
 
-        test_error = np.zeros([num_epochs])
+        test_cost = np.zeros([num_epochs])
         test_accuracy = np.zeros([num_epochs])
-        test_batches = np.zeros([num_epochs])
 
         confusion_matrices = []
 
@@ -526,59 +512,27 @@ class NeuralNetwork:
             epoch_time = time.time()
             logger.info("CURRENT EPOCH: %s", self.curr_epoch)
 
+
             logger.info("Pass over Training Set")
-            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_train, y_train, valid_frames_train, batch_size, shuffle=True),
-                    total=math.ceil(len(X_train) / batch_size)):
-
-                # # some tests of valid predictions functions (this works :) )
-                # valid_predictions = self.valid_predictions_fn(inputs, masks)
-                # logger.debug("valid predictions: ", valid_predictions.shape)
-                #
-                # # get valid predictions for video 0
-                # self.get_validPredictions_video(valid_predictions, valid_frames, 0)
-                # # and the targets for video 0
-                # targets[0][valid_frames[0]]
-
-                error, accuracy = train_fn(inputs, masks, targets, LR)
-                if debug: logger.debug('%s %s', error, accuracy)
-                train_error[epoch] += error
-                train_accuracy[epoch] += accuracy
-                train_batches[epoch] += 1
-                # pdb.set_trace()
+            train_cost[epoch], train_accuracy[epoch] = \
+                self.run_epoch(X=X_train, y=y_train, valid_frames=valid_frames_train, LR=LR)
 
             logger.info("Pass over Validation Set")
-            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_val, y_val, valid_frames_val, batch_size, shuffle=False),total=math.ceil(len(X_val)/batch_size)):
-                error, accuracy = validate_fn(inputs, masks, targets)
-                validation_error[epoch] += error
-                validation_accuracy[epoch] += accuracy
-                validation_batches[epoch] += 1
+            validation_cost[epoch], validation_accuracy[epoch] = \
+                self.run_epoch(X=X_val, y = y_val, valid_frames=valid_frames_val)
 
             logger.info("Pass over Test Set")
-            for inputs, targets, masks, seq_lengths, valid_frames in tqdm(iterate_minibatches(X_test, y_test, valid_frames_test, batch_size, shuffle=False),total=math.ceil(len(X_test)/batch_size)):
-                error, accuracy = validate_fn(inputs, masks, targets)
-                test_error[epoch] += error
-                test_accuracy[epoch] += accuracy
-                test_batches[epoch] += 1
+            test_cost[epoch], test_accuracy[epoch] =\
+                self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
+
 
             # Print epoch summary
-            train_epoch_error = (100 - train_accuracy[epoch]
-                                 / train_batches[epoch] * 100)
-            val_epoch_error = (100 - validation_accuracy[epoch]
-                               / validation_batches[epoch] * 100)
-            test_epoch_error = (100 - test_accuracy[epoch]
-                                / test_batches[epoch] * 100)
-            test_epoch_accuracy = test_accuracy[epoch] / test_batches[epoch] * 100
-
-            self.network_train_info[0].append(train_epoch_error)
-            self.network_train_info[1].append(val_epoch_error)
-            self.network_train_info[2].append(test_epoch_error)
-
             logger.info("Epoch {} of {} took {:.3f}s.".format(
                     epoch + 1, num_epochs, time.time() - epoch_time))
 
             # better model, so save parameters
-            if val_epoch_error < self.best_error:
-                self.best_error = val_epoch_error
+            if validation_cost[epoch] < self.best_cost:
+                self.best_cost = validation_cost[epoch]
                 self.best_epoch = self.curr_epoch
                 self.best_param = lasagne.layers.get_all_param_values(self.network_output_layer)
                 self.best_updates = [p.get_value() for p in self.updates.keys()]
@@ -588,24 +542,15 @@ class NeuralNetwork:
                     self.save_model(save_name)
 
             logger.info("Learning Rate:\t\t{:.6f} %".format(LR))
-            logger.info("Training cost:\t{:.6f}".format(
-                    train_error[epoch] / train_batches[epoch]))
-            logger.info("  train error:\t\t{:.6f} %".format(train_epoch_error))
-
-            logger.info("Validation cost:\t{:.6f}".format(
-                    validation_error[epoch] / validation_batches[epoch]))
-            logger.info("  validation error:\t{:.6f} %".format(val_epoch_error))
-
-            logger.info("Test cost:\t\t{:.6f}".format(
-                    test_error[epoch] / test_batches[epoch]))
-            logger.info("  test error:\t\t{:.6f} %".format(test_epoch_error))
-            logger.info("  test accuracy:\t\t{:.6f} %".format(test_epoch_accuracy))
-
-            if compute_confusion:
-                confusion_matrices.append(self.create_confusion(X_val, y_val)[0])
-                logger.info('  Confusion matrix computed')
+            logger.info("Training cost:\t{:.6f}".format(train_cost[epoch]))
+            logger.info("Validation cost:\t{:.6f} ".format(validation_cost[epoch]))
+            logger.info("Test cost:\t\t{:.6f} ".format(test_cost[epoch]))
+            logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy[epoch]))
 
             # store train info
+            self.network_train_info[0].append(train_cost[epoch])
+            self.network_train_info[1].append(validation_cost[epoch])
+            self.network_train_info[2].append(test_cost[epoch])
             store_path = save_name + '_trainInfo.pkl'
             with open(store_path, 'wb') as cPickle_file:
                 cPickle.dump(
@@ -615,12 +560,15 @@ class NeuralNetwork:
             logger.info("Train info written to:\t %s", store_path)
 
             if compute_confusion:
+                confusion_matrices.append(self.create_confusion(X_val, y_val)[0])
+                logger.info('  Confusion matrix computed')
                 with open(save_name + '_conf.pkl', 'wb') as cPickle_file:
                     cPickle.dump(
                             [confusion_matrices],
                             cPickle_file,
                             protocol=cPickle.HIGHEST_PROTOCOL)
 
+            # update LR, see if we can stop training
             LR = self.updateLR(LR, LR_decay, logger=logger_RNNtools)
 
             if self.epochsNotImproved >= 5:

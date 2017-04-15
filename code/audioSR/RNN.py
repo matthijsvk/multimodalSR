@@ -22,7 +22,6 @@ logger_RNN.addHandler(ch)
 
 # File logger: see below META VARIABLES
 
-
 import time
 program_start_time = time.time()
 
@@ -57,7 +56,7 @@ logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-dataset = "combined"
+dataset = "TIMIT"
 root = os.path.expanduser("~/TCDTIMIT/audioSR/")
 store_dir = root + dataset + "/results"
 if not os.path.exists(store_dir): os.makedirs(store_dir)

@@ -61,7 +61,6 @@ def train(train_fn, val_fn,
 
     # This function tests the model a full epoch (on the whole dataset)
     def val_epoch(X, y):
-
         err = 0
         loss = 0
         batches = len(X) / batch_size
