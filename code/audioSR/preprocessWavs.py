@@ -100,14 +100,10 @@ def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose
 
     print(nbMFCCs)
 
-    # source_path should be TRAIN/ or TEST/
+    # source_path is the root dir of all the wav/phn files
     wav_files = transform.loadWavs(source_path)
     label_files = transform.loadPhns(source_path)
 
-    # wav_files = sorted(glob.glob(source_path + '/*/*/*.WAV'))
-    # label_files = sorted(glob.glob(source_path + '/*/*/*.PHN'))
-
-    # import pdb; pdb.set_trace()
     logger.debug("Found %d WAV files" % len(wav_files))
     logger.debug("Found %d PHN files" % len(label_files))
     assert len(wav_files) == len(label_files)
@@ -118,21 +114,24 @@ def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose
         phn_name = str(label_files[i])
         wav_name = str(wav_files[i])
 
-        if (wav_name.startswith("SA")):  #specific for TIMIT: these files contain strong dialects; don't use
+        if (wav_name.startswith("SA")):  #specific for TIMIT: these files contain strong dialects; don't use them
             continue
 
-        total_duration = get_total_duration(phn_name)
-        fr = open(phn_name)
-
+        # Get MFCC of the WAV
         X_val, total_frames = create_mfcc('DUMMY', wav_name, nbMFCCs)  # get 3 levels: 0th, 1st and 2nd derivative (=> 3*13 = 39 coefficients)
         total_frames = int(total_frames)
 
         X.append(X_val)
 
-        # some .PHN files don't start at 0. Default phoneme = silence (expected at the end of phoneme_set_list)
+
+        # Get phonemes and valid frame numbers out of .phn files
+        total_duration = get_total_duration(phn_name)
+        fr = open(phn_name)
+
+        # some .PHN files don't start at 0. Set default phoneme to silence (expected at the end of phoneme_set_list)
         y_vals = np.zeros(total_frames) + phoneme_classes[phoneme_set_list[-1]]
         valid_frames_vals = []
-        # start_ind = 0
+
         for line in fr:
             [start_time, end_time, phoneme] = line.rstrip('\n').split()
             start_time = int(start_time)
@@ -157,11 +156,6 @@ def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose
         fr.close()
 
         # append the target array to our y
-        if -1 in y_vals:
-            logger.warning("%s", phn_name)
-            logger.warning('WARNING: -1 detected in TARGET: %s', y_vals)
-            pdb.set_trace()
-
         y.append(y_vals.astype('int32'))
 
         # append the valid_frames array to our valid_frames
@@ -180,14 +174,14 @@ def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose
             logger.debug('type(y_val[0]):\t %s', type(y_vals[0]))
             logger.debug('y_val: \t\t %s', (y_vals))
 
-        processed+=1
-        if debug!=None and processed >= debug:
+        processed += 1
+        if debug != None and processed >= debug:
             break
 
     return X, y, valid_frames
 
 
-def preprocess_unlabeled_dataset(source_path, verbose=False, logger=None):
+def preprocess_unlabeled_dataset(source_path, verbose=False, logger=None): # TODO
     wav_files = transform.loadWavs(source_path)
     logger.debug("Found %d WAV files" % len(wav_files))
     assert len(wav_files) != 0

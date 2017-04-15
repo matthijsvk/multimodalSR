@@ -58,16 +58,18 @@ logger_RNN.info("LR_decay = %s", str(LR_decay))
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
 dataset = "combined"
-dataDir = os.path.expanduser("~/TCDTIMIT/audioSR/" + dataset + "/binary") + str(nbPhonemes) + os.sep + dataset
-data_path = os.path.join(dataDir, os.path.basename(dataDir) + '_' + str(nbMFCCs) + '_ch.pkl');
+root = os.path.expanduser("~/TCDTIMIT/audioSR/")
+store_dir = root + dataset + "/results"
+if not os.path.exists(store_dir): os.makedirs(store_dir)
 
+
+dataDir = dataRootDir = root + dataset + "/binary" + str(nbPhonemes) + os.sep + dataset  # output dir from datasetToPkl.py
+data_path = os.path.join(dataDir, dataset + '_' + str(nbMFCCs) + '_ch.pkl');
 
 model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) \
              + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + \
 ("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset
 
-store_dir = output_path = os.path.expanduser("~/TCDTIMIT/audioSR/"+dataset+"/results")
-if not os.path.exists(store_dir): os.makedirs(store_dir)
 
 # model parameters and network_training_info
 model_load = os.path.join(store_dir, model_name + ".npz")

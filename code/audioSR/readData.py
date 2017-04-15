@@ -70,7 +70,7 @@ def printEvaluation(wav_filenames, inputs, predictions, targets, valid_frames, a
         totalSeen += n_phonemes
         totalCorrect += n_correct
 
-    logger.info("expected Avg ACCURACY: -> %s " % (avgAcc))
+    #logger.info("expected Avg ACCURACY: -> %s " % (avgAcc))
     logger.info("\n\n%s evaluated files: %d out of %d correct -> accuracy = %f %%" % (len(indexList), totalCorrect, totalSeen,
                                                                     100.0 * totalCorrect / totalSeen))
 
