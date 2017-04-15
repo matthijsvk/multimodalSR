@@ -28,12 +28,12 @@ import numpy as np
 
 import logging
 from pylearn2.datasets import cache
+import general_tools
 
 _logger = logging.getLogger(__name__)
 
 # User - created files
 import train_lipreadingTCDTIMIT  # load training functions
-import datasetClass  # load the binary dataset in proper format
 import buildNetworks
 
 import lasagne.layers as L
@@ -73,10 +73,18 @@ def main():
     print('Loading TCDTIMIT dataset...')
     nbClasses = 39
     oneHot = False
+
+
     # database in binary format (pkl files)
-    database_binary_location = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binary'))
-    train_X, train_y, valid_X, valid_y, test_X, test_y = load_datasetImages(datapath=database_binary_location, trainFraction=0.8, validFraction=0.1, testFraction=0.1,
-                                                  nbClasses=nbClasses, onehot=oneHot, type="all", verbose=True)
+    database_binaryDir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binary'))
+    dataset = "lipspeakers"
+    pkl_path = database_binaryDir + "processed" + os.sep + dataset + ".pkl"
+    if not os.path.exists(pkl_path):
+        print("dataset not yet processed. Processing...")
+        processdataset_images(data_path = database_binaryDir, store_path=pkl_path, trainFraction = 0.8, validFraction = 0.1, testFraction = 0.1,
+        nbClasses = nbClasses, onehot = oneHot, type = "lipspeakers", verbose = True)
+    train_X, train_y, valid_X, valid_y, test_X, test_y = general_tools.unpickle(pkl_path)
+
 
     print("the number of training examples is: ", len(train_X))
     print("the number of valid examples is: ", len(valid_X))
@@ -128,7 +136,6 @@ def main():
     train_fn = theano.function([inputs, targets, LR], loss, updates=updates)
 
 
-
     print('Training...')
 
     train_lipreadingTCDTIMIT.train(
@@ -140,20 +147,21 @@ def main():
             train_X, train_y,
             valid_X, valid_y,
             test_X, test_y,
-            save_path="./TCDTIMITBestModel",
-            shuffle_parts=shuffle_parts)
+            save_path="./TCDTIMITBestModel")
 
 
 def unpickle(file):
     import cPickle
     fo = open(file, 'rb')
-    dict = cPickle.load(fo)
+    a = cPickle.load(fo)
     fo.close()
-    return dict
+    return a
 
 
-def load_datasetImages(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binary')), trainFraction=0.8,
-                 validFraction=0.1, testFraction=0.1, nbClasses=39, onehot=False, type="all", nbLip=1, nbVol=54,verbose=False):
+def processdataset_images(data_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binary')),
+                          store_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binaryprocessed/dataset.pkl')),
+                          type="all", nbLip=3, nbVol=54, trainFraction=0.8, validFraction=0.1, testFraction=0.1,
+                          nbClasses=39, onehot=False, verbose=False):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
@@ -177,7 +185,7 @@ def load_datasetImages(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipr
 
     datasets = {}
     for name in fnames:
-        fname = os.path.join(datapath, name)
+        fname = os.path.join(data_path, name)
         if not os.path.exists(fname):
             raise IOError(fname + " was not found.")
         datasets[name] = cache.datasetCache.cache_file(fname)
@@ -293,9 +301,9 @@ def load_datasetImages(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipr
         test_y = np.float32(np.eye(nbClasses)[test_y])
 
     # for hinge loss
-    train_y = 2 * train_y - 1.
-    valid_y = 2 * valid_y - 1.
-    test_y = 2 * test_y - 1.
+    # train_y = 2 * train_y - 1.
+    # valid_y = 2 * valid_y - 1.
+    # test_y = 2 * test_y - 1.
 
     # cast to correct datatype, just to be sure. Everything needs to be float32 for GPU processing
     dtypeX = 'float32'
@@ -317,13 +325,7 @@ def load_datasetImages(datapath=os.path.join(os.path.expanduser('~/TCDTIMIT/lipr
 
     ### STORE DATA ###
     dataList = [train_X, train_y, valid_X, valid_y, test_X, test_y]
-    general_tools.saveToPkl(target_path, dataList)
-
-    # these can be used to evaluate new data, so you don't have to load the whole dataset just to normalize
-    meanStd_path = os.path.dirname(outputDir) + os.sep + os.path.basename(dataRootDir) + "MeanStd.pkl"
-    logger.info('Saving Mean and Std_val to %s', meanStd_path)
-    dataList = [mean_val, std_val]
-    general_tools.saveToPkl(meanStd_path, dataList)
+    general_tools.saveToPkl(store_path, dataList)
 
     return train_X, train_y, valid_X, valid_y, test_X, test_y
 

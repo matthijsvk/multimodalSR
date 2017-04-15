@@ -205,13 +205,13 @@ def build_network_google(activation, alpha, epsilon, input, nbClasses):
     # input
     # store each layer of the network in a dict, for quickly retrieving any layer
     cnnDict = {}
-    cnnDict['l_in'] = lasagne.layers.InputLayer(
+    cnnDict['l0_in'] = lasagne.layers.InputLayer(
             shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
             input_var=input)
 
     cnnDict['l1_conv1'] = []
     cnnDict['l1_conv1'].append(lasagne.layers.Conv2DLayer(
-            cnnDict['l_in'],
+            cnnDict['l0_in'],
             num_filters=128,
             filter_size=(3, 3),
             pad=1,
@@ -275,22 +275,30 @@ def build_network_google(activation, alpha, epsilon, input, nbClasses):
             filter_size=(3, 3),
             pad=1,
             nonlinearity=lasagne.nonlinearities.identity))
-    cnnDict['l5_conv5'].append(lasagne.layers.MaxPool2DLayer(cnnDict['l5_conv5'][-1], pool_size=(2, 2)))
+    cnnDict['l5_conv5'].append(lasagne.layers.MaxPool2DLayer(
+            cnnDict['l5_conv5'][-1],
+            pool_size=(2, 2)))
     cnnDict['l5_conv5'].append(lasagne.layers.NonlinearityLayer(
             cnnDict['l5_conv5'][-1],
             nonlinearity=activation))
 
-    # FC layer
-    # cnn = lasagne.layers.DenseLayer(
-    #        cnn,
-    #        nonlinearity=lasagne.nonlinearities.identity, T.nnet.relu
-    #        num_units=128)
-    #
-    # cnn = lasagne.layers.NonlinearityLayer(
-    #         cnn,
-    #         nonlinearity=activation)
 
-    cnnDict['l6_out'] = lasagne.layers.DenseLayer(
+    # disable this layer for normal phoneme recognition
+    # FC layer
+    # cnnDict['l6_fc'] = []
+    # cnnDict['l6_fc'].append(lasagne.layers.DenseLayer(
+    #         cnnDict['l5_conv5'][-1],
+    #        nonlinearity=lasagne.nonlinearities.identity,
+    #        num_units=256))
+    #
+    # cnnDict['l6_fc'].append(lasagne.layers.NonlinearityLayer(
+    #         cnnDict['l6_fc'][-1],
+    #         nonlinearity=activation))
+
+
+    # output layer
+    cnnDict['l7_out'] = lasagne.layers.DenseLayer(
+            # cnnDict['l6_fc'][-1],
             cnnDict['l5_conv5'][-1],
             nonlinearity=lasagne.nonlinearities.softmax,
             num_units=nbClasses)
@@ -300,7 +308,7 @@ def build_network_google(activation, alpha, epsilon, input, nbClasses):
     #       epsilon=epsilon,
     #       alpha=alpha)
 
-    return cnnDict, cnnDict['l6_out']
+    return cnnDict, cnnDict['l7_out']
 
 
 # default network for cifar10
@@ -416,7 +424,7 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
 
     # print(cnn.output_shape)
 
-    # # 1024FP-1024FP-10FP
+    # # # 1024FP-1024FP-10FP
     # cnn = lasagne.layers.DenseLayer(
     #         cnn,
     #         nonlinearity=lasagne.nonlinearities.identity,
@@ -444,11 +452,11 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
     # cnn = lasagne.layers.NonlinearityLayer(
     #         cnn,
     #         nonlinearity=activation)
-
-    cnn = lasagne.layers.DenseLayer(
-            cnn,
-            nonlinearity=lasagne.nonlinearities.softmax,
-            num_units=nbClasses)
+    #
+    # cnn = lasagne.layers.DenseLayer(
+    #         cnn,
+    #         nonlinearity=lasagne.nonlinearities.softmax,
+    #         num_units=nbClasses)
 
     # cnn = lasagne.layers.BatchNormLayer(
     #         cnn,

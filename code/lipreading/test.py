@@ -1,19 +1,23 @@
 from __future__ import print_function
-
 import os
+import numpy as np
+
+def getPhonemeNumberMap(phonemeMap="./phonemeLabelConversion.txt"):
+    phonemeNumberMap = {}
+    with open(phonemeMap) as inf:
+        for line in inf:
+            parts = line.split()  # split line into parts
+            if len(parts) > 1:  # if at least 2 parts/columns
+                phonemeNumberMap[str(parts[0])] = parts[1]  # part0= frame, part1 = phoneme
+                phonemeNumberMap[str(parts[1])] = parts[0]
+    return phonemeNumberMap
 
 
-def unpickle(file):
-    import cPickle
-    fo = open(file, 'rb')
-    dict = cPickle.load(fo)
-    fo.close()
-    return dict
+phonemeNumberMap = getPhonemeNumberMap()
+phoneme = 'aa'
+classNumber = phonemeNumberMap[phoneme]
+print(classNumber, type(classNumber))
 
 
-data = unpickle(os.path.join(os.path.expanduser('~/TCDTIMIT/database_binaryViseme/Lipspkr1.pkl')))
-print(data.keys())
-print(data)
-
-thisN = data['data'].shape[0]
-print("This dataset contains ", thisN, " images")
+classNumber = np.array([classNumber]).astype('int32')
+print(classNumber, type(classNumber[0]))

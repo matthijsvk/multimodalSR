@@ -216,7 +216,7 @@ def saveToPkl(target_path, dataList):
         os.makedirs(os.path.dirname(target_path))
     with open(target_path, 'wb') as cPickle_file:
         cPickle.dump(
-                dataList,
-                cPickle_file,
-                protocol=cPickle.HIGHEST_PROTOCOL)
+            dataList,
+            cPickle_file,
+            protocol=cPickle.HIGHEST_PROTOCOL)
     return 0

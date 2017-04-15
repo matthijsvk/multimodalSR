@@ -63,7 +63,7 @@ if not os.path.exists(outputDir):
 
 # Already exists, ask if overwrite
 if (os.path.exists(target_path)):
-    if (not general_tools.queraudio_y_yes_no(target_path + " exists. Overwrite?", "no")):
+    if (not general_tools.query_yes_no(target_path + " exists. Overwrite?", "no")):
         raise Exception("Not Overwriting")
 
 # set log file
