@@ -11,6 +11,8 @@ from helpFunctions.writeToTxt import writeToTxt
 from phoneme_set import phoneme_set_39, phoneme_set_61_39
 
 debug = False
+
+# input dir should be the dir just above 'TRAIN' and 'TEST'. It expects
 # example usage: python transform.py phonemes -i /home/matthijs/TCDTIMIT/TIMIT/original/TIMIT/ -o /home/matthijs/TCDTIMIT/TIMIT/processed
 
 

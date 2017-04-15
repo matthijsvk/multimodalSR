@@ -42,19 +42,20 @@ class modelEvaluator:
         ADD_DENSE_LAYERS = False
         batch_size = 32
 
-        # MODEL and log locations
-        self.model_dataset = model_dataset # model_datast = "TCDTIMIT"  # the dataset the model has been trained on
-        model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/" + model_dataset + "/results/")
-        meanStd_path = os.path.expanduser(
-            "~/TCDTIMIT/audioSR/" + model_dataset + "/binary39/" + model_dataset + "MeanStd.pkl")
-        store_dir = os.path.expanduser("~/TCDTIMIT/audioSR/" + model_dataset + "/evaluations")
+        root = os.path.expanduser("~/TCDTIMIT/audioSR/")
 
         # where preprocessed data will be stored in PKL format
-        data_store_dir = os.path.expanduser("~/TCDTIMIT/audioSR/dataPreparedForEvaluation/batch_size32/")
+        data_store_dir = root + "/dataPreparedForEvaluation/batch_size32/"
 
-        # get all the wavDirs'
-        evaluate_datasets = ['TIMIT','TCDTIMIT']
-        dataNames = ['/TEST']#,'/TRAIN']
+        # get all the wavDirs we're going to evaluate
+        evaluate_datasets = ['TIMIT', 'TCDTIMIT']
+        dataNames = ['/TEST']  # ,'/TRAIN']
+
+        # MODEL and log locations
+        self.model_dataset = model_dataset # the dataset the model has been trained on
+        model_dir = root + model_dataset + "/results/"
+        meanStd_path = root + model_dataset + "/binary39/" + model_dataset + "MeanStd.pkl"
+        store_dir = root + model_dataset + "/evaluations"
 
 
         #################
@@ -69,6 +70,7 @@ class modelEvaluator:
         # model parameters and network_training_info
         model_load = os.path.join(model_dir, model_name + ".npz")
 
+
         #### BUIDING MODEL ####
         logger_evaluate.info('* Building network ...')
         self.RNN_network = NeuralNetwork('RNN', batch_size=batch_size, num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
@@ -76,7 +78,8 @@ class modelEvaluator:
                                     logger=logger_evaluate)
         # Try to load stored model
         logger_evaluate.info(' Network built. Trying to load stored model: %s', model_load)
-        self.RNN_network.load_model(model_load, logger=logger_evaluate)
+        returnVal = self.RNN_network.load_model(model_load, logger=logger_evaluate)
+        if returnVal != 0: raise IOError("Model not found, no weights loaded. Train the model first with RNN.py")
 
         # print number of parameters
         nb_params = lasagne.layers.count_params(self.RNN_network.network_output_layer)
@@ -89,7 +92,7 @@ class modelEvaluator:
         self.predictions_fn = self.RNN_network.predictions_fn
 
 
-        ## EVALUATION TIME ##
+        ## EVALUATION TIME :) ##
         # loop over the train/test test of the different datasets
         for evaluate_dataset in evaluate_datasets:
             for dataName in dataNames:
@@ -114,9 +117,7 @@ class modelEvaluator:
                     nbMFCCs, store_dir, force_overwrite=False):
         logger_evaluate.info("\n\n\n")
 
-        #TODO: if evaluation file already exists, do nothing
         ####### THE DATA you want to evaluate ##########
-        # dataName = dataName.lstrip("/")
         data_store_path = data_store_dir + dataName.replace('/', '_') + "_nbMFCC" + str(nbMFCCs)
         if not os.path.exists(data_store_dir): os.makedirs(data_store_dir)
         predictions_path = store_dir + os.sep + dataName.replace('/', '_') + "_predictions.pkl"
@@ -146,10 +147,12 @@ class modelEvaluator:
             [inputs, targets, valid_frames] = unpickle(data_store_path + ".pkl")
             calculateAccuracy = True
             logger_evaluate.info("Successfully loaded preprocessed data, with targets")
-        elif os.path.exists(data_store_path + "_noTargets.pkl"):
+
+        elif os.path.exists(data_store_path + "_noTargets.pkl"):  # TODO: make it work for unlabeled datasets. see RNN_tools_lstm.py, eg iterate_minibatch_noTargets.
             [inputs] = unpickle(data_store_path + "_noTargets.pkl")
-            calculateAccuracy = False
+            calculateAccuracy = False # we can't as we don't know the correct labels
             logger_evaluate.info("Successfully loaded preprocessed data, no targets")
+
         else:
             logger_evaluate.info("Data not found, preprocessing...")
 
@@ -168,7 +171,7 @@ class modelEvaluator:
 
                 return X, y, valid_frames
 
-            def preprocessUnlabeledWavs(wavDir, store_dir, name):
+            def preprocessUnlabeledWavs(wavDir, store_dir, name):  #TODO
                 # fixWavs -> suppose this is done
                 # convert to pkl
                 X = preprocessWavs.preprocess_unlabeled_dataset(source_path=wavDir, nbMFCCs=nbMFCCs, logger=logger_evaluate)
@@ -178,6 +181,7 @@ class modelEvaluator:
 
                 return X
 
+            # load wavs and labels
             wav_files = transform.loadWavs(wavDir)
             wav_filenames = [str(
                     os.path.basename(
@@ -187,7 +191,7 @@ class modelEvaluator:
             logger_evaluate.info("Found %s files to evaluate \n Example: %s", len(wav_filenames), wav_filenames[0])
             label_files = transform.loadPhns(wavDir)
 
-            # if source dir doesn't contain labelfiles, we can't calculate accuracy
+            # if source dir doesn't contain labels, we can't calculate accuracy
             calculateAccuracy = True
             if not (len(wav_files) == len(label_files)):
                 calculateAccuracy = False
@@ -195,7 +199,7 @@ class modelEvaluator:
             else:
                 inputs, targets, valid_frames = preprocessLabeledWavs(wavDir=wavDir, store_dir=store_dir, name=dataName)
 
-            # normalize inputs, convert to float32
+            # normalize inputs using dataset Mean and Std_dev;  convert to float32 for GPU evaluation
             with open(meanStd_path, 'rb') as cPickle_file:
                 [mean_val, std_val] = cPickle.load(cPickle_file)
             inputs = preprocessWavs.normalize(inputs, mean_val, std_val)
@@ -216,7 +220,7 @@ class modelEvaluator:
             logger_evaluate.debug('  %s %s', type(targets[0]), targets[0].shape)
             logger_evaluate.debug('  %s %s', type(targets[0][0]), targets[0][0].shape)
 
-            # slice to have a #inputs that is a multiple of batch size
+            # slice to have a number of inputs that is a multiple of batch size
             logger_evaluate.info("Not evaluating %s last files (batch size mismatch)", len(inputs) % batch_size)
             inputs = inputs[:-(len(inputs) % batch_size) or None]
             if calculateAccuracy:
@@ -227,14 +231,14 @@ class modelEvaluator:
             inputs = pad_sequences_X(inputs)
             if calculateAccuracy: targets = pad_sequences_y(targets)
 
-            # save the processed data
+            # save the preprocessed data
             logger_evaluate.info("storing preprocessed data to: %s", data_store_path)
             if calculateAccuracy:
                 general_tools.saveToPkl(data_store_path + '.pkl', [inputs, targets, valid_frames])
             else:
                 general_tools.saveToPkl(data_store_path + '_noTargets.pkl', [inputs])
 
-        # Gather filenames for debugging
+        # Gather filenames; for debugging
         wav_files = transform.loadWavs(wavDir)
         wav_filenames = [str(
                 os.path.basename(
@@ -242,11 +246,13 @@ class modelEvaluator:
                         os.path.dirname(os.path.dirname(wav_file))) + os.sep + os.path.basename(
                         os.path.dirname(wav_file)) + os.sep + os.path.basename(wav_file)) for wav_file in wav_files]
         logger_evaluate.debug(" # inputs: %s, # wav files: %s", len(inputs), len(wav_files))
+
         # make copy of data because we might need to use is again for calculating accurasy, and the iterator will remove elements from the array
         inputs_bak = copy.deepcopy(inputs)
         if calculateAccuracy:
             targets_bak = copy.deepcopy(targets)
             valid_frames_bak = copy.deepcopy(valid_frames)
+
         logger_evaluate.info("* Evaluating: pass over Evaluation Set")
         predictions = []
         if calculateAccuracy:
@@ -263,7 +269,7 @@ class modelEvaluator:
                 nb_inputs = len(inputs_batch)  # usually batch size, but could be lower
                 seq_len = len(inputs_batch[0])
                 prediction = self.predictions_fn(inputs_batch, masks_batch)
-                prediction = np.reshape(prediction, (nb_inputs, -1))
+                #prediction = np.reshape(prediction, (nb_inputs, -1))  #only needed if predictions_fn is the flattened and not the batched version (see RNN_tools_lstm.py)
                 prediction = list(prediction)
                 predictions = predictions + prediction
 
@@ -277,14 +283,16 @@ class modelEvaluator:
             avg_error = totError / n_batches * 100
             avg_Acc = totAcc / n_batches * 100
 
-            logger_evaluate.info(" Accuracy: %s", avg_Acc)
+            logger_evaluate.info("All batches, avg Accuracy: %s", avg_Acc)
             inputs = inputs_bak
             targets = targets_bak
             valid_frames = valid_frames_bak
+
+            #uncomment if you want to save everything in one place (takes quite a lot of storage space)
             #general_tools.saveToPkl(predictions_path, [inputs, predictions, targets, valid_frames, avg_Acc])
 
         else:
-            # TODO make sure this works when you don't give targets and valid_frames
+            # TODO fix this
             for inputs, masks, seq_lengths in tqdm(
                     iterate_minibatches_noTargets(inputs, batch_size=batch_size, shuffle=False),
                     total=len(inputs)):
@@ -298,6 +306,9 @@ class modelEvaluator:
 
             inputs = inputs_bak
             #general_tools.saveToPkl(predictions_path, [inputs, predictions])
+
+
+        # Print information about the predictions
         logger_evaluate.info("* Done")
         end_evaluation_time = time.time()
         eval_duration = end_evaluation_time - program_start_time
