@@ -40,7 +40,7 @@ logger_lip.addHandler(ch)
 
 
 # User - created files
-import train_lipreading2  # load training functions
+import train_lipreading  # load training functions
 import buildNetworks
 import preprocessLipreading
 import general_tools
@@ -197,7 +197,7 @@ def main():
 
     logger_lip.info('Training...')
 
-    train_lipreading2.train(
+    train_lipreading.train(
         train_fn=train_fn, val_fn=val_fn,
         network_output_layer=l_out,
         batch_size=batch_size,

@@ -57,29 +57,39 @@ def train(train_fn, val_fn,
 
         return X, y
 
-    # This function runs the model a full epoch (on the whole dataset)
-    # is a LR is specified, the model will be trained, and the ouput is 'cost' (no accuracy for speed)
-    # if no LR is specified, there's not training and the output is 'cost, accuracy'
-    def run_epoch(X, y, LR=None):
-        cost = 0;     cst = 0;
-        accuracy = 0; acc = 0;
+    # This function trains the model a full epoch (on the whole dataset)
+    def train_epoch(X, y, LR):
+        loss = 0
+        print("training with a batchsize of: ", batch_size)
         nb_batches = len(X) / batch_size
+        print("len X: ", len(X))
+        print("so number of batches per epoch: ", nb_batches)
 
-        predictions = []  # only used if get_predictions = True
         for i in tqdm(range(nb_batches), total=nb_batches):
             batch_X = X[i * batch_size:(i + 1) * batch_size]
             batch_y = y[i * batch_size:(i + 1) * batch_size]
-            # logger_train.info("batch_X.shape: %s", batch_X.shape)
-            # logger_train.info("batch_y.shape: %s", batch_y.shape)
-            if LR != None:   cst = train_fn(batch_X, batch_y, LR)      # training
-            else:            cst, acc = val_fn(batch_X, batch_y)  # validation
-            cost += cst;    accuracy += acc
+            # print("batch_X.shape: ", batch_X.shape)
+            # print("batch_y.shape: ", batch_y.shape)
+            loss += train_fn(batch_X, batch_y, LR)
 
-        cost /= nb_batches;
-        accuracy /= nb_batches
+        return loss, nb_batches
 
-        if LR != None: return cost, nb_batches  # for training, only cost (faster)
-        else:          return cost, accuracy, nb_batches  # for validation, get both
+    # This function tests the model a full epoch (on the whole dataset)
+    def val_epoch(X, y):
+        err = 0
+        loss = 0
+        nb_batches = len(X) / batch_size
+
+        for i in range(nb_batches):
+            batch_X = X[i * batch_size:(i + 1) * batch_size]
+            batch_y = y[i * batch_size:(i + 1) * batch_size]
+            new_loss, new_err = val_fn(batch_X, batch_y)
+            err += new_err
+            loss += new_loss
+
+
+
+        return err, loss, nb_batches
 
     best_val_err = 100
     best_epoch = 1
@@ -92,10 +102,12 @@ def train(train_fn, val_fn,
         start_time = time.time()
 
         if not loadPerSpeaker:
-            train_loss, _ = run_epoch(X=X_train, y=y_train, LR=LR)
+            total_train_loss, nb_train_batches = train_epoch(X=X_train, y=y_train, LR=LR); train_loss = total_train_loss / nb_train_batches
             X_train, y_train = shuffle(X_train, y_train)
 
-            val_err, val_loss, _ = run_epoch(X=X_val, y=y_val)
+            val_err, val_loss, nb_val_batches = val_epoch(X=X_val, y=y_val)
+            val_err = val_err / nb_val_batches * 100; val_loss /=nb_val_batches
+
         else:
             train_loss = 0; val_err = 0; val_loss = 0;
             train_batches = 0; val_batches = 0;
@@ -112,10 +124,10 @@ def train(train_fn, val_fn,
                 logger_train.debug("the number of test examples is:     %s", len(X_test))
 
                 if shuffleEnabled: X_train, y_train = shuffle(X_train, y_train)
-                train_loss_one, train_batches_one = run_epoch(X=X_train, y=y_train, LR=LR)
+                train_loss_one, train_batches_one = train_epoch(X=X_train, y=y_train, LR=LR)
 
                 # get results for validation and test set
-                val_err_one, val_loss_one, val_batches_one = run_epoch(X=X_val, y=y_val)
+                val_err_one, val_loss_one, val_batches_one = val_epoch(X=X_val, y=y_val)
 
                 train_loss += train_loss_one*train_batches_one;   train_batches += train_batches_one
                 val_loss   += val_loss_one*val_batches_one;     val_batches   += val_batches_one;         val_err += val_err_one*val_batches_one;
@@ -140,7 +152,8 @@ def train(train_fn, val_fn,
             logger_train.info("\n\nBest ever validation score; evaluating TEST set...")
 
             if not loadPerSpeaker:  #all at once
-                test_err, test_loss, _ = run_epoch(X_test, y_test)
+                test_err, test_loss, nb_test_batches = val_epoch(X_test, y_test)
+                test_err = test_err / nb_test_batches * 100;  test_loss /= nb_test_batches
 
             else:  # process each speaker seperately
                 test_err = 0;
@@ -157,7 +170,7 @@ def train(train_fn, val_fn,
                     logger_train.debug("the number of test examples is:     %s", len(X_test))
 
                     # get results for test set
-                    test_err_one, test_loss_one, test_batches_one = run_epoch(X=X_test, y=y_test)
+                    test_err_one, test_loss_one, test_batches_one = val_epoch(X=X_test, y=y_test)
 
                     test_loss += test_loss_one*test_batches_one;
                     test_batches += test_batches_one;

@@ -84,40 +84,7 @@ def train(#X_train, y_train, X_val, y_val, X_test, y_test,
         if LR != None:   return loss, nb_batches  # for training, only loss (faster)
         else:            return loss, error, nb_batches  # for validation, get both
 
-    # This function trains the model a full epoch (on the whole dataset)
-    def train_epoch(X, y, LR):
-        loss = 0
-        print("training with a batchsize of: ", batch_size)
-        nb_batches = len(X) / batch_size
-        print("len X: ", len(X))
-        print("so number of batches per epoch: ", nb_batches)
 
-        for i in tqdm(range(nb_batches), total=nb_batches):
-            batch_X = X[i * batch_size:(i + 1) * batch_size]
-            batch_y = y[i * batch_size:(i + 1) * batch_size]
-            # print("batch_X.shape: ", batch_X.shape)
-            # print("batch_y.shape: ", batch_y.shape)
-            loss += train_fn(batch_X, batch_y, LR)
-
-        loss /= nb_batches
-
-        return loss, nb_batches
-
-    # This function tests the model a full epoch (on the whole dataset)
-    def val_epoch(X, y):
-        err = 0
-        loss = 0
-        nb_batches = len(X) / batch_size
-
-        for i in range(nb_batches):
-            new_loss, new_err = val_fn(X[i * batch_size:(i + 1) * batch_size], y[i * batch_size:(i + 1) * batch_size])
-            err += new_err
-            loss += new_loss
-
-        err = err / nb_batches * 100
-        loss /= nb_batches
-
-        return err, loss, nb_batches
 
     # shuffle the train set
     X_train, y_train = shuffle(X_train, y_train)
