@@ -64,7 +64,7 @@ def prepLip_one(speakerFile=None, trainFraction=0.7, validFraction=0.1,
     # estimate as float32 = 4* memory as uint8
     memEstimate = 4 * (sys.getsizeof(X_train) + sys.getsizeof(X_val) + sys.getsizeof(X_test) + \
                        sys.getsizeof(y_train) + sys.getsizeof(y_val) + sys.getsizeof(y_test))
-    if verbose: logger_prepLip.info("memory estimate: %s", memEstimate / 1000.0, "MB")
+    if verbose: logger_prepLip.info("memory estimate: %s MB", memEstimate / 1000.0)
     # if memEstimate > 0.6 * memAvaliable:
     #     logger_prepLip.info("loaded too many for memory, stopping loading...")
     #     break
@@ -80,12 +80,12 @@ def prepLip_one(speakerFile=None, trainFraction=0.7, validFraction=0.1,
     if isinstance(y_test, list):        y_test = np.asarray(y_test).astype(dtypeY);
 
     if verbose:
-        logger_prepLip.info("TRAIN: ", X_train.shape, X_train[0][0].dtype)
-        logger_prepLip.info(y_train.shape, y_train[0].dtype)
-        logger_prepLip.info("VALID: ", X_val.shape)
-        logger_prepLip.info(y_val.shape)
-        logger_prepLip.info("TEST: ", X_test.shape)
-        logger_prepLip.info(y_test.shape)
+        logger_prepLip.info("TRAIN: %s %s", X_train.shape, X_train[0][0].dtype)
+        logger_prepLip.info("%s %s",y_train.shape, y_train[0].dtype)
+        logger_prepLip.info("VALID: %s", X_val.shape)
+        logger_prepLip.info("%s", y_val.shape)
+        logger_prepLip.info("TEST: %s", X_test.shape)
+        logger_prepLip.info("%s",y_test.shape)
 
     memTot = X_train.nbytes + X_val.nbytes + X_test.nbytes + y_train.nbytes + y_val.nbytes + y_test.nbytes
     logger_prepLip.info("Total memory size required as float32: %s MB", memTot / 1000000)
@@ -104,9 +104,9 @@ def prepLip_one(speakerFile=None, trainFraction=0.7, validFraction=0.1,
     X_test = np.subtract(X_test, 1., dtype='float32');
 
     if verbose:
-        logger_prepLip.info("Train: ", X_train.shape, X_train[0][0].dtype)
-        logger_prepLip.info("Valid: ", X_val.shape, X_val[0][0].dtype)
-        logger_prepLip.info("Test: ", X_test.shape, X_test[0][0].dtype)
+        logger_prepLip.info("Train: %s %s", X_train.shape, X_train[0][0].dtype)
+        logger_prepLip.info("Valid: %s %s", X_val.shape, X_val[0][0].dtype)
+        logger_prepLip.info("Test:  %s %s", X_test.shape, X_test[0][0].dtype)
 
     # reshape to get one image per row
     X_train = np.reshape(X_train, (-1, 1, 120, 120))
@@ -135,13 +135,12 @@ def prepLip_one(speakerFile=None, trainFraction=0.7, validFraction=0.1,
     y_test = y_test.astype(dtypeY);
 
     if verbose:
-        logger_prepLip.info("\n Final datatype: ")
-        logger_prepLip.info("TRAIN: ", X_train.shape, X_train[0][0].dtype)
-        logger_prepLip.info(y_train.shape, y_train[0].dtype)
-        logger_prepLip.info("VALID: ", X_val.shape)
-        logger_prepLip.info(y_val.shape)
-        logger_prepLip.info("TEST: ", X_test.shape)
-        logger_prepLip.info(y_test.shape)
+        logger_prepLip.info("TRAIN: %s %s", X_train.shape, X_train[0][0].dtype)
+        logger_prepLip.info("%s %s", y_train.shape, y_train[0].dtype)
+        logger_prepLip.info("VALID: %s", X_val.shape)
+        logger_prepLip.info("%s", y_val.shape)
+        logger_prepLip.info("TEST: %s", X_test.shape)
+        logger_prepLip.info("%s", y_test.shape)
 
     ### STORE DATA ###
     dataList = [X_train, y_train, X_val, y_val, X_test, y_test]
@@ -210,7 +209,7 @@ def prepLip_all(data_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading
             logger_prepLip.info("nbValidLoaded:  %s", validLoaded)
             logger_prepLip.info("nbTestLoaded:   %s", testLoaded)
 
-        logger_prepLip.info('loading file %s' % datasets[fname])
+        logger_prepLip.info('loading file %s', datasets[fname])
         data = unpickle(datasets[fname])
         thisN = data['data'].shape[0]
         thisTrain = int(trainFraction * thisN)
@@ -236,12 +235,12 @@ def prepLip_all(data_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading
             logger_prepLip.info("nbTrainLoaded:  %s", trainLoaded)
             logger_prepLip.info("nbValidLoaded:  %s", validLoaded)
             logger_prepLip.info("nbTestLoaded:   %s", testLoaded)
-            logger_prepLip.info("Total loaded till now: ", trainLoaded + validLoaded + testLoaded)
+            logger_prepLip.info("Total loaded till now: %s", trainLoaded + validLoaded + testLoaded)
 
         # estimate as float32 = 4* memory as uint8
         memEstimate = 4 * (sys.getsizeof(X_train) + sys.getsizeof(X_val) + sys.getsizeof(X_test) + \
                            sys.getsizeof(y_train) + sys.getsizeof(y_val) + sys.getsizeof(y_test))
-        if verbose: logger_prepLip.info("memory estimate: %s", memEstimate / 1000.0, "MB")
+        if verbose: logger_prepLip.info("memory estimate: %s MB", memEstimate / 1000.0)
         # if memEstimate > 0.6 * memAvaliable:
         #     logger_prepLip.info("loaded too many for memory, stopping loading...")
         #     break
@@ -265,7 +264,7 @@ def prepLip_all(data_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading
         logger_prepLip.info(y_test.shape)
 
     memTot = X_train.nbytes + X_val.nbytes + X_test.nbytes + y_train.nbytes + y_val.nbytes + y_test.nbytes
-    logger_prepLip.info("Total memory size required as float32: %s", memTot / 1000000, " MB")
+    logger_prepLip.info("Total memory size required as float32: %s MB", memTot / 1000000)
 
     # fix labels (labels start at 1, but the library expects them to start at 0)
     y_train = y_train - 1

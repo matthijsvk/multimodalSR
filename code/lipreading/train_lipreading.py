@@ -64,22 +64,20 @@ def train(train_fn, val_fn,
         cost = 0;     cst = 0;
         accuracy = 0; acc = 0;
         nb_batches = len(X) / batch_size
+        n_evaluated = 0
 
-        predictions = []  # only used if get_predictions = True
         for i in tqdm(range(nb_batches), total=nb_batches):
             batch_X = X[i * batch_size:(i + 1) * batch_size]
             batch_y = y[i * batch_size:(i + 1) * batch_size]
             # logger_train.info("batch_X.shape: %s", batch_X.shape)
             # logger_train.info("batch_y.shape: %s", batch_y.shape)
-            if LR != None:   cst = train_fn(batch_X, batch_y, LR)      # training
-            else:            cst, acc = val_fn(batch_X, batch_y)  # validation
-            cost += cst;    accuracy += acc
+            if LR != None:   cst = train_fn(batch_X, batch_y, LR)       # training
+            else:            cst, acc = val_fn(batch_X, batch_y)        # validation
+            cost += cst*len(batch_X);    accuracy += acc*len(batch_X)  # cost = weighted sum, avg_cost of the batch * nb of items in the batch (we need this because often the last batch contains less elements; this skews the results
+            n_evaluated += len(batch_X)
 
-        cost /= nb_batches;
-        accuracy /= nb_batches
-
-        if LR != None: return cost, nb_batches  # for training, only cost (faster)
-        else:          return cost, accuracy, nb_batches  # for validation, get both
+        if LR != None: return cost, n_evaluated  # for training, only cost (faster)
+        else:          return cost, accuracy, n_evaluated  # for validation, get both
 
     best_val_err = 100
     best_epoch = 1
@@ -92,18 +90,19 @@ def train(train_fn, val_fn,
         start_time = time.time()
 
         if not loadPerSpeaker:
-            train_loss, _ = run_epoch(X=X_train, y=y_train, LR=LR)
+            train_loss, n_evaluated = run_epoch(X=X_train, y=y_train, LR=LR); train_loss /= n_evaluated
             X_train, y_train = shuffle(X_train, y_train)
 
-            val_err, val_loss, _ = run_epoch(X=X_val, y=y_val)
+            val_err, val_loss, n_evaluated = run_epoch(X=X_val, y=y_val); val_err /= n_evaluated; val_loss /= n_evaluated
+
         else:
             train_loss = 0; val_err = 0; val_loss = 0;
-            train_batches = 0; val_batches = 0;
+            train_nb_evaluated = 0; val_nb_evaluated = 0;
 
             #for each speaker, pass over the train set, then val set. (test is other files). save the results.
             for speakerFile in tqdm(trainingSpeakerFiles,total=len(trainingSpeakerFiles)):
                 # TODO: pallelize this with the GPU evaluation to eliminate waiting
-                logging.debug("processing %s", speakerFile)
+                logger_train.debug("processing %s", speakerFile)
                 X_train, y_train, X_val, y_val, X_test, y_test = preprocessLipreading.prepLip_one(speakerFile=speakerFile,
                                                                                                   trainFraction=0.8,
                                                                                                   validFraction=0.2)
@@ -112,22 +111,22 @@ def train(train_fn, val_fn,
                 logger_train.debug("the number of test examples is:     %s", len(X_test))
 
                 if shuffleEnabled: X_train, y_train = shuffle(X_train, y_train)
-                train_loss_one, train_batches_one = run_epoch(X=X_train, y=y_train, LR=LR)
+                train_loss_one, train_nb_evaluated_one = run_epoch(X=X_train, y=y_train, LR=LR)
 
                 # get results for validation and test set
-                val_err_one, val_loss_one, val_batches_one = run_epoch(X=X_val, y=y_val)
+                val_err_one, val_loss_one, val_nb_evaluated_one = run_epoch(X=X_val, y=y_val)
 
-                train_loss += train_loss_one;   train_batches += train_batches_one
-                val_loss   += val_loss_one;     val_batches   += val_batches_one;         val_err += val_err_one;
+                train_loss += train_loss_one;   train_nb_evaluated += train_nb_evaluated_one
+                val_loss   += val_loss_one;     val_nb_evaluated   += val_nb_evaluated_one;         val_err += val_err_one;
 
-                logger_train.debug("\tthis speaker results: ")
-                logger_train.info("\t  training loss:                 %s", str(train_loss_one))
-                logger_train.info("\t  validation loss:               %s", str(val_loss_one))
-                logger_train.info("\t  validation error rate:         %s %%", str(val_err_one))
+                logger_train.debug("  this speaker results: ")
+                logger_train.info("\ttraining loss:     %s", str(train_loss_one/train_nb_evaluated_one))
+                logger_train.info("\tvalidation loss:   %s", str(val_loss_one/val_nb_evaluated_one))
+                logger_train.info("\tvalidation error rate:  %s %%", str(val_err_one/val_nb_evaluted_one))
 
-            # get the average over all speakers
-            train_loss /= train_batches
-            val_err    /= val_batches;     val_loss /= val_batches
+            # get the average over all evaluated files
+            train_loss /= train_nb_evaluated
+            val_err    /= val_nb_evaluated;     val_loss /= val_nb_evaluated
 
 
         # test if validation error went down
@@ -137,19 +136,19 @@ def train(train_fn, val_fn,
             best_val_err = val_err
             best_epoch = epoch + 1
 
-            logger_train.info("Best ever validation score; evaluating TEST set...")
+            logger_train.info("\n\nBest ever validation score; evaluating TEST set...")
 
             if not loadPerSpeaker:  #all at once
                 test_err, test_loss, _ = run_epoch(X_test, y_test)
 
-            else:  # process each speaker seperately
+            else:  # process each speaker seperately  % TODO: fix  nb_evaluted as above
                 test_err = 0;
                 test_loss = 0;
                 test_batches = 0
 
                 for speakerFile in tqdm(testSpeakerFiles,total=len(testSpeakerFiles)):  # TODO: pallelize this with the GPU evaluation to eliminate waiting
 
-                    logging.debug("processing %s", speakerFile)
+                    logger_train.debug("processing %s", speakerFile)
                     X_train, y_train, X_val, y_val, X_test, y_test = preprocessLipreading.prepLip_one(
                         speakerFile=speakerFile, trainFraction=0.0, validFraction=0.0, )
                     logger_train.debug("the number of training examples is: %s", len(X_train))
@@ -159,9 +158,9 @@ def train(train_fn, val_fn,
                     # get results for test set
                     test_err_one, test_loss_one, test_batches_one = run_epoch(X=X_test, y=y_test)
 
-                    test_loss += test_loss_one;
+                    test_loss += test_loss_one*test_batches_one;
                     test_batches += test_batches_one;
-                    test_err += test_err_one;
+                    test_err += test_err_one*test_batches_one;
 
                     logger_train.debug("\tthis speaker results: ")
                     logger_train.info("\t  test loss:                     %s", str(test_loss_one))
@@ -175,8 +174,8 @@ def train(train_fn, val_fn,
 
             if save_path is None:
                 save_path = "./bestModel"
-            if not os.path.exists(os.dirname(save_path)):
-                os.makedirs(os.dirname(save_path))
+            if not os.path.exists(os.path.dirname(save_path)):
+                os.makedirs(os.path.dirname(save_path))
             logger_train.info("saving model to %s", save_path)
             np.savez(save_path, *lasagne.layers.get_all_param_values(network_output_layer))
 
@@ -198,3 +197,4 @@ def train(train_fn, val_fn,
         LR *= LR_decay
 
     logger_train.info("Done.")
+

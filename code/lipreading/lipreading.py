@@ -50,15 +50,15 @@ import lasagne.objectives as LO
 
 
 def main():
-    viseme = True  # will set nbClasses and store path   vis: 6.498.828   phn: 7.176.231
+
     # BN parameters
     batch_size = 8
-    logger_lip.info("batch_size = " + str(batch_size))
+    logger_lip.info("batch_size = %s",batch_size)
     # alpha is the exponential moving average factor
     alpha = .1
-    logger_lip.info("alpha = " + str(alpha))
+    logger_lip.info("alpha = %s",alpha)
     epsilon = 1e-4
-    logger_lip.info("epsilon = " + str(epsilon))
+    logger_lip.info("epsilon = %s",epsilon)
 
     # activation
     activation = T.nnet.relu
@@ -66,26 +66,28 @@ def main():
 
     # Training parameters
     num_epochs = 20
-    logger_lip.info("num_epochs = " + str(num_epochs))
+    logger_lip.info("num_epochs = %s", num_epochs)
 
     # Decaying LR
     LR_start = 0.001
-    logger_lip.info("LR_start = " + str(LR_start))
+    logger_lip.info("LR_start = %s", LR_start)
     LR_fin = 0.0000003
-    logger_lip.info("LR_fin = " + str(LR_fin))
+    logger_lip.info("LR_fin = %s",LR_fin)
     LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)
-    logger_lip.info("LR_decay = " + str(LR_decay))
+    logger_lip.info("LR_decay = %s",LR_decay)
     # BTW, LR decay might good for the BN moving average...
 
     shuffle_parts = 1
-    logger_lip.info("shuffle_parts = " + str(shuffle_parts))
-
-    logger_lip.info('Loading TCDTIMIT dataset...')
-    if viseme: nbClasses = 12
-    else: nbClasses = 39
+    logger_lip.info("shuffle_parts = %s",shuffle_parts)
     oneHot = False
 
+    ##############################################
     network_type = "google"
+    viseme = True  # will set nbClasses and store path   vis: 6.498.828   phn: 7.176.231
+
+    if viseme:   nbClasses = 12
+    else:        nbClasses = 39
+
 
     # get the database
     # If it's small (lipspeakers) -> generate X_train, y_train etc here
@@ -96,6 +98,7 @@ def main():
     if viseme: database_binaryDir = root_dir + 'database_binaryViseme'
     else:      database_binaryDir = root_dir + 'database_binary'
     dataset = "volunteers";
+    ##############################################
 
     if dataset == "lipspeakers":
         loadPerSpeaker = False  # only lipspeakers small enough to fit in CPU RAM, generate X_train etc here
@@ -206,8 +209,6 @@ def main():
         shuffleEnabled=True)
 
 
-
-
 def unpickle(file):
     import cPickle
     fo = open(file, 'rb')
@@ -227,8 +228,8 @@ def load_model(model_path, network_output_layer, logger=logger_lip):
         return 0
 
     except IOError as e:
-        logger.info(os.strerror(e.errno))
-        logger.info('Model: {} not found. No weights loaded'.format(model_path))
+        logger.info("%s", os.strerror(e.errno))
+        logger.info('Model: %s not found. No weights loaded', model_path)
         return -1
 
 
