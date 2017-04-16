@@ -110,7 +110,7 @@ def train(train_fn, val_fn,
 
         else:
             train_loss = 0; val_err = 0; val_loss = 0;
-            train_batches = 0; val_batches = 0;
+            nb_train_batches = 0; nb_val_batches = 0;
 
             #for each speaker, pass over the train set, then val set. (test is other files). save the results.
             for speakerFile in tqdm(trainingSpeakerFiles,total=len(trainingSpeakerFiles)):
@@ -125,21 +125,21 @@ def train(train_fn, val_fn,
 
                 if shuffleEnabled: X_train, y_train = shuffle(X_train, y_train)
                 train_loss_one, train_batches_one = train_epoch(X=X_train, y=y_train, LR=LR)
-
-                # get results for validation and test set
+                train_loss += train_loss_one;     nb_train_batches += train_batches_one
+                
+                # get results for validation  set
                 val_err_one, val_loss_one, val_batches_one = val_epoch(X=X_val, y=y_val)
-
-                train_loss += train_loss_one*train_batches_one;   train_batches += train_batches_one
-                val_loss   += val_loss_one*val_batches_one;     val_batches   += val_batches_one;         val_err += val_err_one*val_batches_one;
+                val_err += val_err_one;  val_loss+= val_loss_one;   nb_val_batches += val_batches_one;         
 
                 logger_train.debug("  this speaker results: ")
-                logger_train.info("\ttraining loss:     %s", str(train_loss_one))
-                logger_train.info("\tvalidation loss:   %s", str(val_loss_one))
-                logger_train.info("\validation error rate:  %s %%", str(val_err_one))
+                logger_train.info("\ttraining loss:     %s", train_loss_one/train_batches_one)
+                logger_train.info("\tvalidation loss:   %s", val_loss_one/val_batches_one)
+                logger_train.info("\vvalidation error rate:  %s %%", val_err_one/val_batches_one)
 
             # get the average over all speakers
-            train_loss /= train_batches
-            val_err    /= val_batches;     val_loss /= val_batches
+            train_loss /= nb_train_batches
+            val_err   /= nb_val_batches;     
+            val_loss /= nb_val_batches
 
 
         # test if validation error went down
@@ -156,31 +156,34 @@ def train(train_fn, val_fn,
                 test_err = test_err / nb_test_batches * 100;  test_loss /= nb_test_batches
 
             else:  # process each speaker seperately
+
                 test_err = 0;
                 test_loss = 0;
-                test_batches = 0
+                nb_test_batches = 0;
 
-                for speakerFile in tqdm(testSpeakerFiles,total=len(testSpeakerFiles)):  # TODO: pallelize this with the GPU evaluation to eliminate waiting
-
+                # for each speaker, pass over the train set, then test set. (test is other files). save the results.
+                for speakerFile in tqdm(testSpeakerFiles, total=len(testSpeakerFiles)):
+                    # TODO: pallelize this with the GPU evaluation to eliminate waiting
                     logger_train.debug("processing %s", speakerFile)
-                    X_train, y_train, X_val, y_val, X_test, y_test = preprocessLipreading.prepLip_one(
-                        speakerFile=speakerFile, trainFraction=0.0, validFraction=0.0, )
+                    X_train, y_train, X_test, y_test, X_test, y_test = preprocessLipreading.prepLip_one(
+                        speakerFile=speakerFile, trainFraction=0.0, validFraction=0.0)
                     logger_train.debug("the number of training examples is: %s", len(X_train))
-                    logger_train.debug("the number of valid examples is:    %s", len(X_val))
+                    logger_train.debug("the number of valid examples is:   %s", len(X_val))
                     logger_train.debug("the number of test examples is:     %s", len(X_test))
 
-                    # get results for test set
+                    # get results for testidation  set
                     test_err_one, test_loss_one, test_batches_one = val_epoch(X=X_test, y=y_test)
+                    test_err += test_err_one;
+                    test_loss += test_loss_one;
+                    nb_test_batches += test_batches_one;
 
-                    test_loss += test_loss_one*test_batches_one;
-                    test_batches += test_batches_one;
-                    test_err += test_err_one*test_batches_one;
+                    logger_train.debug("  this speaker results: ")
+                    logger_train.info("\ttestidation loss:   %s", test_loss_one / test_batches_one)
+                    logger_train.info("\vtestidation error rate:  %s %%", test_err_one / test_batches_one)
 
-                    logger_train.debug("\tthis speaker results: ")
-                    logger_train.info("\t  test loss:                     %s", str(test_loss_one))
-                    logger_train.info("\t  test error rate:               %s %%", str(test_err_one))
-                test_err /= test_batches;
-                test_loss /= test_batches
+                # get the average over all speakers
+                test_err /= nb_test_batches
+                test_loss /= nb_test_batches
 
             logger_train.info("TEST results: ")
             logger_train.info("\t  test loss:                     %s", str(test_loss))
