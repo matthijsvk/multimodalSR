@@ -4,7 +4,7 @@ import sys, os
 import numpy as np
 from six.moves import cPickle
 
-logger_GeneralTools = logging.getLogger('RNN.generalTools')
+logger_GeneralTools = logging.getLogger('audioSR.generalTools')
 logger_GeneralTools.setLevel(logging.ERROR)
 
 

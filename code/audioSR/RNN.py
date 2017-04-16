@@ -8,7 +8,7 @@ warnings.simplefilter("ignore", UserWarning)  # cuDNN warning
 import logging
 import formatting
 
-logger_RNN = logging.getLogger('RNN')
+logger_RNN = logging.getLogger('audioSR')
 logger_RNN.setLevel(logging.DEBUG)
 FORMAT = '[$BOLD%(filename)s$RESET:%(lineno)d][%(levelname)-5s]: %(message)s '
 formatter = logging.Formatter(formatting.formatter_message(FORMAT, False))

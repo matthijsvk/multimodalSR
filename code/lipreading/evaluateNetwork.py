@@ -1,32 +1,76 @@
 from __future__ import print_function
 
-from lipreadingTCDTIMIT import *
+from lipreading import *
+from phoneme_set import phoneme_set_39, classToPhoneme39
 
 
-def load_model(model_npz_file, type):
-    if not os.path.exists(model_npz_file): print(
-            "This npz file does not exist! Please run 'lipreadingTCDTIMIT' first to generate it.")
-
+#  build the model structure, fill in the stored parameters from a trained network with this structure
+#  networkType:  1 = CIFAR10, 2 = GoogleNet, 3 = ResNet50
+#  phonemeViseme:  1 = phoneme-trained, 0 = viseme-trained (meaning outputs are visemes)
+def load_model(phonemeViseme, networkType, printNetwork=False):
+    # network parameters
     alpha = .1
     print("alpha = " + str(alpha))
     epsilon = 1e-4
     print("epsilon = " + str(epsilon))
-
-    # activation
     activation = T.nnet.relu
     print("activation = T.nnet.relu")
-    input = T.tensor4('inputs')
-    target = T.matrix('targets')
-    if type == 'resnet50':
-        cnn = buildNetworks.build_network_resnet50(input)
+
+    inputs = T.tensor4('inputs')
+
+    if phonemeViseme == 'phoneme':  # use phoneme-trained network
+        if networkType == 'cifar10':  # CIFAR10
+            cnnDict, outputLayer = buildNetworks.build_network_cifar10(activation, alpha, epsilon, inputs,
+                                                                       nbClassesPhonemes)
+            modelParameterFile = './results/Phoneme_trained/CIFAR10/allLipspeakers/allLipspeakers.npz'
+
+        elif networkType == 'google':  # GoogleNet
+            cnnDict, outputLayer = buildNetworks.build_network_google(activation, alpha, epsilon, inputs,
+                                                                      nbClassesPhonemes)
+            modelParameterFile = './results/Phoneme_trained/GoogleNet/allLipspeakers/allLipspeakers.npz'
+
+        elif networkType == 'resnet50':  # ResNet50
+            cnnDict, outputLayer = buildNetworks.build_network_resnet50(inputs, nbClassesPhonemes)
+            modelParameterFile = './results/Phoneme_trained/ResNet50/allLipspeakers/allLipspeakers.npz'
+        else:
+            raise Exception('ERROR: given network type unknown.')
+
+    elif phonemeViseme == 'viseme':  # use viseme-trained network, only trained for Google Network
+        cnnDict, outputLayer = buildNetworks.build_network_google(activation, alpha, epsilon, inputs,
+                                                                  39)  # nbClassesVisemes)
+        modelParameterFile = './results/Viseme_trained/GoogleNet/allLipspeakers.npz'
+
     else:
-        print("WRONG NETWORK SPECIFIED, cannot be loaded")
+        raise Exception('ERROR: given phoneme viseme type unknown.')
 
-    with np.load('./results/ResNet50/allLipspeakers/allLipspeakers.npz') as f:
+    # print the network structure
+    if printNetwork: print_cnnNetwork(cnnDict)
+
+    # load all the parameters
+    with np.load(modelParameterFile) as f:
         param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+    lasagne.layers.set_all_param_values(outputLayer, param_values)
 
-    lasagne.layers.set_all_param_values(cnn['prob'], param_values)
-    return cnn
+    return outputLayer, inputs
+
+
+def print_cnnNetwork(cnnDict):
+    print("\n PRINTING Network structure: \n %s " % (sorted(cnnDict.keys())))
+    for key in sorted(cnnDict.keys()):
+        print(key)
+        if 'conv' in key and type(cnnDict[key]) == list:
+            for layer in cnnDict[key]:
+                try:
+                    print('      %12s \nin: %s | out: %s' % (layer, layer.input_shape, layer.output_shape))
+                except:
+                    print('      %12s \nout: %s' % (layer, layer.output_shape))
+        else:
+            try:
+                print('Layer: %12s \nin: %s | out: %s' % (
+                    cnnDict[key], cnnDict[key].input_shape, cnnDict[key].output_shape))
+            except:
+                print('Layer: %12s \nout: %s' % (cnnDict[key], cnnDict[key].output_shape))
+    return 0
 
 
 def getPhonemeToVisemeMap():
@@ -49,22 +93,36 @@ def getPhonemeToVisemeMap():
     return map
 
 
-def getPhonemeNumberMap(phonemeMap="./phonemeLabelConversion.txt"):
-    phonemeNumberMap = {}
-    with open(phonemeMap) as inf:
-        for line in inf:
-            parts = line.split()  # split line into parts
-            if len(parts) > 1:  # if at least 2 parts/columns
-                phonemeNumberMap[str(parts[0])] = parts[1]  # part0= frame, part1 = phoneme
-                phonemeNumberMap[str(parts[1])] = parts[0]
-    return phonemeNumberMap
+def prob_to_class(prob):
+    a = []
+    for p in list(prob):
+        a.append(classToPhoneme39[p])
+    return a
 
 
-def evaluateNetwork(X, y, model_npz_file):
+from phoneme_set import phoneme_set_39, classToPhoneme39
+def getPhonemeNumberMap():
+    z = phoneme_set_39.copy()
+    z.update(classToPhoneme39)
+    return
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Getting top results for this image...")
+    add_arg = parser.add_argument
+    add_arg("input_image", help="Input image to be evaluated")
+    add_arg("target_phoneme", help="Correct phoneme of input image")
+    add_arg("-n", "--network_type", help="Type of network to be used", default='google')
+    add_arg("-p", "--output", help="Network outputting phonemes (1) or visemes (0)", default='phoneme')
+    # add_arg("-m", "--model-file", help="Model pickle file that contains trained network parameters")
+    args = parser.parse_args()
+
+
+def evaluateNetwork(X, y, phonemeViseme, networkType):
     phonemeToViseme = getPhonemeToVisemeMap()
     phonemeNumberMap = getPhonemeNumberMap()  # bidirectional map phoneme-number
 
-    cnn = load_model(model_npz_file, 'resnet50')
+    cnn = load_model(phonemeViseme, networkType)
 
     for i in range(len(y)):
         y[i] = phonemeToViseme{phonemeNumberMap{y[i]}}  # viseme of the phoneme belonging to the y-number
