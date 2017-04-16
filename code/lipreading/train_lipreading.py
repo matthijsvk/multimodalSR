@@ -7,6 +7,7 @@ import lasagne
 import numpy as np
 import preprocessLipreading
 import general_tools
+import theano
 
 import logging
 logger_train = logging.getLogger('lipreading.train')
@@ -60,6 +61,7 @@ def train(train_fn, val_fn,
     # This function trains the model a full epoch (on the whole dataset)
     def train_epoch(X, y, LR):
         cost = 0
+        LR_np = np.array([LR]).astype(theano.config.floatX)
         nb_batches = len(X) / batch_size
 
         for i in tqdm(range(nb_batches), total=nb_batches):
@@ -67,7 +69,7 @@ def train(train_fn, val_fn,
             batch_y = y[i * batch_size:(i + 1) * batch_size]
             # print("batch_X.shape: ", batch_X.shape)
             # print("batch_y.shape: ", batch_y.shape)
-            cost += train_fn(batch_X, batch_y, LR)
+            cost += train_fn(batch_X, batch_y, LR_np)
 
         return cost, nb_batches
 
