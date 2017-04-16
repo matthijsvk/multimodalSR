@@ -6,6 +6,12 @@ from tqdm import tqdm
 import lasagne
 import numpy as np
 
+import preprocessLipreading
+
+import logging
+logger_train = logging.getLogger('lipreading.train')
+logger_train.setLevel(logging.DEBUG)
+
 
 # Given a dataset and a model, this function trains the model on the dataset for several epochs
 # (There is no default trainer function in Lasagne yet)
@@ -16,14 +22,24 @@ def train(#X_train, y_train, X_val, y_val, X_test, y_test,
           LR_start, LR_decay,
           num_epochs,
           dataset,
+          loadPerSpeaker=False,
           save_path=None,
-          shuffleEnabled=1):
-    X_train, y_train, X_val, y_val, X_test, y_test = dataset
-    shuffle_parts = 1
+          shuffleEnabled=True):
+
+    if loadPerSpeaker:
+        trainingSpeakerFiles, testSpeakerFiles = dataset
+        logger_train.info("train files: \n%s", trainingSpeakerFiles)
+        logger_train.info("test files:  \n %s", testSpeakerFiles)
+    else:
+        X_train, y_train, X_val, y_val, X_test, y_test = dataset
+        logger_train.info("the number of training examples is: %s", len(X_train))
+        logger_train.info("the number of valid examples is:    %s", len(X_val))
+        logger_train.info("the number of test examples is:     %s", len(X_test))
+
 
     # A function which shuffles a dataset
     def shuffle(X, y):
-
+        shuffle_parts = 1
         chunk_size = len(X) / shuffle_parts
         shuffled_range = range(chunk_size)
 
@@ -125,4 +141,8 @@ def train(#X_train, y_train, X_val, y_val, X_test, y_test,
         # decay the LR
         LR *= LR_decay
 
+<<<<<<< HEAD
     print("Done.")
+=======
+    print("Done.")
+>>>>>>> d03faa80c46a679664fad4bf1afd11027257fe54
