@@ -7,12 +7,13 @@ from PIL import Image
 # this imported file contains build_model(), which constructs the network structure that you van fill using the pkl file
 # to generate the pkl file, you need to run the main function in resnet50CaffeToLasagne_ImageNet,
 #   which populates the network from caffe, gets the classes and the mean image, and stores those in a pkl file
-from lipreadingTCDTIMIT import *
+from lipreading import *
 from phoneme_set import phoneme_set_39, classToPhoneme39
+import buildNetworks
 import buildNetworks
 
 nbClassesPhonemes = 39
-nbClassesVisemes = 13
+nbClassesVisemes = 12
 
 # TODO: very weird issue when trying to use the viseme file: seems like the stored network is for 39 features ipv 13??? Also super weird outputs, it's surely not trained for phonemes
 # TODO: some of the stored networks also were genereated with different network structure than is in build_networks.py (more or larger dense layers for example)...

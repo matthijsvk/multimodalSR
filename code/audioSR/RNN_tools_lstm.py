@@ -12,7 +12,7 @@ import theano
 import theano.tensor as T
 from tqdm import tqdm
 
-logger_RNNtools = logging.getLogger('RNN.tools')
+logger_RNNtools = logging.getLogger('audioSR.tools')
 logger_RNNtools.setLevel(logging.DEBUG)
 
 from general_tools import *
