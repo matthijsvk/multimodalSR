@@ -63,27 +63,26 @@ def train(#X_train, y_train, X_val, y_val, X_test, y_test,
     # is a LR is specified, the model will be trained, and the ouput is 'cost' (no accuracy for speed)
     # if no LR is specified, there's not training and the output is 'cost, accuracy'
     def run_epoch(X, y, LR=None):
-        cost = 0;
-        cst = 0;
-        accuracy = 0;
-        acc = 0;
+        loss = 0;
+        lss = 0;
+        error = 0;
+        err = 0;
         nb_batches = len(X) / batch_size
 
-        predictions = []  # only used if get_predictions = True
         for i in tqdm(range(nb_batches), total=nb_batches):
             batch_X = X[i * batch_size:(i + 1) * batch_size]
             batch_y = y[i * batch_size:(i + 1) * batch_size]
             # logger_train.info("batch_X.shape: %s", batch_X.shape)
             # logger_train.info("batch_y.shape: %s", batch_y.shape)
-            if LR != None:  cst = train_fn(batch_X, batch_y, LR)  # training
-            else:           cst, acc = val_fn(batch_X, batch_y)  # validation
-            cost += cst;  accuracy += acc
+            if LR != None:  lss = train_fn(batch_X, batch_y, LR)  # training
+            else:           lss, err = val_fn(batch_X, batch_y)  # validation
+            loss += lss;  error += err
 
-        cost /= nb_batches;
-        accuracy /= nb_batches
+        loss /= nb_batches
+        error /= nb_batches
 
-        if LR != None:   return cost, nb_batches  # for training, only cost (faster)
-        else:            return cost, accuracy, nb_batches  # for validation, get both
+        if LR != None:   return loss, nb_batches  # for training, only loss (faster)
+        else:            return loss, error, nb_batches  # for validation, get both
 
     # This function trains the model a full epoch (on the whole dataset)
     def train_epoch(X, y, LR):
@@ -102,23 +101,23 @@ def train(#X_train, y_train, X_val, y_val, X_test, y_test,
 
         loss /= nb_batches
 
-        return loss
+        return loss, nb_batches
 
     # This function tests the model a full epoch (on the whole dataset)
     def val_epoch(X, y):
         err = 0
         loss = 0
-        batches = len(X) / batch_size
+        nb_batches = len(X) / batch_size
 
-        for i in range(batches):
+        for i in range(nb_batches):
             new_loss, new_err = val_fn(X[i * batch_size:(i + 1) * batch_size], y[i * batch_size:(i + 1) * batch_size])
             err += new_err
             loss += new_loss
 
-        err = err / batches * 100
-        loss /= batches
+        err = err / nb_batches * 100
+        loss /= nb_batches
 
-        return err, loss
+        return err, loss, nb_batches
 
     # shuffle the train set
     X_train, y_train = shuffle(X_train, y_train)
@@ -132,10 +131,10 @@ def train(#X_train, y_train, X_val, y_val, X_test, y_test,
         print("epoch ", epoch + 1, "started...")
         start_time = time.time()
 
-        train_loss, nb_train_batches = run_epoch(X_train, y_train, LR)
+        train_loss, nb_train_batches = train_epoch(X_train, y_train, LR)
         X_train, y_train = shuffle(X_train, y_train)
 
-        val_err, val_loss, nb_val_batches = run_epoch(X_val, y_val)
+        val_err, val_loss, nb_val_batches = val_epoch(X_val, y_val)
 
         # test if validation error went down
         if val_err <= best_val_err:
@@ -143,7 +142,7 @@ def train(#X_train, y_train, X_val, y_val, X_test, y_test,
             best_val_err = val_err
             best_epoch = epoch + 1
 
-            test_err, test_loss, nb_test_batches = run_epoch(X_test, y_test)
+            test_err, test_loss, nb_test_batches = val_epoch(X_test, y_test)
 
             if save_path is None:
                 save_path = "./bestModel"
