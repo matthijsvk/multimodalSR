@@ -108,7 +108,7 @@ def main():
             preprocessLipreading.prepLip_all(data_path=database_binaryDir, store_path=pkl_path, trainFraction=0.8, validFraction=0.1,
                         testFraction=0.1,
                         nbClasses=nbClasses, onehot=oneHot, type=dataset, verbose=True)
-	    datasetFiles = general_tools.unpickle(pkl_path)
+        datasetFiles = general_tools.unpickle(pkl_path)
 
     else:  # we need to load and preprocess each speaker before we evaluate, because dataset is too large and doesn't fit in CPU RAM
             # TODO: load/preprocess next data while GPU is still working on previous data
