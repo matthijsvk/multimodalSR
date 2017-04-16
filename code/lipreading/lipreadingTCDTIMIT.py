@@ -41,6 +41,7 @@ import lasagne.objectives as LO
 
 
 def main():
+    viseme = True  # will set nbClasses and store path   vis: 6.498.828   phn: 7.176.231
     # BN parameters
     batch_size = 10
     print("batch_size = " + str(batch_size))
@@ -71,14 +72,16 @@ def main():
     print("shuffle_parts = " + str(shuffle_parts))
 
     print('Loading TCDTIMIT dataset...')
-    nbClasses = 39
+    if viseme: nbClasses = 12
+    else: nbClasses = 39
     oneHot = False
 
     network_type = "google"
 
     # database in binary format (pkl files)
     rootDir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/'))
-    database_binaryDir = rootDir + 'database_binary'
+    if viseme: database_binaryDir = rootDir + 'database_binaryViseme'
+    else:      database_binaryDir = rootDir + 'database_binary'
     dataset = "lipspeakers"
     pkl_path = database_binaryDir + "processed" + os.sep + dataset + ".pkl"
     if not os.path.exists(pkl_path):
@@ -116,6 +119,8 @@ def main():
     print("Using the ", network_type, " network")
     print("The number of parameters of this network: ", L.count_params(l_out))
 
+    # try to load stored model
+    load_model(model_store_path +'.npz', l_out)
 
     print("* COMPILING FUNCTIONS...")
 
@@ -151,7 +156,7 @@ def main():
             train_X, train_y,
             valid_X, valid_y,
             test_X, test_y,
-            save_path="./TCDTIMITBestModel")
+            save_path=model_store_path)
 
 
 def unpickle(file):
@@ -161,6 +166,21 @@ def unpickle(file):
     fo.close()
     return a
 
+def load_model(model_path, network_output_layer):
+    try:
+        print("Loading stored model...")
+        # restore network weights
+        with np.load(model_path) as f:
+            param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+            lasagne.layers.set_all_param_values(network_output_layer, *param_values)
+
+        print("Loading parameters successful.")
+        return 0
+
+    except IOError as e:
+        print(os.strerror(e.errno))
+        print('Model: {} not found. No weights loaded'.format(model_path))
+        return -1
 
 def processdataset_images(data_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binary')),
                           store_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/database_binaryprocessed/dataset.pkl')),

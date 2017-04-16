@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import os
 import time
 from tqdm import tqdm
 import lasagne
@@ -102,6 +103,8 @@ def train(train_fn, val_fn,
 
             if save_path is None:
                 save_path = "./bestModel"
+            if not os.path.exists(os.dirname(save_path)):
+                os.makedirs(os.dirname(save_path))
             np.savez(save_path, *lasagne.layers.get_all_param_values(model))
 
         epoch_duration = time.time() - start_time
