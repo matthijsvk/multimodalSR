@@ -40,7 +40,7 @@ logger_lip.addHandler(ch)
 
 
 # User - created files
-import train_lipreading  # load training functions
+import train_lipreading2  # load training functions
 import buildNetworks
 import preprocessLipreading
 import general_tools
@@ -52,7 +52,7 @@ import lasagne.objectives as LO
 def main():
 
     # BN parameters
-    batch_size = 8
+    batch_size = 64
     logger_lip.info("batch_size = %s",batch_size)
     # alpha is the exponential moving average factor
     alpha = .1
@@ -97,7 +97,7 @@ def main():
     if not os.path.exists(results_dir): os.makedirs(results_dir)
     if viseme: database_binaryDir = root_dir + 'database_binaryViseme'
     else:      database_binaryDir = root_dir + 'database_binary'
-    dataset = "volunteers";
+    dataset = "lipspeakers";
     ##############################################
 
     if dataset == "lipspeakers":
@@ -108,7 +108,8 @@ def main():
             preprocessLipreading.prepLip_all(data_path=database_binaryDir, store_path=pkl_path, trainFraction=0.8, validFraction=0.1,
                         testFraction=0.1,
                         nbClasses=nbClasses, onehot=oneHot, type=dataset, verbose=True)
-        datasetFiles = general_tools.unpickle(pkl_path)
+        #X_train, y_train, X_val, y_val, X_test, y_test = general_tools.unpickle(pkl_path)
+	datasetFiles = general_tools.unpickle(pkl_path)
 
     else:  # we need to load and preprocess each speaker before we evaluate, because dataset is too large and doesn't fit in CPU RAM
             # TODO: load/preprocess next data while GPU is still working on previous data
@@ -197,14 +198,14 @@ def main():
 
     logger_lip.info('Training...')
 
-    train_lipreading.train(
+    train_lipreading2.train(#X_train, y_train, X_val, y_val, X_test, y_test,
         train_fn=train_fn, val_fn=val_fn,
         network_output_layer=l_out,
         batch_size=batch_size,
         LR_start=LR_start, LR_decay=LR_decay,
         num_epochs=num_epochs,
         dataset=datasetFiles,
-        loadPerSpeaker=loadPerSpeaker,
+        #loadPerSpeaker=loadPerSpeaker,
         save_path=model_store_path,
         shuffleEnabled=True)
 
