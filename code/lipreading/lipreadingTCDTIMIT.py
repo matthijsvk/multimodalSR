@@ -41,6 +41,7 @@ import lasagne.objectives as LO
 
 
 def main():
+    viseme = True  # will set nbClasses and store path
     # BN parameters
     batch_size = 10
     print("batch_size = " + str(batch_size))
@@ -71,14 +72,16 @@ def main():
     print("shuffle_parts = " + str(shuffle_parts))
 
     print('Loading TCDTIMIT dataset...')
-    nbClasses = 39
+    if viseme: nbClasses = 12
+    else: nbClasses = 39
     oneHot = False
 
     network_type = "google"
 
     # database in binary format (pkl files)
     rootDir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/'))
-    database_binaryDir = rootDir + 'database_binary'
+    if viseme: database_binaryDir = rootDir + 'database_binaryViseme'
+    else:      database_binaryDir = rootDir + 'database_binary'
     dataset = "lipspeakers"
     pkl_path = database_binaryDir + "processed" + os.sep + dataset + ".pkl"
     if not os.path.exists(pkl_path):
@@ -151,7 +154,7 @@ def main():
             train_X, train_y,
             valid_X, valid_y,
             test_X, test_y,
-            save_path="./TCDTIMITBestModel")
+            save_path=model_store_path)
 
 
 def unpickle(file):
