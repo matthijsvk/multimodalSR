@@ -73,7 +73,8 @@ def main():
     logger_lip.info("LR_start = %s", LR_start)
     LR_fin = 0.0000003
     logger_lip.info("LR_fin = %s",LR_fin)
-    LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)
+    # LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)
+    LR_decay = 0.5
     logger_lip.info("LR_decay = %s",LR_decay)
     # BTW, LR decay might good for the BN moving average...
 

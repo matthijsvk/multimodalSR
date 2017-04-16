@@ -575,13 +575,13 @@ class NeuralNetwork:
 
 
     def updateLR(self, LR, LR_decay, logger=logger_RNNtools):
-        this_error = self.network_train_info[1][-1]
-        try:last_error = self.network_train_info[1][-2]
-        except: last_error = 10*this_error #first time it will fail because there is only 1 result stored
+        this_cost = self.network_train_info[1][-1]
+        try:last_cost = self.network_train_info[1][-2]
+        except: last_cost = 10*this_cost #first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_error / float(last_error) >= 0.98:
-            logger.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_error, last_error, LR * LR_decay)
+        if this_cost / float(last_cost) >= 0.98:
+            logger.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_cost, last_cost, LR * LR_decay)
             self.epochsNotImproved += 1
             return LR * LR_decay
         else:

@@ -161,21 +161,20 @@ def train(train_fn, val_fn,
         test_cost /= nb_test_batches
         return test_cost, test_err
 
-    def updateLR(LR, LR_decay):
-        this_error = self.network_train_info[1][-1]
-        try:
-            last_error = self.network_train_info[1][-2]
-        except:
-            last_error = 10 * this_error  # first time it will fail because there is only 1 result stored
+
+    def updateLR(LR, LR_decay, network_train_info, epochsNotImproved):
+        this_cost = network_train_info[1][-1] #validation cost
+        try:      last_cost = network_train_info[1][-2]
+        except:   last_cost = 10 * this_cost  # first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_error / float(last_error) >= 0.98:
-            logger_train.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_error, last_error, LR * LR_decay)
-            self.epochsNotImproved += 1
-            return LR * LR_decay
+        if this_cost / float(last_cost) >= 0.98:
+            logger_train.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_cost, last_cost, LR * LR_decay)
+            epochsNotImproved += 1
+            return LR * LR_decay, epochsNotImproved
         else:
-            self.epochsNotImproved = max(self.epochsNotImproved - 1, 0)  # reduce by 1, minimum 0
-            return LR
+            epochsNotImproved = max(epochsNotImproved - 1, 0)  # reduce by 1, minimum 0
+            return LR, epochsNotImproved
 
 
 
@@ -183,7 +182,8 @@ def train(train_fn, val_fn,
     best_epoch = 1
     LR = LR_start
     # for storage of training info
-    network_train_info = network_train_info = [[], [], [], [], []]    #train cost, val cost, val acc, test cost, test acc
+    network_train_info = [[], [], [], [], []]    #train cost, val cost, val acc, test cost, test acc
+    epochsNotImproved = 0
 
     logger_train.info("starting training for %s epochs...", num_epochs)
     for epoch in range(num_epochs):
@@ -244,16 +244,16 @@ def train(train_fn, val_fn,
         # save the training info
         network_train_info[0].append(train_cost)
         network_train_info[1].append(val_cost)
-        network_train_info[2].append(100 - val_err)
-        network_train_info[3].append( test_cost)
-        network_train_info[4].append( 100 - test_err)
+        network_train_info[2].append(val_err)
+        network_train_info[3].append(test_cost)
+        network_train_info[4].append(test_err)
         store_path = save_name + '_trainInfo.pkl'
         general_tools.saveToPkl(store_path, network_train_info)
         logger_train.info("Train info written to:\t %s", store_path)
 
         # decay the LR
-        LR *= LR_decay
-
+        # LR *= LR_decay
+        LR = updateLR(LR, LR_decay, network_train_info, epochsNotImproved)
 
     logger_train.info("Done.")
 
