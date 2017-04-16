@@ -197,7 +197,7 @@ def main():
 
     logger_lip.info('Training...')
 
-    train_lipreading2.train(#X_train, y_train, X_val, y_val, X_test, y_test,
+    train_lipreading2.train(
         train_fn=train_fn, val_fn=val_fn,
         network_output_layer=l_out,
         batch_size=batch_size,

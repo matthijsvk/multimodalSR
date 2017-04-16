@@ -141,8 +141,4 @@ def train(#X_train, y_train, X_val, y_val, X_test, y_test,
         # decay the LR
         LR *= LR_decay
 
-<<<<<<< HEAD
     print("Done.")
-=======
-    print("Done.")
->>>>>>> d03faa80c46a679664fad4bf1afd11027257fe54
