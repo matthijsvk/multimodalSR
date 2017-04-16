@@ -69,7 +69,7 @@ def main():
     logger_lip.info("num_epochs = %s", num_epochs)
 
     # Decaying LR
-    LR_start = 0.001
+    LR_start = 0.01
     logger_lip.info("LR_start = %s", LR_start)
     LR_fin = 0.0000003
     logger_lip.info("LR_fin = %s",LR_fin)
@@ -98,7 +98,7 @@ def main():
     if not os.path.exists(results_dir): os.makedirs(results_dir)
     if viseme: database_binaryDir = root_dir + 'database_binaryViseme'
     else:      database_binaryDir = root_dir + 'database_binary'
-    dataset = "lipspeakers";
+    dataset = "volunteers";
     ##############################################
 
     if dataset == "lipspeakers":
