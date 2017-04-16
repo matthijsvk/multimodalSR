@@ -34,7 +34,7 @@ formatter = logging.Formatter(formatting.formatter_message(FORMAT, False))
 
 # create console handler with a higher log level
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger_lip.addHandler(ch)
 
@@ -134,7 +134,7 @@ def main():
 
 
     model_name = dataset + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")
-    model_store_path = os.path.join(results_dir,model_name)
+    model_save_name = os.path.join(results_dir,model_name)
 
     # log file
     logFile = results_dir + os.sep + model_name + '.log'
@@ -170,7 +170,7 @@ def main():
     logger_lip.info("The number of parameters of this network: %s", L.count_params(l_out))
 
     # try to load stored model
-    load_model(model_store_path +'.npz', l_out)
+    load_model(model_save_name +'.npz', l_out)
 
     logger_lip.info("* COMPILING FUNCTIONS...")
 
@@ -205,7 +205,7 @@ def main():
         num_epochs=num_epochs,
         dataset=datasetFiles,
         loadPerSpeaker=loadPerSpeaker,
-        save_path=model_store_path,
+        save_name=model_save_name,
         shuffleEnabled=True)
 
 
