@@ -27,7 +27,6 @@ class NeuralNetwork:
     X = None
     Y = None
 
-    network_train_info = [[], [], []]
 
     def __init__(self, architecture, dataset=None, batch_size=1, max_seq_length=1000, num_features=26, n_hidden_list=(100,), num_output_units=61,
                  bidirectional=False, addDenseLayers=False, seed=int(time.time()), debug=False, logger=logger_RNNtools):
@@ -37,6 +36,7 @@ class NeuralNetwork:
         self.max_seq_length = max_seq_length #currently unused
         self.epochsNotImproved = 0  #keep track, to know when to stop training
         self.updates = {}
+        self.network_train_info = [[], [], [], [], []]  # train cost, val cost, val acc, test cost, test acc
 
         if architecture == 'RNN':
             if dataset != None:
@@ -493,16 +493,6 @@ class NeuralNetwork:
 
         X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
 
-        # Initiate some vectors used for tracking performance
-        train_cost = np.zeros([num_epochs])
-        train_accuracy = np.zeros([num_epochs])
-
-        validation_cost = np.zeros([num_epochs])
-        validation_accuracy = np.zeros([num_epochs])
-
-        test_cost = np.zeros([num_epochs])
-        test_accuracy = np.zeros([num_epochs])
-
         confusion_matrices = []
 
         logger.info("\n* Starting training...")
@@ -514,25 +504,27 @@ class NeuralNetwork:
 
 
             logger.info("Pass over Training Set")
-            train_cost[epoch], train_accuracy[epoch] = \
-                self.run_epoch(X=X_train, y=y_train, valid_frames=valid_frames_train, LR=LR)
+            train_cost, train_accuracy =     self.run_epoch(X=X_train, y=y_train, valid_frames=valid_frames_train, LR=LR)
 
             logger.info("Pass over Validation Set")
-            validation_cost[epoch], validation_accuracy[epoch] = \
-                self.run_epoch(X=X_val, y = y_val, valid_frames=valid_frames_val)
+            validation_cost, validation_accuracy =    self.run_epoch(X=X_val, y = y_val, valid_frames=valid_frames_val)
 
             logger.info("Pass over Test Set")
-            test_cost[epoch], test_accuracy[epoch] =\
-                self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
+            test_cost, test_accuracy =       self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
 
 
             # Print epoch summary
             logger.info("Epoch {} of {} took {:.3f}s.".format(
                     epoch + 1, num_epochs, time.time() - epoch_time))
+            logger.info("Learning Rate:\t\t{:.6f} %".format(LR))
+            logger.info("Training cost:\t{:.6f}".format(train_cost))
+            logger.info("Validation cost:\t{:.6f} ".format(validation_cost))
+            logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
+            logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy))
 
             # better model, so save parameters
-            if validation_cost[epoch] < self.best_cost:
-                self.best_cost = validation_cost[epoch]
+            if validation_cost < self.best_cost:
+                self.best_cost = validation_cost
                 self.best_epoch = self.curr_epoch
                 self.best_param = lasagne.layers.get_all_param_values(self.network_output_layer)
                 self.best_updates = [p.get_value() for p in self.updates.keys()]
@@ -541,23 +533,14 @@ class NeuralNetwork:
                     logger.info("Model saved as " + save_name)
                     self.save_model(save_name)
 
-            logger.info("Learning Rate:\t\t{:.6f} %".format(LR))
-            logger.info("Training cost:\t{:.6f}".format(train_cost[epoch]))
-            logger.info("Validation cost:\t{:.6f} ".format(validation_cost[epoch]))
-            logger.info("Test cost:\t\t{:.6f} ".format(test_cost[epoch]))
-            logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy[epoch]))
-
             # store train info
-            self.network_train_info[0].append(train_cost[epoch])
-            self.network_train_info[1].append(validation_cost[epoch])
-            self.network_train_info[2].append(test_cost[epoch])
-            store_path = save_name + '_trainInfo.pkl'
-            with open(store_path, 'wb') as cPickle_file:
-                cPickle.dump(
-                        [self.network_train_info],
-                        cPickle_file,
-                        protocol=cPickle.HIGHEST_PROTOCOL)
-            logger.info("Train info written to:\t %s", store_path)
+            self.network_train_info[0].append(train_cost)
+            self.network_train_info[1].append(validation_cost)
+            self.network_train_info[2].append(validation_accuracy)
+            self.network_train_info[3].append(test_cost)
+            self.network_train_info[4].append(test_accuracy)
+            saveToPkl(save_name + '_trainInfo.pkl', [self.network_train_info])
+            logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
 
             if compute_confusion:
                 confusion_matrices.append(self.create_confusion(X_val, y_val)[0])

@@ -161,13 +161,29 @@ def train(train_fn, val_fn,
         test_cost /= nb_test_batches
         return test_cost, test_err
 
+    def updateLR(self, LR, LR_decay):
+        this_error = self.network_train_info[1][-1]
+        try:
+            last_error = self.network_train_info[1][-2]
+        except:
+            last_error = 10 * this_error  # first time it will fail because there is only 1 result stored
+
+        # only reduce LR if not much improvment anymore
+        if this_error / float(last_error) >= 0.98:
+            logger_train.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_error, last_error, LR * LR_decay)
+            self.epochsNotImproved += 1
+            return LR * LR_decay
+        else:
+            self.epochsNotImproved = max(self.epochsNotImproved - 1, 0)  # reduce by 1, minimum 0
+            return LR
+
 
 
     best_val_err = 100
     best_epoch = 1
     LR = LR_start
     # for storage of training info
-    network_train_info = np.zeros([5, num_epochs])  #train cost, val cost, val acc, test cost, test acc
+    network_train_info = network_train_info = [[], [], [], [], []]    #train cost, val cost, val acc, test cost, test acc
 
     logger_train.info("starting training for %s epochs...", num_epochs)
     for epoch in range(num_epochs):
@@ -237,6 +253,7 @@ def train(train_fn, val_fn,
 
         # decay the LR
         LR *= LR_decay
+
 
     logger_train.info("Done.")
 
