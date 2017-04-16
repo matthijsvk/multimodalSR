@@ -146,7 +146,9 @@ def train(train_fn, val_fn,
                 test_err = 0;
                 test_loss = 0;
                 test_batches = 0
+
                 for speakerFile in tqdm(testSpeakerFiles,total=len(testSpeakerFiles)):  # TODO: pallelize this with the GPU evaluation to eliminate waiting
+
                     logging.debug("processing %s", speakerFile)
                     X_train, y_train, X_val, y_val, X_test, y_test = preprocessLipreading.prepLip_one(
                         speakerFile=speakerFile, trainFraction=0.0, validFraction=0.0, )
