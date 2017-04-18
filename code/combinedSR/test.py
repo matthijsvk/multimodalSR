@@ -1,31 +1,32 @@
-import numpy as np
-import theano
-import theano.tensor as T
 
-batch_size = 32
-Tmask = T.imatrix()
-eqs = T.neq(Tmask,T.zeros(Tmask.shape))
-f = theano.function([Tmask],eqs)
-indices = eqs.nonzero()
-g = theano.function([Tmask], indices)
+import shutil
+from general_tools import *
+badSpeakersDirs = unpickle('./badDirs.pkl')
 
-mask = np.array([np.array([0, 0, 0, 1]), np.array([1, 0, 0, 1]), np.array([0, 1, 0, 1]), np.array([0, 1, 1, 0])],dtype='int32')
-print(mask)
-fm = f(mask); print(fm)
-gm = g(mask); print(gm)
+targetDir = os.path.expanduser('~/TCDTIMIT/lipreading/processed')
+rootDir = '/home/matthijs/TCDTIMIT/combinedSR/TCDTIMIT/database/'
+
+
+deleted = []
+for badSpeaker in badSpeakersDirs:
+    for badDir in badSpeaker:
+        # eg /home/matthijs/TCDTIMIT/combinedSR/TCDTIMIT/database/lipspeakers/Lipspkr1/sx180
+        # We want to convert to
+        # /home/matthijs/TCDTIMIT/lipreading/processed/lipspeakers/Lipspkr1/sx180
+        relPath = relpath(rootDir, badDir)
+        relTopDir = relPath.split('/')[0]
+        while not (relTopDir == 'lipspeakers' or relTopDir == 'volunteers'):
+            relPath = '/'.join(relPath.split('/')[1:])
+            relTopDir = relPath.split('/')[0]
+        print(relPath)
+
+        toDelete = os.path.join(targetDir, relPath)
+        print("TO DELETE: ", toDelete)
+
+        try:
+            #shutil.rmtree(toDelete);
+            deleted.append(toDelete)
+        except:
+            continue
 
 import pdb;pdb.set_trace()
-
-# y=T.fmatrix()
-#
-# y01x = y.dimshuffle(0, 1, 'x')
-# y0x1 = y.dimshuffle(0, 'x', 1)
-# yx01 = y.dimshuffle('x', 0, 1)
-#
-# f01x = theano.function(inputs=[y], outputs=y01x)
-# f0x1 = theano.function(inputs=[y], outputs=y0x1)
-# fx01 = theano.function(inputs=[y], outputs=yx01)
-#
-# print f01x(np.array(np.random.rand(10, 2), dtype=np.float32)).shape
-# print f0x1(np.array(np.random.rand(10, 2), dtype=np.float32)).shape
-# print fx01(np.array(np.random.rand(10, 2), dtype=np.float32)).shape

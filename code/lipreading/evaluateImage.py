@@ -95,8 +95,8 @@ def prep_image(fname):
     return im.astype('float32')
 
 
-def get_net_fun(phonemeViseme, networkType, k=5):
-    outputLayer, inputs = load_model(phonemeViseme, networkType)
+def get_net_fun(phonemeViseme, networkType, k=5, print_network= False):
+    outputLayer, inputs = load_model(phonemeViseme, networkType, print_network)
 
     target = T.ivector('targets')
 
@@ -153,7 +153,8 @@ if __name__ == "__main__":
     print("Compiling functions...")
     get_all_prob, get_top1_prob, print_topk, get_accuracy, get_topk_accuracy = get_net_fun(args.output,
                                                                                            args.network_type,
-                                                                                           10)  # expects npz model
+                                                                                           10,
+                                                                                           print_network=True)
     t0 = time.clock()
     print_topk(args.input_image, 10)
     t1 = time.clock()

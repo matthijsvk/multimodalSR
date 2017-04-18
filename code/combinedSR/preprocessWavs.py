@@ -9,7 +9,7 @@ import pdb
 import python_speech_features
 
 from phoneme_set import phoneme_set_39_list
-import fixDataset.transform as transform
+from general_tools import *
 
 
 nbPhonemes = 39
@@ -92,7 +92,7 @@ def set_type(X, type):
     return X
 
 
-def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose=False):
+def preprocess_dataset_audio(source_path, nbMFCCs=39, logger=None, debug=None, verbose=False):
     """Preprocess data, ignoring compressed files and files starting with 'SA'"""
     X = []
     y = []
@@ -101,8 +101,8 @@ def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose
     print(nbMFCCs)
 
     # source_path is the root dir of all the wav/phn files
-    wav_files = transform.loadWavs(source_path)
-    label_files = transform.loadPhns(source_path)
+    wav_files = loadWavs(source_path)
+    label_files = loadPhns(source_path)
 
     logger.debug("Found %d WAV files" % len(wav_files))
     logger.debug("Found %d PHN files" % len(label_files))
@@ -135,9 +135,9 @@ def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose
         for line in fr:
             [start_time, end_time, phoneme] = line.rstrip('\n').split()
             start_time = int(start_time)
+            start_ind = int(np.round(start_time * (total_frames / float(total_duration))))
             end_time = int(end_time)
-            start_ind = int(np.round(start_time / (total_duration / total_frames)))
-            end_ind = int(np.round(end_time / (total_duration / total_frames)))
+            end_ind = int(np.round(end_time * (total_frames / float(total_duration))))
 
             valid_ind = int( (start_ind + end_ind)/2)
             valid_frames_vals.append(valid_ind)
@@ -181,8 +181,8 @@ def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose
     return X, y, valid_frames
 
 
-def preprocess_unlabeled_dataset(source_path, nbMFCCs=39,verbose=False, logger=None): # TODO
-    wav_files = transform.loadWavs(source_path)
+def preprocess_unlabeled_dataset_audio(source_path, nbMFCCs=39,verbose=False, logger=None): # TODO
+    wav_files = loadWavs(source_path)
     logger.debug("Found %d WAV files" % len(wav_files))
     assert len(wav_files) != 0
 

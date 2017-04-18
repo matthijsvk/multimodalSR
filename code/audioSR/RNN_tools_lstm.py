@@ -175,7 +175,7 @@ class NeuralNetwork:
                 # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
                 net['l2_lstm'].append(lasagne.layers.ElemwiseSumLayer([net['l2_lstm'][-2], net['l2_lstm'][-1]]))
 
-        # we need to convert (batch_size,seq_length, num_features) to (batch_size * seq_length, num_features) because Dense networks can't deal with 2 unknown sizes
+        # we need to convert (batch_size, seq_length, num_features) to (batch_size * seq_length, num_features) because Dense networks can't deal with 2 unknown sizes
         net['l3_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'][-1], (-1, n_hidden_list[-1]))
         if debug:
             get_l_reshape = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],

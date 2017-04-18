@@ -307,7 +307,7 @@ if __name__ == "__main__":
     # then convert to files useable by lipreading network
     
     processedDir = os.path.expanduser("~/TCDTIMIT/lipreading/processed")
-    databaseDir = os.path.expanduser("~/TCDTIMIT/lipreading/database2")
+    databaseDir = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/database")
     databaseBinaryDir = os.path.expanduser("~/TCDTIMIT/lipreading/database_binary")
     
     # 1. copy mouths_gray_120 images and PHN.txt files to targetRoot. Move files up from their mouths_gray_120 dir to the video dir (eg sa1)
@@ -316,11 +316,13 @@ if __name__ == "__main__":
     print("-----------------------------------------")
     
     # # 2. extract phonemes for each image, put them in the image name
+    # if two phonemes for one frame, copy the image so we have 2 times the same frame, but with a different phoneme (in the name)
     # # has to be called against the 'database' directory
     print("Adding phoneme to filenames...")
-    addPhonemesToImagesDB(databaseDir, moveToSpeakerDir=True)
+    addPhonemesToImagesDB(databaseDir, moveToSpeakerDir=False)
     print("-----------------------------------------")
-    #
+
+    # Only for seperate lipreading:
     # # 3. convert all files from one speaker to a a binary file in CIFAR10 format:
     # # each row = label + image
     # # this function has to be called against the 'database' directory

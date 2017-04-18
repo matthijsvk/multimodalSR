@@ -1,348 +1,265 @@
 import math
 import os
+from tqdm import tqdm
 import timeit;
 program_start_time = timeit.default_timer()
 import random
 random.seed(int(timeit.default_timer()))
 
-from phoneme_set import phoneme_set_39_list
-import general_tools
-from preprocessing import *
+# label files are in audio frames @16kHz, not in seconds
+from PIL import Image
+from phoneme_set import phoneme_set_39, classToPhoneme39
+import math
+import cPickle
 
 import logging, formatting
-logger = logging.getLogger('PrepTCDTIMIT')
-logger.setLevel(logging.DEBUG)
+logger_combinedPrep = logging.getLogger('prepcombined')
+logger_combinedPrep.setLevel(logging.DEBUG)
 FORMAT = '[$BOLD%(filename)s$RESET:%(lineno)d][%(levelname)-5s]: %(message)s '
 formatter = logging.Formatter(formatting.formatter_message(FORMAT, False))
 
 # create console handler with a higher log level
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
-logger.addHandler(ch)
-
-# File logger: see below META VARIABLES
+logger_combinedPrep.addHandler(ch)
 
 
-##### SCRIPT META VARIABLES #####
-DEBUG = False
-debug_size = 50
+from preprocessWavs import *
+from general_tools import *
 
-# TODO:  MODIFY THESE PARAMETERS for other nbPhonemes of mfccTypes. Save location is updated automatically.
-nbMFCCs = 39 # 13= just mfcc (13 features). 26 = also derivative (26 features). 39 = also 2nd derivative (39 features)
-nbPhonemes = 39
-phoneme_set_list = phoneme_set_39_list  # import list of phonemes,
-# convert to dictionary with number mappings (see phoneme_set.py)
-values = [i for i in range(0, len(phoneme_set_list))]
-phoneme_classes = dict(zip(phoneme_set_list, values))
+nbMFCCs = 39
 
-############### DATA LOCATIONS  ###################
-dataPreSplit = True #some datasets have a pre-defined TEST set (eg TIMIT)
-FRAC_VAL = 0.1 # fraction of training data to be used for validation
-root = os.path.expanduser("~/TCDTIMIT/combinedSR/") # ( keep the trailing slash)
-if dataPreSplit:
-    dataset = "TIMIT" #eg TIMIT. You can also manually split up TCDTIMIT according to train/test split in Harte, N.; Gillen, E., "TCD-TIMIT: An Audio-Visual Corpus of Continuous Speech," doi: 10.1109/TMM.2015.2407694
-    ## eg TIMIT ##
-    dataRootDir       = root+dataset+"/fixed" + str(nbPhonemes) + os.sep + dataset
-    train_source_path = os.path.join(dataRootDir, 'TRAIN')
-    test_source_path  = os.path.join(dataRootDir, 'TEST')
-    outputDir         = root + dataset + "/binary" + str(nbPhonemes) + os.sep + dataset
-else:
-    ## just a bunch of wav and phn files, not split up in train and test -> create the split yourself.
+def main():
+
+    root = os.path.expanduser("~/TCDTIMIT/combinedSR/")  # ( keep the trailing slash)
+
     dataset = "TCDTIMIT"
-    dataRootDir = root + dataset + "/fixed" + str(nbPhonemes) + "_nonSplit" + os.sep + dataset
-    outputDir     = root + dataset + "/binary" + str(nbPhonemes) + os.sep + os.path.basename(dataRootDir)
-    FRAC_TRAINING = 0.9  # TOTAL = TRAINING + TEST = TRAIN + VALIDATION + TEST
+    databaseDir = root + dataset + "/database"
+    outputDir = root + dataset + "/binary"
+
+    meanStdAudio = unpickle("./database_averages/TCDTIMITMeanStd.pkl")
+    allSpeakersToBinary(databaseDir, outputDir, meanStdAudio)
 
 
-### store path
-target = os.path.join(outputDir, os.path.basename(dataRootDir) + '_' + str(nbMFCCs) + '_ch');
-target_path = target + '.pkl'
-if not os.path.exists(outputDir):
-    os.makedirs(outputDir)
-
-# Already exists, ask if overwrite
-if (os.path.exists(target_path)):
-    if (not general_tools.query_yes_no(target_path + " exists. Overwrite?", "no")):
-        raise Exception("Not Overwriting")
-
-# set log file
-logFile = outputDir + os.sep + os.path.basename(target) + '.log'
-fh = logging.FileHandler(logFile, 'w')  # create new logFile
-fh.setLevel(logging.DEBUG)
-fh.setFormatter(formatter)
-logger.addHandler(fh)
-
-### SETUP ###
-if DEBUG:
-    logger.info('DEBUG mode: \tACTIVE, only a small dataset will be preprocessed')
-    target_path = target + '_DEBUG.pkl'
-else:
-    logger.info('DEBUG mode: \tDEACTIVE')
-    debug_size = None
-
-##### The PREPROCESSING itself #####
-logger.info('Preprocessing data ...')
-
-# FIRST, gather the WAV and PHN files, generate MFCCs, extract labels to make inputs and targets for the network
-# for a dataset containing no TRAIN/TEST subdivision, just a bunch of wavs -> choose training set yourself
-def processDataset(FRAC_TRAINING, data_source_path, logger=None):
-    logger.info('  Data: %s ', data_source_path)
-    audio_X_all, audio_y_all, valid_frames_all = preprocess_dataset_audio(source_path=data_source_path, nbMFCCs=nbMFCCs, logger=logger, debug=debug_size)
-    assert len(audio_X_all) == len(audio_y_all) == len(valid_frames_all)
-
-    logger.info(' Loading data complete.')
-    logger.debug('Type and shape/len of audio_X_all')
-    logger.debug('type(audio_X_all): {}'.format(type(audio_X_all)))
-    logger.debug('type(audio_X_all[0]): {}'.format(type(audio_X_all[0])))
-    logger.debug('type(audio_X_all[0][0]): {}'.format(type(audio_X_all[0][0])))
-    logger.debug('type(audio_X_all[0][0][0]): {}'.format(type(audio_X_all[0][0][0])))
-    logger.info('Creating Validation index ...')
-
-    total_size = len(audio_X_all)  # TOTAL = TRAINING + TEST = TRAIN + VAL + TEST
-    total_training_size = int(math.ceil(FRAC_TRAINING * total_size))  # TRAINING = TRAIN + VAL
-    test_size = total_size - total_training_size
-
-    # split off a 'test' dataset
-    test_idx = random.sample(range(0, total_training_size), test_size)
-    test_idx = [int(i) for i in test_idx]
-    # ensure that the testidation set isn't empty
-    if DEBUG:
-        test_idx[0] = 0
-        test_idx[1] = 1
-    logger.info('Separating test and training set ...')
-    audio_X_training = []
-    audio_y_training = []
-    valid_frames_training = []
-    audio_X_test = []
-    audio_y_test = []
-    valid_frames_test = []
-    for i in range(len(audio_X_all)):
-        if i in test_idx:
-            audio_X_test.append(audio_X_all[i])
-            audio_y_test.append(audio_y_all[i])
-            valid_frames_test.append(valid_frames_all[i])
-        else:
-            audio_X_training.append(audio_X_all[i])
-            audio_y_training.append(audio_y_all[i])
-            valid_frames_training.append(valid_frames_all[i])
-
-    assert len(audio_X_test) == test_size
-    assert len(audio_X_training) == total_training_size
-
-    return  audio_X_training, audio_y_training, valid_frames_training, audio_X_test, audio_y_test, valid_frames_test
-
-def processDatasetSplit(train_source_path, test_source_path, logger=None):
-    logger.info('  Training data: %s ', train_source_path)
-    audio_X_training, audio_y_training, valid_frames_training = preprocess_dataset_audio(source_path=train_source_path, logger=logger,
-                                                                                      nbMFCCs=nbMFCCs, debug=debug_size)
-    logger.info('  Test data: %s', test_source_path)
-    audio_X_test, audio_y_test, valid_frames_test = preprocess_dataset_audio(source_path=test_source_path, logger=logger, nbMFCCs=nbMFCCs, debug=debug_size)
-    return audio_X_training, audio_y_training, valid_frames_training, audio_X_test, audio_y_test, valid_frames_test
-
-if dataPreSplit:    audio_X_training, audio_y_training, valid_frames_training, audio_X_test, audio_y_test, valid_frames_test = \
-    processDatasetSplit(train_source_path, test_source_path, logger)
-else:    audio_X_training, audio_y_training, valid_frames_training, audio_X_test, audio_y_test, valid_frames_test = \
-    processDataset(FRAC_TRAINING, dataRootDir, logger)
-
-
-# SECOND, split off a 'validation' set from the training set. The remainder is the 'train' set
-total_training_size = len(audio_X_training)
-val_size = int(math.ceil(total_training_size * FRAC_VAL))
-train_size = total_training_size - val_size
-val_idx = random.sample(range(0, total_training_size), val_size) # choose random indices to be validation data
-val_idx = [int(i) for i in val_idx]
-
-logger.info('Length of training')
-logger.info("  train X: %s", len(audio_X_training))
-
-# ensure that the validation set isn't empty
-if DEBUG:
-    val_idx[0] = 0
-    val_idx[1] = 1
-
-logger.info('Separating training set into validation and train ...')
-audio_X_train = []
-audio_y_train = []
-valid_frames_train = []
-audio_X_val = []
-audio_y_val = []
-valid_frames_val = []
-for i in range(len(audio_X_training)):
-    if i in val_idx:
-        audio_X_val.append(audio_X_training[i])
-        audio_y_val.append(audio_y_training[i])
-        valid_frames_val.append(valid_frames_training[i])
-    else:
-        audio_X_train.append(audio_X_training[i])
-        audio_y_train.append(audio_y_training[i])
-        valid_frames_train.append(valid_frames_training[i])
-assert len(audio_X_val) == val_size
-
-# Print some information
-logger.info('Length of train, val, test')
-logger.info("  train X: %s", len(audio_X_train))
-logger.info("  train y: %s", len(audio_y_train))
-logger.info("  train valid_frames: %s", len(valid_frames_train))
-
-logger.info("  val X: %s", len(audio_X_val))
-logger.info("  val y: %s", len(audio_y_val))
-logger.info("  val valid_frames: %s", len(valid_frames_val))
-
-logger.info("  test X: %s", len(audio_X_test))
-logger.info("  test y: %s", len(audio_y_test))
-logger.info("  test valid_frames: %s", len(valid_frames_test))
-
-
-### NORMALIZE data ###
-logger.info('Normalizing data ...')
-logger.info('    Each channel mean=0, sd=1 ...')
-
-mean_val, std_val, _ = calc_norm_param(audio_X_train)
-
-audio_X_train = normalize(audio_X_train, mean_val, std_val)
-audio_X_val = normalize(audio_X_val, mean_val, std_val)
-audio_X_test = normalize(audio_X_test, mean_val, std_val)
-
-
-logger.debug('X train')
-logger.debug('  %s %s', type(audio_X_train), len(audio_X_train))
-logger.debug('  %s %s', type(audio_X_train[0]), audio_X_train[0].shape)
-logger.debug('  %s %s', type(audio_X_train[0][0]), audio_X_train[0][0].shape)
-logger.debug('  %s %s', type(audio_X_train[0][0][0]), audio_X_train[0][0].shape)
-logger.debug('y train')
-logger.debug('  %s %s', type(audio_y_train), len(audio_y_train))
-logger.debug('  %s %s', type(audio_y_train[0]), audio_y_train[0].shape)
-logger.debug('  %s %s', type(audio_y_train[0][0]), audio_y_train[0][0].shape)
-
-
-# make sure we're working with float32
-audio_X_data_type = 'float32'
-audio_X_train = set_type(audio_X_train, audio_X_data_type)
-audio_X_val = set_type(audio_X_val, audio_X_data_type)
-audio_X_test = set_type(audio_X_test, audio_X_data_type)
-
-audio_y_data_type = 'int32'
-audio_y_train = set_type(audio_y_train, audio_y_data_type)
-audio_y_val = set_type(audio_y_val, audio_y_data_type)
-audio_y_test = set_type(audio_y_test, audio_y_data_type)
-
-valid_frames_data_type = 'int32'
-valid_frames_train = set_type(valid_frames_train, valid_frames_data_type)
-valid_frames_val = set_type(valid_frames_val, valid_frames_data_type)
-valid_frames_test = set_type(valid_frames_test, valid_frames_data_type)
-
-
-# print some more to check that cast succeeded
-logger.debug('X train')
-logger.debug('  %s %s', type(audio_X_train), len(audio_X_train))
-logger.debug('  %s %s', type(audio_X_train[0]), audio_X_train[0].shape)
-logger.debug('  %s %s', type(audio_X_train[0][0]), audio_X_train[0][0].shape)
-logger.debug('  %s %s', type(audio_X_train[0][0][0]), audio_X_train[0][0].shape)
-logger.debug('y train')
-logger.debug('  %s %s', type(audio_y_train), len(audio_y_train))
-logger.debug('  %s %s', type(audio_y_train[0]), audio_y_train[0].shape)
-logger.debug('  %s %s', type(audio_y_train[0][0]), audio_y_train[0][0].shape)
-
-
-### STORE DATA ###
-logger.info('Saving data to %s', target_path)
-dataList = [audio_X_train, audio_y_train, valid_frames_train, audio_X_val, audio_y_val, valid_frames_val, audio_X_test, audio_y_test, valid_frames_test]
-general_tools.saveToPkl(target_path, dataList)
-
-# these can be used to evaluate new data, so you don't have to load the whole dataset just to normalize
-meanStd_path = os.path.dirname(outputDir) + os.sep + os.path.basename(dataRootDir) + "MeanStd.pkl"
-logger.info('Saving Mean and Std_val to %s', meanStd_path)
-dataList = [mean_val, std_val]
-general_tools.saveToPkl(meanStd_path, dataList)
-
-
-logger.info('Preprocessing complete!')
-logger.info('Total time: {:.3f}'.format(timeit.default_timer() - program_start_time))
-
-# helpfunction
-from phoneme_set import phoneme_set_39
+def dirToArrays(dir, nbMFCCs=39, verbose=False):
+    bad = []
 
 
 
-# LIPREADING files
-def depth(path):
-    return path.count(os.sep)
+    thisImages = []
+    thisMFCCs = []
+    thisValidAudioFrames = []  # these are the audio valid frames of this video
 
-def getPhonemeNumberMap():
-    return phoneme_set_39
+    labels_fromAudio = []
+    imageValidFrames_fromAudio = []
 
-def speakerToBinary(speakerDir, binaryDatabaseDir):
-    import numpy as np
-    from PIL import Image
-    import pickle
-    import time
+    imagePaths = []
+    for root, dirs, files in os.walk(dir):  # files in videoDir, should only be .jpg, .wav and .phn (and .vphn)
+        for file in files:
+            name, extension = os.path.splitext(file)
+            if extension == ".jpg":
+                imagePath = ''.join([root, os.sep, file])
+                imagePaths.append(imagePath)
 
-    rootDir = speakerDir
+                # do the processing after all the files have been found, because then we can sort on frame number
+
+            if extension == ".wav":
+                # Get MFCC of the WAV
+                wav_path = ''.join([root, os.sep, file])
+                X_val, total_frames = create_mfcc('DUMMY', wav_path, nbMFCCs)
+                total_frames = int(total_frames)
+                thisMFCCs.append(X_val)
+
+                # find the corresponding phoneme file, get the phoneme classes
+                phn_path = ''.join([root, os.sep, name, ".phn"])
+                if not os.path.exists(phn_path):
+                    raise IOError("Phoneme files ", phn_path, " not found...")
+                    import pdb;
+                    pdb.set_trace()
+
+                # some .PHN files don't start at 0. Set default phoneme to silence (expected at the end of phoneme_set_list)
+                labels_fromAudio = total_frames * [phoneme_set_39_list[-1]]
+
+                fr = open(phn_path)
+                total_duration = get_total_duration(phn_path)
+
+                for line in fr:
+                    [start_time, end_time, phoneme] = line.rstrip('\n').split()
+
+                    # check that phoneme is found in dict
+                    if (phoneme not in phoneme_set_39_list):
+                        logger.error("In file: %s, phoneme not found: %s", phn_path, phoneme)
+                        pdb.set_trace()
+                    # fill all the labels with the correct phoneme for each timestep
+                    start_ind = int(np.round(int(start_time) * total_frames / float(total_duration)))
+                    end_ind = int(np.round(int(end_time) * total_frames / float(total_duration)))
+                    labels_fromAudio[start_ind:end_ind] = (end_ind - start_ind) * [phoneme]
+
+                    # get valid audio frame
+                    valid_ind = int(np.round( (start_ind + end_ind) * 0.5))
+                    thisValidAudioFrames.append(valid_ind)
+
+                    # get video frames like in TCDTIMITprocessing,  sanity check
+                    start = float(start_time) / 16000  # 16kHz is audio sampling frequency; label files are in audio frames, not in seconds
+                    end = float(end_time) / 16000
+                    extractionTime = start * (1 - 0.5) + (0.5) * end
+                    frame = int(math.floor(extractionTime * 29.97))  # convert to
+                    imageValidFrames_fromAudio.append(frame + 1)
+
+                    if verbose:
+                        logger.debug('%s', (total_frames / float(total_duration)))
+                        logger.debug('TIME  start: %s end: %s, phoneme: %s, class: %s', start_time, end_time,
+                                     phoneme, phoneme_num)
+                        logger.debug('FRAME start: %s end: %s, phoneme: %s, class: %s', start_ind, end_ind,
+                                     phoneme, phoneme_num)
+                fr.close()
+
+                # save only the valid labels to this list
+                try:validLabels_fromAudio = [labels_fromAudio[i] if (i< len(labels_fromAudio)) else labels_fromAudio[-1] for i in thisValidAudioFrames]
+                except: import pdb;pdb.set_trace()
+
+    imageValidFrames_fromImages = []  # just to check sanity, make sure audio and video correspond
+    labels_fromImages = []  # use both to do sanity check
+    imagePaths = sort_nicely(imagePaths)
+    for imagePath in imagePaths:
+        name = os.path.splitext(os.path.basename(imagePath))[0]
+        try:videoName, frame, phoneme = name.split("_")
+        except:
+            print("Not a proper image, removing... : ", imagePath)
+            os.remove(imagePath)
+            continue
+
+        # add the image, flattened as numpy array
+        thisImages.append(np.array(Image.open(imagePath), dtype=np.uint8).flatten())
+        # add the phoneme, converted to its class number
+        labels_fromImages.append(phoneme)
+        # save the imageFrame, to check later
+        imageValidFrames_fromImages.append(int(frame))
+
+    # do the sanity check on image frames and labels
+    import pdb
+    try:
+        assert imageValidFrames_fromImages == imageValidFrames_fromImages
+    # except:
+    #     logger_combinedPrep.error(getWrongIndices(imageValidFrames_fromImages, imageValidFrames_fromImages));   pdb.set_trace()
+    # # and on the labels
+        assert labels_fromImages == validLabels_fromAudio
+    except:
+        # try: logger_combinedPrep.error(getWrongIndices(validLabels_fromAudio, labels_fromImages)); pdb.set_trace()
+        # except:
+        bad = [dir]; #pdb.set_trace()
+
+
+    # if the checks succeed, set final values and convert to proper formats
+    thisValidAudioFrames = np.array(thisValidAudioFrames)
+    thisAudioLabels = np.array(map(int, [phoneme_set_39[phoneme] for phoneme in labels_fromAudio]))
+    thisValidLabels = np.array(map(int, [phoneme_set_39[phoneme] for phoneme in validLabels_fromAudio]))
+
+    # now convert to proper format
+    input_data_type = 'float32'
+    thisImages = set_type(thisImages, input_data_type)
+    thisMFCCs = set_type(thisMFCCs, input_data_type)
+
+    label_data_type = 'int32'
+    thisAudioLabels = set_type(thisAudioLabels, label_data_type)
+    thisValidLabels = set_type(thisValidLabels, label_data_type)
+    thisValidAudioFrames = set_type(thisValidAudioFrames, label_data_type)
+
+
+    return thisImages, thisMFCCs, thisValidLabels, thisAudioLabels, thisValidAudioFrames, bad
+
+def getWrongIndices(a,b):
+    wrong = []
+    assert len(a) == len(b)
+    for i in range(len(a)):
+        if a[i]  != b[i]: wrong.append(i)
+    return wrong
+
+
+def normalizeMFCC(MFCC, mean, std_dev):
+    return (MFCC - mean) / std_dev
+
+def normalizeImages(X, verbose=False):
+    # rescale to interval [-1,1], cast to float32 for GPU use
+    X = np.multiply(2. / 255., X, dtype='float32')
+    X = np.subtract(X, 1., dtype='float32');
+
+    if verbose:  logger_combinedPrep.info("Train: %s %s", X.shape, X[0][0].dtype)
+
+    # reshape to get one image per row
+    X = np.reshape(X, (-1, 1, 120, 120))
+
+    # cast to correct datatype, just to be sure. Everything needs to be float32 for GPU processing
+    dtypeX = 'float32'
+    X = X.astype(dtypeX);
+
+    return X
+
+def speakerToBinary_perVideo(speakerDir, binaryDatabaseDir, mean, std_dev):  # meanStdAudio is tuple of mean and std_dev of audio training data
     targetDir = binaryDatabaseDir
     if not os.path.exists(targetDir):
         os.makedirs(targetDir)
 
-    # get list of images and list of labels (= phonemes)
-    images = []
-    labels = []
-    for root, dirs, files in os.walk(rootDir):
-        for file in files:
-            name, extension = os.path.splitext(file)
-            # copy phoneme files as well
-            if extension == ".jpg":
-                videoName, frame, phoneme = name.split("_")
-                path = ''.join([root, os.sep, file])
-                # print(path, " is \t ", phoneme)
-                images.append(path)
-                labels.append(phoneme)
+    badDirsThisSpeaker =[]
+
+    allvideosImages = []
+    allvideosMFCCs = []
+    allvideosValidLabels = []
+    allvideosAudioLabels = []
+    allvideosValidAudioFrames = []  #valid audio frames
+
+    for videoDir in directories(speakerDir):  # rootDir is the speakerDir, below that are the videodirs
+        #logger_combinedPrep.info("    Extracting video: %s", os.path.basename(videoDir))
+        thisImages, thisMFCCs, thisValidLabels, thisAudioLabels, thisValidAudioFrames, badDirs= dirToArrays(videoDir, nbMFCCs)
+        thisMFCCs = normalizeMFCC(thisMFCCs, mean, std_dev)
+        thisImages = normalizeImages(thisImages)
+
+        allvideosMFCCs.append(thisMFCCs)
+        allvideosImages.append(thisImages)
+        allvideosAudioLabels.append(thisAudioLabels)
+        allvideosValidLabels.append(thisValidLabels)
+        allvideosValidAudioFrames.append(thisValidAudioFrames)
+
+        badDirsThisSpeaker = badDirsThisSpeaker + badDirs
 
     # write label and image to binary file, 1 label+image per row
-    speakerName = os.path.basename(rootDir)
+    speakerName = os.path.basename(speakerDir)
     outputPath = targetDir + os.sep + speakerName + ".pkl"
 
-    # store in dict with data and 'labelNumber' values.
-    rowsize = 120 * 120
-    data = np.zeros(shape=(len(images), rowsize), dtype=np.uint8)
-    labelNumbers = [0] * len(images)
-
-    print(data.shape)
-
-    for i in range(len(images)):
-        label = labels[i]
-        image = images[i]
-
-        # for mapping to phonemes (nbClasses = 39)
-        phonemeNumberMap = getPhonemeNumberMap()
-        labelNumber = phonemeNumberMap[label]  # you could also use the phoneme to viseme map afterwards.
-
-        # for mapping to visemes (nbClasses = 12)
-        # phonemeToViseme = getPhonemeToVisemeMap()  # dictionary of phoneme-viseme key-value pairs
-        # labelNumber = visemeNumberMap{phonemeToViseme{label}}  # viseme of the phoneme, then get the number of this viseme
-        # labelNumbers[i] = labelNumber
-
-        im = np.array(Image.open(image), dtype=np.uint8).flatten()  # flatten to one row per image
-        data[i] = im
     # now write python dict to a file
-    print("the data file takes: ", data.nbytes, " bytes of memory")
-    mydict = {'data': data, 'labels': labelNumbers}
-    output = open(outputPath, 'wb')
-    pickle.dump(mydict, output, 2)
-    output.close()
-    print(speakerName, "files have been written to: ", outputPath)
-    return 0
+    logger_combinedPrep.info("the data file takes: %s bytes of memory", sys.getsizeof(allvideosImages))
+    mydict = {'images': allvideosImages, 'mfccs': allvideosMFCCs, 'audioLabels': allvideosAudioLabels, 'validLabels': allvideosValidLabels, 'validAudioFrames': allvideosValidAudioFrames}
+    output = open(outputPath, 'wb'); cPickle.dump(mydict, output, 2); output.close()
 
-def allSpeakersToBinary(databaseDir, binaryDatabaseDir):
+    logger_combinedPrep.info("%s files have been written to: %s", speakerName, outputPath)
+    return badDirsThisSpeaker
+
+
+def allSpeakersToBinary(databaseDir, binaryDatabaseDir, meanStdAudio):
+    mean = meanStdAudio[0]
+    std_dev = meanStdAudio[1]
+
+    badDirectories = []
+
     rootDir = databaseDir
     dirList = []
     for dir in directories(rootDir):
-        # print(dir)
-        # print(relpath(rootDir, dir))
-        # print(depth(relpath(rootDir, dir)))
+        # logger_combinedPrep.info(dir)
+        # logger_combinedPrep.info(relpath(rootDir, dir))
+        # logger_combinedPrep.info(depth(relpath(rootDir, dir)))
         if depth(relpath(rootDir, dir)) == 1:
             dirList.append(dir)
-    print(dirList)
-    for speakerDir in dirList:
-        print("Extracting files of: ", speakerDir)
-        speakerToBinary(speakerDir, binaryDatabaseDir)
+    logger_combinedPrep.info("\n %s", [os.path.basename(directory) for directory in dirList])
+    for speakerDir in tqdm(dirList, total=len(dirList)):
+        logger_combinedPrep.info("\nExtracting files of speaker: %s", os.path.basename(speakerDir))
+        badDirsSpeaker = speakerToBinary_perVideo(speakerDir, binaryDatabaseDir, mean, std_dev)
+        badDirectories.append(badDirsSpeaker)
+
+    print(badDirectories)
+    pdb.set_trace()
     return 0
+
+
+if __name__ == "__main__":
+    main()
