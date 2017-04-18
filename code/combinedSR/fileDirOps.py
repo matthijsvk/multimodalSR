@@ -141,8 +141,7 @@ def addPhonemesToImageNames(videoDir, moveToSpeakerDir = False):
     # videoDir will be the lowest-level directory
     videoName = os.path.basename(videoDir)
     parentName = os.path.basename(os.path.dirname(videoDir))
-    import collections
-    validFrames = collections.OrderedDict({})
+    validFrames = {}
     phoneme_extension = "_PHN.txt"
     phonemeFile = ''.join([videoDir + os.sep + parentName + "_" + videoName + phoneme_extension])
     # print(phonemeFile)
@@ -150,39 +149,36 @@ def addPhonemesToImageNames(videoDir, moveToSpeakerDir = False):
         for line in inf:
             parts = line.split()  # split line into parts
             if len(parts) > 1:  # if at least 2 parts/columns
-                validFrames[str(parts[0])] = parts[1]  # dict, key= frame, value = phoneme
+                frame = str(parts[0])
+                phoneme = parts[1] # tuple, (frame, phoneme)
+                if frame not in validFrames.keys():
+                    validFrames[frame] = [phoneme]       # create list of phn. belonging to this frame
+                else:validFrames[frame].append(phoneme)  # add phoneme to the list of phonemes belonging to this frame
 
-    # print("validFrames: ", validFrames)
-    nbRenamed = 0
+    frameImageDict = {}
+    # loop through jpgs, get directory with key = frame number, value = imagePath
     for root, dirs, files in os.walk(videoDir):
         for file in files:
             fileName, ext = os.path.splitext(file)
-            if ext == ".jpg":
+            if ext == ".jpg" and "mouth_gray" in fileName:
                 filePath = ''.join([root, os.sep, file])
                 videoName = file.split("_")[0]
-                frameNumber = file.split("_")[1]  # number-> after first underscore
-                if frameNumber in validFrames:  # maybe some wrong picture got extracted
-                    phoneme = validFrames[frameNumber]
-                    if moveToSpeakerDir:
-                        newFileName = ''.join([videoName, "_", frameNumber, "_", phoneme, ext])
-                    else: #in place
-                        newFileName = ''.join([videoName, os.sep, videoName, "_", frameNumber, "_", phoneme, ext])
-                    parent = os.path.dirname(root)
-                    newFilePath = ''.join([parent, os.sep, newFileName])
-                    # print(filePath, " will be renamed to: ", newFilePath)
-                    os.rename(filePath, newFilePath)
-                    nbRenamed += 1
-            if file.endswith(phoneme_extension):  # the phoneme file
-                filePath = ''.join([root, os.sep, file])
-                speakerName, videoName = file.split("_")[0:2]
+                frame = file.split("_")[1]  # number-> after first underscore
+                frameImageDict[str(frame)] = filePath
 
-                if moveToSpeakerDir: newFilePath = filePath.replace(videoName + os.sep, '')
-                else:
-                    newFilePath = filePath.replace("_PHN.txt", ".vphn")
-                    newFilePath = newFilePath.replace(speakerName+"_", '')
+    for frame in validFrames.keys():
+        for phoneme in validFrames[frame]:
+            # for each phoneme, create a copy of the image belonging to this frame
+            imagePath = frameImageDict[frame]
+            videoName = os.path.basename(imagePath).split("_")[0]
+            newFilePath = ''.join([os.path.dirname(imagePath), os.sep, videoName, "_", frame, "_", phoneme, ".jpg"])
+            shutil.copy2(imagePath, newFilePath)
+        print(videoDir)
 
-                os.rename(filePath, newFilePath)
-    # print("Finished renaming ", nbRenamed, " files.")
+    # delete the source images
+    for imagePath in frameImageDict.values():
+        os.remove(imagePath)
+
     return 0
 
 
@@ -307,7 +303,7 @@ if __name__ == "__main__":
     # then convert to files useable by lipreading network
     
     processedDir = os.path.expanduser("~/TCDTIMIT/lipreading/processed")
-    databaseDir = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/database")
+    databaseDir = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/database4")
     databaseBinaryDir = os.path.expanduser("~/TCDTIMIT/lipreading/database_binary")
     
     # 1. copy mouths_gray_120 images and PHN.txt files to targetRoot. Move files up from their mouths_gray_120 dir to the video dir (eg sa1)
