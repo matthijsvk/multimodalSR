@@ -45,8 +45,6 @@ def main():
 def dirToArrays(dir, nbMFCCs=39, verbose=False):
     bad = []
 
-
-
     thisImages = []
     thisMFCCs = []
     thisValidAudioFrames = []  # these are the audio valid frames of this video

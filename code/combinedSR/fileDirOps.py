@@ -169,21 +169,24 @@ def addPhonemesToImageNames(videoDir, moveToSpeakerDir = False):
     for frame in validFrames.keys():
         for phoneme in validFrames[frame]:
             # for each phoneme, create a copy of the image belonging to this frame
-            imagePath = frameImageDict[frame]
+            try:imagePath = frameImageDict[frame]
+            except: return videoDir #frame not found, means something went wrong in the extraction -> delete dir and extract again
             videoName = os.path.basename(imagePath).split("_")[0]
             newFilePath = ''.join([os.path.dirname(imagePath), os.sep, videoName, "_", frame, "_", phoneme, ".jpg"])
             shutil.copy2(imagePath, newFilePath)
-        print(videoDir)
+        #print(videoDir)
 
     # delete the source images
     for imagePath in frameImageDict.values():
         os.remove(imagePath)
 
-    return 0
+    return None  #successful -> nothing to dbe deleted
 
 
 # now traverse the database tree and rename  files in all the directories
 def addPhonemesToImagesDB(rootDir, moveToSpeakerDir = False):
+    badDirs = []
+
     dirList = []
     for dir in directories(rootDir):
         # print(dir)
@@ -193,26 +196,11 @@ def addPhonemesToImagesDB(rootDir, moveToSpeakerDir = False):
             dirList.append(dir)
     print("First 10 directories to be processed: ", dirList[0:10])
     for dir in dirList:
-        addPhonemesToImageNames(dir, moveToSpeakerDir=moveToSpeakerDir)
+        result = addPhonemesToImageNames(dir, moveToSpeakerDir=moveToSpeakerDir)
+        if result != None: badDirs.append(result)
         if moveToSpeakerDir: shutil.rmtree(dir)
-    return 0
+    return badDirs
 
-# for training on visemes
-def getPhonemeToVisemeMap():
-    map = {'f':'A','v':'A',
-            'er':'B','ow':'B','r':'B','q':'B','w':'B','uh':'B','uw':'B','axr':'B','ux':'B',
-             'b':'C','p':'C','m':'C','em':'C',
-             'aw':'D',
-             ' dh':'E','th':'E',
-             'ch':'F','jh':'F','sh':'F','zh':'F',
-             'oy':'G', 'ao':'G',
-             's':'H', 'z':'H',
-             'aa':'I','ae':'I','ah':'I','ay':'I','ey':'I','ih':'I','iy':'I','y':'I','eh':'I','ax-h':'I','ax':'I','ix':'I',
-             'd':'J','l':'J','n':'J','t':'J','el':'J','nx':'J','en':'J','dx':'J',
-             'g':'K','k':'K','ng':'K','eng':'K',
-             'sil':'S','pcl':'S','tcl':'S','kcl':'S','bcl':'S','dcl':'S','gcl':'S','h#':'S','#h':'S','pau':'S','epi':'S'
-    }
-    return map
 
 # helpfunction
 from phoneme_set import phoneme_set_39
@@ -220,82 +208,7 @@ def getPhonemeNumberMap():
     return phoneme_set_39
 
 
-def speakerToBinary(speakerDir, binaryDatabaseDir):
-    import numpy as np
-    from PIL import Image
-    import pickle
-    import time
-    
-    rootDir = speakerDir
-    targetDir = binaryDatabaseDir
-    if not os.path.exists(targetDir):
-        os.makedirs(targetDir)
-    
-    # get list of images and list of labels (= phonemes)
-    images = []
-    labels = []
-    for root, dirs, files in os.walk(rootDir):
-        for file in files:
-            name, extension = os.path.splitext(file)
-            # copy phoneme files as well
-            if extension == ".jpg":
-                videoName, frame, phoneme = name.split("_")
-                path = ''.join([root, os.sep, file])
-                #print(path, " is \t ", phoneme)
-                images.append(path)
-                labels.append(phoneme)
-    
-    # write label and image to binary file, 1 label+image per row
-    speakerName = os.path.basename(rootDir)
-    outputPath = targetDir + os.sep + speakerName+".pkl"
-
-    # store in dict with data and 'labelNumber' values.
-    rowsize = 120*120
-    data = np.zeros(shape=(len(images), rowsize), dtype=np.uint8)
-    labelNumbers = [0]*len(images)
-    
-    print(data.shape)
-   
-    for i in range(len(images)):
-        label = labels[i]
-        image = images[i]
-
-        # for mapping to phonemes (nbClasses = 39)
-        phonemeNumberMap = getPhonemeNumberMap()
-        labelNumber = phonemeNumberMap[label]     # you could also use the phoneme to viseme map afterwards.
-
-        # for mapping to visemes (nbClasses = 12)
-        # phonemeToViseme = getPhonemeToVisemeMap()  # dictionary of phoneme-viseme key-value pairs
-        # labelNumber = visemeNumberMap{phonemeToViseme{label}}  # viseme of the phoneme, then get the number of this viseme
-        # labelNumbers[i] = labelNumber
-    
-        im = np.array(Image.open(image), dtype=np.uint8).flatten() # flatten to one row per image
-        data[i] = im
-    # now write python dict to a file
-    print("the data file takes: ", data.nbytes, " bytes of memory")
-    mydict = {'data': data, 'labels': labelNumbers}
-    output = open(outputPath, 'wb')
-    pickle.dump(mydict, output, 2)
-    output.close()
-    print(speakerName, "files have been written to: ", outputPath)
-    return 0
-
-def allSpeakersToBinary(databaseDir, binaryDatabaseDir):
-    rootDir = databaseDir
-    dirList = []
-    for dir in directories(rootDir):
-        # print(dir)
-        # print(relpath(rootDir, dir))
-        # print(depth(relpath(rootDir, dir)))
-        if depth(relpath(rootDir, dir)) == 1:
-            dirList.append(dir)
-    print(dirList)
-    for speakerDir in dirList:
-        print("Extracting files of: ", speakerDir)
-        speakerToBinary(speakerDir, binaryDatabaseDir)
-    return 0
-        
-        
+from general_tools import *
         
 if __name__ == "__main__":
 
@@ -303,8 +216,7 @@ if __name__ == "__main__":
     # then convert to files useable by lipreading network
     
     processedDir = os.path.expanduser("~/TCDTIMIT/lipreading/processed")
-    databaseDir = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/database4")
-    databaseBinaryDir = os.path.expanduser("~/TCDTIMIT/lipreading/database_binary")
+    databaseDir = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/database2")
     
     # 1. copy mouths_gray_120 images and PHN.txt files to targetRoot. Move files up from their mouths_gray_120 dir to the video dir (eg sa1)
     print("Copying mouth_gray_120 directories to database location...")
@@ -315,22 +227,11 @@ if __name__ == "__main__":
     # if two phonemes for one frame, copy the image so we have 2 times the same frame, but with a different phoneme (in the name)
     # # has to be called against the 'database' directory
     print("Adding phoneme to filenames...")
-    addPhonemesToImagesDB(databaseDir, moveToSpeakerDir=False)
+    badDirs = addPhonemesToImagesDB(databaseDir, moveToSpeakerDir=False)
     print("-----------------------------------------")
 
-    # Only for seperate lipreading:
-    # # 3. convert all files from one speaker to a a binary file in CIFAR10 format:
-    # # each row = label + image
-    # # this function has to be called against the 'database' directory
-    # print("Copying the labels and images into binary CIFAR10 format...")
-    # allSpeakersToBinary(databaseDir, databaseBinaryDir)
-    # print("The final binary files can be found in: ", databaseBinaryDir)
-    # print("-----------------------------------------")
-    
-    
-    # Other functions that are not normally needed
-    # 1. deleting directories, not needed
-    # root = "/home/user/TCDTIMIT/processed"
-    # name = ["mouths", "faces"]
-    # deleteDirs(root, name)
+    saveToPkl('./badDirs2.pkl', badDirs)
+    print(len(badDirs))
+    import pdb;pdb.set_trace()
+
 
