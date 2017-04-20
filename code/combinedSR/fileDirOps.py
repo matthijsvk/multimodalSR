@@ -103,7 +103,7 @@ def copyDBFiles(rootDir, names, targetRoot):
         
         for dir in dirList:
             relativePath = relpath(rootDir, dir)
-            relativePath = relativePath.replace('/mouths_gray_120','')
+            relativePath = relativePath.replace('/mouths_120','')
             dest = ''.join([targetRoot+os.sep+relativePath])
             #print("copying dir:", dir, " to: ", dest)
             copytree(dir, dest)
@@ -160,7 +160,7 @@ def addPhonemesToImageNames(videoDir, moveToSpeakerDir = False):
     for root, dirs, files in os.walk(videoDir):
         for file in files:
             fileName, ext = os.path.splitext(file)
-            if ext == ".jpg" and "mouth_gray" in fileName:
+            if ext == ".jpg" and "mouth" in fileName:
                 filePath = ''.join([root, os.sep, file])
                 videoName = file.split("_")[0]
                 frame = file.split("_")[1]  # number-> after first underscore
@@ -169,12 +169,12 @@ def addPhonemesToImageNames(videoDir, moveToSpeakerDir = False):
     for frame in validFrames.keys():
         for phoneme in validFrames[frame]:
             # for each phoneme, create a copy of the image belonging to this frame
-            try:imagePath = frameImageDict[frame]
-            except: return videoDir #frame not found, means something went wrong in the extraction -> delete dir and extract again
-            videoName = os.path.basename(imagePath).split("_")[0]
-            newFilePath = ''.join([os.path.dirname(imagePath), os.sep, videoName, "_", frame, "_", phoneme, ".jpg"])
-            shutil.copy2(imagePath, newFilePath)
-        #print(videoDir)
+            newFilePath = ''.join([videoDir, os.sep, videoName, "_", frame, "_", phoneme, ".jpg"])
+            if not os.path.exists(newFilePath): #if already exists, do nothing
+                try:imagePath = frameImageDict[frame]
+                except: import pdb;pdb.set_trace() #return videoDir #frame not found, means something went wrong in the extraction -> delete dir and extract again
+                videoName = os.path.basename(imagePath).split("_")[0]
+                shutil.copy2(imagePath, newFilePath)
 
     # delete the source images
     for imagePath in frameImageDict.values():
@@ -216,11 +216,11 @@ if __name__ == "__main__":
     # then convert to files useable by lipreading network
     
     processedDir = os.path.expanduser("~/TCDTIMIT/lipreading/processed")
-    databaseDir = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/database2")
+    databaseDir = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/database")
     
     # 1. copy mouths_gray_120 images and PHN.txt files to targetRoot. Move files up from their mouths_gray_120 dir to the video dir (eg sa1)
-    print("Copying mouth_gray_120 directories to database location...")
-    copyDBFiles(processedDir, ["mouths_gray_120"], databaseDir)
+    print("Copying mouth_120 directories to database location...")
+    #copyDBFiles(processedDir, ["mouths_120"], databaseDir)
     print("-----------------------------------------")
     
     # # 2. extract phonemes for each image, put them in the image name

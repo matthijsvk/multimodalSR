@@ -35,13 +35,12 @@ VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
 batch_size_audio = 1
-batch_size_lip = 4
+batch_size_lip = 4 #this will be variable (# valid frames per video)
 num_epochs = 50
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 nbPhonemes = 39  # number output neurons
-N_HIDDEN_LIST = [64,64]
-MAX_SEQ_LENGTH = 1000
+LSTM_N_HIDDEN_LIST = [64,64]
 
 BIDIRECTIONAL = True
 
@@ -56,18 +55,16 @@ logger_combined.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-dataset = "combined"
+dataset = "TCDTIMIT"
 root = os.path.expanduser("~/TCDTIMIT/combinedSR/")
 store_dir = root + dataset + "/results"
 if not os.path.exists(store_dir): os.makedirs(store_dir)
 
 
 dataDir = dataRootDir = root + dataset + "/binary" + str(nbPhonemes) + os.sep + dataset  # output dir from datasetToPkl.py
-data_path = os.path.join(dataDir, dataset + '_' + str(nbMFCCs) + '_ch.pkl');
 
-model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) \
-             + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + \
-("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset
+model_name = str(len(LSTM_N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in LSTM_N_HIDDEN_LIST]) \
+             + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") +  "_" + dataset
 
 
 # model parameters and network_training_info
@@ -90,37 +87,16 @@ logger_combinedtools.info("\n\n\n\n STARTING NEW TRAINING SESSION AT " + strftim
 
 ##### IMPORTING DATA #####
 
-logger_combined.info('  data source: ' + data_path)
+logger_combined.info('  data source: ' + dataDir)
 logger_combined.info('  model target: ' + model_save + '.npz')
 
-dataset = unpickle(data_path)
-X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
-# these are lists of np arrays, because the time sequences are different for each example
-# X shape: (example, time_sequence, mfcc_feature,)
-# y shape: (example, time_sequence,)
 
+# get a sample of the dataset to debug the network
 
-# Print some information
-logger_combined.info("\n* Data information")
-logger_combined.info('X train')
-logger_combined.info('  %s %s', type(X_train), len(X_train))
-logger_combined.info('  %s %s', type(X_train[0]), X_train[0].shape)
-logger_combined.info('  %s %s', type(X_train[0][0]), X_train[0][0].shape)
-logger_combined.info('  %s', type(X_train[0][0][0]))
-
-logger_combined.info('y train')
-logger_combined.info('  %s %s', type(y_train), len(y_train))
-logger_combined.info('  %s %s', type(y_train[0]), y_train[0].shape)
-logger_combined.info('  %s %s', type(y_train[0][0]), y_train[0][0].shape)
-
-logger_combined.info('valid_frames train')
-logger_combined.info('  %s %s', type(valid_frames_train), len(valid_frames_train))
-logger_combined.info('  %s %s', type(valid_frames_train[0]), valid_frames_train[0].shape)
-logger_combined.info('  %s %s', type(valid_frames_train[0][0]), valid_frames_train[0][0].shape)
 
 ##### BUIDING MODEL #####
 logger_combined.info('\n* Building network ...')
-RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size_audio, num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
+RNN_network = NeuralNetwork('RNN', dataset_test, batch_size=batch_size_audio, num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
                             num_output_units=nbPhonemes, bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS, seed=0, debug=False)
 # print number of parameters
 nb_params = lasagne.layers.count_params(RNN_network.network_output_layer)
