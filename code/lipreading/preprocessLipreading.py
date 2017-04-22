@@ -16,10 +16,21 @@ def unpickle(file):
     return a
 
 
-def prepLip_one(speakerFile=None, trainFraction=0.7, validFraction=0.1,
-                       nbClasses=39, onehot=False, verbose=False,  store_path=None):
+def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbose=False, storeDir=None, loadData=True):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
+
+    if storeDir != None:
+        store_path = ''.join([storeDir, "_train", str(trainFraction).replace("0.",""), "valid",
+                              str(validFraction).replace("0.", ""), os.sep, os.path.basename(speakerFile)])
+        #import pdb;pdb.set_trace()
+        # if already processed, just load it from disk
+        if os.path.exists(store_path):
+            if loadData:  #before starting training, we just want to check if it exists, and generate otherwise. Not load the data
+                logger_prepLip.info("loading stored files X's...")
+                X_train, y_train, X_val, y_val, X_test, y_test = unpickle(store_path)
+                return X_train, y_train, X_val, y_val, X_test, y_test
+            return
 
     dtype = 'uint8'
     memAvaliableMB = 6000;
@@ -33,7 +44,7 @@ def prepLip_one(speakerFile=None, trainFraction=0.7, validFraction=0.1,
     X_val   = [];   y_val = []
     X_test  = [];   y_test = []
 
-    logger_prepLip.info('loading file %s', speakerFile)
+    #logger_prepLip.info('loading file %s', speakerFile)
     data = unpickle(speakerFile)
     thisN = data['data'].shape[0]
     thisTrain = int(trainFraction * thisN)
@@ -112,17 +123,6 @@ def prepLip_one(speakerFile=None, trainFraction=0.7, validFraction=0.1,
     X_train = np.reshape(X_train, (-1, 1, 120, 120))
     X_val = np.reshape(X_val, (-1, 1, 120, 120))
     X_test = np.reshape(X_test, (-1, 1, 120, 120))
-
-    # also flatten targets to get one target per row
-    # y_train = np.hstack(y_train)
-    # y_val = np.hstack(y_val)
-    # y_test = np.hstack(y_test)
-
-    # Onehot the targets
-    if onehot:
-        y_train = np.float32(np.eye(nbClasses)[y_train])
-        y_val = np.float32(np.eye(nbClasses)[y_val])
-        y_test = np.float32(np.eye(nbClasses)[y_test])
 
     # cast to correct datatype, just to be sure. Everything needs to be float32 for GPU processing
     dtypeX = 'float32'

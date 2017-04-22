@@ -347,6 +347,7 @@ def speakerToBinary(speakerDir, binaryDatabaseDir, phoneme=True):
 
         im = np.array(Image.open(image), dtype=np.uint8).flatten()  # flatten to one row per image
         data[i] = im
+
     # now write python dict to a file
     print("the data file takes: ", data.nbytes, " bytes of memory")
     mydict = {'data': data, 'labels': labelNumbers}

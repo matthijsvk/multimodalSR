@@ -52,7 +52,7 @@ import lasagne.objectives as LO
 def main():
 
     # BN parameters
-    batch_size = 64
+    batch_size = 10
     logger_lip.info("batch_size = %s",batch_size)
     # alpha is the exponential moving average factor
     alpha = .1
@@ -84,7 +84,7 @@ def main():
 
     ##############################################
     network_type = "google"
-    viseme = True  # will set nbClasses and store path   vis: 6.498.828   phn: 7.176.231
+    viseme = False  # will set nbClasses and store path   vis: 6.498.828   phn: 7.176.231
 
     if viseme:   nbClasses = 12
     else:        nbClasses = 39
@@ -112,26 +112,14 @@ def main():
         datasetFiles = general_tools.unpickle(pkl_path)
 
     else:  # we need to load and preprocess each speaker before we evaluate, because dataset is too large and doesn't fit in CPU RAM
-            # TODO: load/preprocess next data while GPU is still working on previous data
         loadPerSpeaker = True
-        testVolunteerNumbers = [13, 15, 21, 23, 24, 25, 28, 29, 30, 31, 34, 36, 37, 43, 47, 51, 54];
-        testVolunteers = ["Volunteer" + str(testNumber)+".pkl" for testNumber in testVolunteerNumbers];
-        lipspeakers = ["Lipspkr1.pkl", "Lipspkr2.pkl", "Lipspkr3.pkl"];
-        allSpeakers = [f for f in os.listdir(database_binaryDir) if os.path.isfile(os.path.join(database_binaryDir, f))]
-        trainVolunteers = [f if not (f in testVolunteers or f in lipspeakers) else None for f in allSpeakers]; trainVolunteers = [vol for vol in trainVolunteers if vol is not None]
+        processed_store_dir = os.path.expanduser("~/TCDTIMIT/lipreading/database_binaryViseme")
+        trainingPKL_dir = processed_store_dir +"_train8valid2"
+        trainingPKL_files = [os.path.join(trainingPKL_dir, f) for f in os.listdir(trainingPKL_dir) if os.path.isfile(os.path.join(trainingPKL_dir, f))]
+        testPKL_dir = processed_store_dir +"_train0valid0"
+        testPKL_files = [os.path.join(testPKL_dir, f) for f in os.listdir(testPKL_dir) if os.path.isfile(os.path.join(testPKL_dir, f))]
 
-        if dataset =="combined":
-            trainingSpeakerFiles = trainVolunteers + lipspeakers
-            testSpeakerFiles = testVolunteers
-        elif dataset == "volunteers":
-            trainingSpeakerFiles = trainVolunteers
-            testSpeakerFiles = testVolunteers
-        else: raise Exception("invalid dataset entered")
-
-        # add the directory to create paths
-        trainingSpeakerFiles = sorted([database_binaryDir+os.sep+file for file in trainingSpeakerFiles])
-        testSpeakerFiles = sorted([database_binaryDir + os.sep + file for file in testSpeakerFiles])
-        datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
+        datasetFiles = [trainingPKL_files, testPKL_files]
 
 
     model_name = dataset + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")
@@ -205,6 +193,7 @@ def main():
         LR_start=LR_start, LR_decay=LR_decay,
         num_epochs=num_epochs,
         dataset=datasetFiles,
+        processed_store_dir=processed_store_dir,
         loadPerSpeaker=loadPerSpeaker,
         save_name=model_save_name,
         shuffleEnabled=True)

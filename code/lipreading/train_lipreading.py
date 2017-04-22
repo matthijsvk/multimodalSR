@@ -22,6 +22,7 @@ def train(train_fn, val_fn,
           LR_start, LR_decay,
           num_epochs,
           dataset,
+          processed_store_dir,
           loadPerSpeaker=False,
           save_name=None,
           shuffleEnabled=True):
@@ -89,7 +90,7 @@ def train(train_fn, val_fn,
         return err, cost, nb_batches
 
     # evaluate many TRAINING speaker files -> train loss, val loss and vall error. Load them in one by one (so they fit in memory)
-    def evalTRAINING(trainingSpeakerFiles, LR, shuffleEnabled, verbose=False):
+    def evalTRAINING(trainingSpeakerFiles, LR, shuffleEnabled, verbose=False, storeDir=None):
         train_cost = 0;
         val_err = 0;
         val_cost = 0;
@@ -101,7 +102,7 @@ def train(train_fn, val_fn,
             logger_train.debug("processing %s", speakerFile)
             X_train, y_train, X_val, y_val, X_test, y_test = preprocessLipreading.prepLip_one(speakerFile=speakerFile,
                                                                                               trainFraction=0.8,
-                                                                                              validFraction=0.2)
+                                                                                              validFraction=0.2, storeDir=storeDir)
             if verbose:
                 logger_train.debug("the number of training examples is: %s", len(X_train))
                 logger_train.debug("the number of valid examples is:    %s", len(X_val))
@@ -131,16 +132,15 @@ def train(train_fn, val_fn,
         return train_cost, val_cost, val_err
 
     # evaluate many TEST speaker files. Load them in one by one (so they fit in memory)
-    def evalTEST(testSpeakerFiles, verbose=False):
+    def evalTEST(testSpeakerFiles, verbose=False, storeDir=None):
         test_err = 0;
         test_cost = 0;
         nb_test_batches = 0;
         # for each speaker, pass over the train set, then test set. (test is other files). save the results.
         for speakerFile in tqdm(testSpeakerFiles, total=len(testSpeakerFiles)):
-            # TODO: pallelize this with the GPU evaluation to eliminate waiting
             logger_train.debug("processing %s", speakerFile)
             X_train, y_train, X_val, y_val, X_test, y_test = preprocessLipreading.prepLip_one(
-                    speakerFile=speakerFile, trainFraction=0.0, validFraction=0.0)
+                    speakerFile=speakerFile, trainFraction=0.0, validFraction=0.0, storeDir=storeDir)
 
             if verbose:
                 logger_train.debug("the number of training examples is: %s", len(X_train))
@@ -188,6 +188,7 @@ def train(train_fn, val_fn,
     epochsNotImproved = 0
 
     logger_train.info("starting training for %s epochs...", num_epochs)
+    # now run through the epochs
     for epoch in range(num_epochs):
         logger_train.info("\n\n\n Epoch %s started", epoch + 1)
         start_time = time.time()
@@ -200,7 +201,7 @@ def train(train_fn, val_fn,
             val_err = val_err / nb_val_batches * 100; val_cost /=nb_val_batches
 
         else:
-            train_cost, val_cost, val_err = evalTRAINING(trainingSpeakerFiles, LR, shuffleEnabled)
+            train_cost, val_cost, val_err = evalTRAINING(trainingSpeakerFiles, LR, shuffleEnabled, storeDir=processed_store_dir)
 
         # test if validation error went down
         printTest = False
@@ -216,7 +217,7 @@ def train(train_fn, val_fn,
                 test_err = test_err / nb_test_batches * 100;  test_cost /= nb_test_batches
 
             else:  # process each speaker seperately
-                test_cost, test_err = evalTEST(testSpeakerFiles)
+                test_cost, test_err = evalTEST(testSpeakerFiles, storeDir=processed_store_dir)
 
             logger_train.info("TEST results: ")
             logger_train.info("\t  test cost:        %s", str(test_cost))
