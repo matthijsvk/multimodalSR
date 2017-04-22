@@ -6,6 +6,13 @@ import logging
 logger_phonemeSet = logging.getLogger('phonemeSet')
 logger_phonemeSet.setLevel(logging.ERROR)
 
+############  VISEMES  ##############
+viseme_set_list = ['A', 'B', 'C', 'D', 'E', 'F', 'G','H','I','J','K','S']
+values = [i for i in range(0, len(viseme_set_list))]
+viseme_set = dict(zip(viseme_set_list, values))
+classToViseme = dict((v, k) for k, v in viseme_set.iteritems())
+
+###########  PHONMEMES   ##############
 phoneme_set_61_39 = {
     'ao':   'aa',  # 1
     'ax':   'ah',  # 2

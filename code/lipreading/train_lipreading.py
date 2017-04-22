@@ -28,8 +28,8 @@ def train(train_fn, val_fn,
 
     if loadPerSpeaker:
         trainingSpeakerFiles, testSpeakerFiles = dataset
-        logger_train.info("train files: \n%s", trainingSpeakerFiles)
-        logger_train.info("test files:  \n %s", testSpeakerFiles)
+        logger_train.info("train files: \n%s", [os.path.basename(speakerFile) for speakerFile in trainingSpeakerFiles])
+        logger_train.info("test files:  \n %s", [os.path.basename(speakerFile) for speakerFile in testSpeakerFiles])
     else:
         X_train, y_train, X_val, y_val, X_test, y_test = dataset
         logger_train.info("the number of training examples is: %s", len(X_train))

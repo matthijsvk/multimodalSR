@@ -311,7 +311,6 @@ def build_network_google(activation, alpha, epsilon, input, nbClasses):
     return cnnDict, cnnDict['l7_out']
 
 
-# default network for cifar10
 def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
     cnn = lasagne.layers.InputLayer(
             shape=(None, 1, 120, 120),
@@ -439,24 +438,24 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
     #         cnn,
     #         nonlinearity=activation)
 
-    # cnn = lasagne.layers.DenseLayer(
-    #         cnn,
-    #         nonlinearity=lasagne.nonlinearities.identity,
-    #         num_units=1024)
+    cnn = lasagne.layers.DenseLayer(
+            cnn,
+            nonlinearity=lasagne.nonlinearities.identity,
+            num_units=1024)
     #
-    # cnn = lasagne.layers.BatchNormLayer(
-    #         cnn,
-    #         epsilon=epsilon,
-    #         alpha=alpha)
-    #
-    # cnn = lasagne.layers.NonlinearityLayer(
-    #         cnn,
-    #         nonlinearity=activation)
-    #
-    # cnn = lasagne.layers.DenseLayer(
-    #         cnn,
-    #         nonlinearity=lasagne.nonlinearities.softmax,
-    #         num_units=nbClasses)
+    cnn = lasagne.layers.BatchNormLayer(
+            cnn,
+            epsilon=epsilon,
+            alpha=alpha)
+
+    cnn = lasagne.layers.NonlinearityLayer(
+            cnn,
+            nonlinearity=activation)
+
+    cnn = lasagne.layers.DenseLayer(
+            cnn,
+            nonlinearity=lasagne.nonlinearities.softmax,
+            num_units=nbClasses)
 
     # cnn = lasagne.layers.BatchNormLayer(
     #         cnn,
@@ -465,6 +464,72 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
 
     return {}, cnn
 
+
+# default network for cifar10
+
+from lasagne.layers import InputLayer, DropoutLayer, FlattenLayer
+from lasagne.layers.dnn import Conv2DDNNLayer as ConvLayer
+from lasagne.layers import Pool2DLayer as PoolLayer
+
+def build_network_cifar10_v2(input, nbClasses):
+    net = {}
+    net['input'] = InputLayer((None, 1, 120, 120), input_var=input)
+    net['conv1'] = ConvLayer(net['input'],
+                             num_filters=192,
+                             filter_size=5,
+                             pad=2,
+                             flip_filters=False)
+    net['cccp1'] = ConvLayer(
+            net['conv1'], num_filters=160, filter_size=1, flip_filters=False)
+    net['cccp2'] = ConvLayer(
+            net['cccp1'], num_filters=96, filter_size=1, flip_filters=False)
+    net['pool1'] = PoolLayer(net['cccp2'],
+                             pool_size=3,
+                             stride=2,
+                             mode='max',
+                             ignore_border=False)
+    net['drop3'] = DropoutLayer(net['pool1'], p=0.5)
+    net['conv2'] = ConvLayer(net['drop3'],
+                             num_filters=192,
+                             filter_size=5,
+                             pad=2,
+                             flip_filters=False)
+    net['cccp3'] = ConvLayer(
+            net['conv2'], num_filters=192, filter_size=1, flip_filters=False)
+    net['cccp4'] = ConvLayer(
+            net['cccp3'], num_filters=192, filter_size=1, flip_filters=False)
+    net['pool2'] = PoolLayer(net['cccp4'],
+                             pool_size=3,
+                             stride=2,
+                             mode='average_exc_pad',
+                             ignore_border=False)
+    net['drop6'] = DropoutLayer(net['pool2'], p=0.5)
+    net['conv3'] = ConvLayer(net['drop6'],
+                             num_filters=192,
+                             filter_size=3,
+                             pad=1,
+                             flip_filters=False)
+    net['cccp5'] = ConvLayer(
+            net['conv3'], num_filters=192, filter_size=1, flip_filters=False)
+    net['cccp6'] = ConvLayer(
+            net['cccp5'], num_filters=10, filter_size=1, flip_filters=False)
+    net['pool3'] = PoolLayer(net['cccp6'],
+                             pool_size=8,
+                             mode='average_exc_pad',
+                             ignore_border=False)
+    # net['output'] = FlattenLayer(net['pool3'])
+
+    net['dense1'] = lasagne.layers.DenseLayer(
+            net['pool3'],
+            nonlinearity=lasagne.nonlinearities.identity,
+            num_units=1024)
+
+    net['output'] = lasagne.layers.DenseLayer(
+            net['dense1'],
+            nonlinearity=lasagne.nonlinearities.softmax,
+            num_units=nbClasses)
+
+    return net, net['output']
 
 ################## BINARY NETWORKS ###################
 
