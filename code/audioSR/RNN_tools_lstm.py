@@ -47,6 +47,8 @@ class NeuralNetwork:
                 self.valid_frames = valid_frames_train[:batch_size]
                 self.masks = generate_masks(X, valid_frames=self.valid_frames, batch_size=len(X))
 
+                #import pdb; pdb.set_trace()
+
                 self.X = pad_sequences_X(X)
                 self.Y = pad_sequences_y(y)
 
@@ -89,9 +91,13 @@ class NeuralNetwork:
         batch_size = self.batch_size
 
         audio_inputs = T.tensor3('audio_inputs')
-        audio_masks = T.matrix('audio_masks')       #TODO set MATRIX, not iMatrix!! Otherwise all mask calculations are done by CPU, and everything will be ~2x slowed down!! Also in general_tools.generate_masks()
-
+        audio_masks = T.matrix('audio_masks')       #set MATRIX, not iMatrix!! Otherwise all mask calculations are done by CPU, and everything will be ~2x slowed down!! Also in general_tools.generate_masks()
+        valid_indices = T.imatrix('valid_indices')
+        
+        
         net = {}
+        # net['l1_in_valid'] = L.InputLayer(shape=(batch_size, None), input_var=valid_indices)
+
         # shape = (batch_size, batch_max_seq_length, num_features)
         net['l1_in'] = L.InputLayer(shape=(batch_size, None, num_features),input_var=audio_inputs)
         # We could do this and set all input_vars to None, but that is slower -> fix batch_size and num_features at initialization
@@ -121,10 +127,10 @@ class NeuralNetwork:
         # weight matrices, the cell-to-gate weight vector, the bias vector, and the nonlinearity.
         # The convention is that gates use the standard sigmoid nonlinearity,
         # which is the default for the Gate class.
-        gate_parameters = lasagne.layers.recurrent.Gate(
+        gate_parameters = L.recurrent.Gate(
                 W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
                 b=lasagne.init.Constant(0.))
-        cell_parameters = lasagne.layers.recurrent.Gate(
+        cell_parameters = L.recurrent.Gate(
                 W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
                 # Setting W_cell to None denotes that no cell connection will be used.
                 W_cell=None, b=lasagne.init.Constant(0.),
@@ -140,7 +146,7 @@ class NeuralNetwork:
             if i==0: input = net['l1_in']
             else:    input = net['l2_lstm'][i-1]
 
-            nextForwardLSTMLayer = lasagne.layers.recurrent.LSTMLayer(
+            nextForwardLSTMLayer = L.recurrent.LSTMLayer(
                     input, n_hidden,
                     # We need to specify a separate input for masks
                     mask_input=net['l1_mask'],
@@ -156,7 +162,7 @@ class NeuralNetwork:
                 # Use backward LSTM
                 # The "backwards" layer is the same as the first,
                 # except that the backwards argument is set to True.
-                nextBackwardLSTMLayer = lasagne.layers.recurrent.LSTMLayer(
+                nextBackwardLSTMLayer = L.recurrent.LSTMLayer(
                         input, n_hidden, ingate=gate_parameters,
                         mask_input=net['l1_mask'], forgetgate=gate_parameters,
                         cell=cell_parameters, outgate=gate_parameters,
@@ -173,10 +179,11 @@ class NeuralNetwork:
                 # We'll combine the forward and backward layer output by summing.
                 # Merge layers take in lists of layers to merge as input.
                 # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
-                net['l2_lstm'].append(lasagne.layers.ElemwiseSumLayer([net['l2_lstm'][-2], net['l2_lstm'][-1]]))
+                net['l2_lstm'].append(L.ElemwiseSumLayer([net['l2_lstm'][-2], net['l2_lstm'][-1]]))
 
         # we need to convert (batch_size, seq_length, num_features) to (batch_size * seq_length, num_features) because Dense networks can't deal with 2 unknown sizes
-        net['l3_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'][-1], (-1, n_hidden_list[-1]))
+        net['l3_reshape'] = L.ReshapeLayer(net['l2_lstm'][-1], (-1, n_hidden_list[-1]))
+
         if debug:
             get_l_reshape = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
                                             L.get_output(net['l3_reshape']))
@@ -204,8 +211,22 @@ class NeuralNetwork:
 
         # # Now, the shape will be (n_batch * n_timesteps, num_output_units). We can then reshape to
         # # n_batch to get num_output_units values for each timestep from each sequence
-        net['l7_out_flattened'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (-1, num_output_units))
-        net['l7_out'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (batch_size, -1, num_output_units))
+        net['l7_out_flattened'] = L.ReshapeLayer(net['l6_dense'], (-1, num_output_units))
+        net['l7_out'] = L.ReshapeLayer(net['l6_dense'], (batch_size, -1, num_output_units))
+        
+        net['l7_out_valid'] = L.SliceLayer(net['l7_out'], indices=valid_indices, axis=1)
+        net['l7_out_valid'] = L.ReshapeLayer(net['l7_out_valid'],(batch_size, -1, num_output_units))
+
+
+        if debug:
+            get_l_out = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var], L.get_output(net['l7_out']))
+            l_out = get_l_out(self.X, self.masks)
+
+            get_l_out_valid = theano.function([audio_inputs, audio_masks, valid_indices],
+                                         L.get_output(net['l7_out_valid']))
+            l_out_valid = get_l_out_valid(self.X, self.masks, self.valid_frames)
+            logger_RNNtools.debug('\n\n\n  l_out: %s  | l_out_valid: %s', l_out.shape, l_out_valid.shape);
+
 
         if debug:   self.print_network_structure(net)
         self.network_output_layer = net['l7_out_flattened']
@@ -231,7 +252,7 @@ class NeuralNetwork:
         return 0
 
     def use_best_param(self):
-        lasagne.layers.set_all_param_values(self.network, self.best_param)
+        L.set_all_param_values(self.network, self.best_param)
         self.curr_epoch = self.best_epoch
         # Remove the network_train_info enries newer than self.best_epoch
         del self.network_train_info[0][self.best_epoch:]
@@ -246,7 +267,7 @@ class NeuralNetwork:
                 # restore network weights
                 with np.load(model_name) as f:
                     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-                    lasagne.layers.set_all_param_values(self.network_output_layer, *param_values)
+                    L.set_all_param_values(self.network_output_layer, *param_values)
 
                 # # restore 'updates' training parameters
                 # with np.load(model_name + "_updates.npz") as f:
@@ -342,6 +363,9 @@ class NeuralNetwork:
             valid_targets = target_var[valid_indices_example, valid_indices_seqNr]
             self.valid_targets_fn = theano.function([l_mask.input_var, target_var], valid_targets, name='valid_targets_fn')
             self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions, name='valid_predictions_fn')
+
+            get_l_out_valid = theano.function([audio_inputs, audio_masks, valid_indices],
+                                              L.get_output(net['l7_out_valid']))
 
             if debug:
                 try:
@@ -526,7 +550,7 @@ class NeuralNetwork:
             if validation_cost < self.best_cost:
                 self.best_cost = validation_cost
                 self.best_epoch = self.curr_epoch
-                self.best_param = lasagne.layers.get_all_param_values(self.network_output_layer)
+                self.best_param = L.get_all_param_values(self.network_output_layer)
                 self.best_updates = [p.get_value() for p in self.updates.keys()]
                 logger.info("New best model found!")
                 if save_name is not None:

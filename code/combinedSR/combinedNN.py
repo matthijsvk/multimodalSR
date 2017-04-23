@@ -118,8 +118,8 @@ datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
 
 
 # get a sample of the dataset to debug the network
-
-train_ = preprocessingCombined.getOneSpeaker( database_binaryDir + os.sep + trainingSpeakerFiles[0], t)
+dataset_test, _, _ = preprocessingCombined.getOneSpeaker( storeDir=database_binaryDir, speakerFile=trainingSpeakerFiles[0],
+                                              trainFraction=1.0, validFraction=0.0)
 
 ##### BUIDING MODEL #####
 logger_combined.info('\n* Building network ...')
@@ -129,6 +129,7 @@ RNN_network = NeuralNetwork('combined', dataset_test,
                             cnn_network=CNN_NETWORK,
                             dense_hidden_list=DENSE_HIDDEN_LIST,
                             debug=True)
+
 # print number of parameters
 nb_params = lasagne.layers.count_params(RNN_network.network_output_layer)
 logger_combined.info(" Number of parameters of this network: %s", nb_params)

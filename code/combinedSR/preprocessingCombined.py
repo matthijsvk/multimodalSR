@@ -25,14 +25,10 @@ def getOneSpeaker(speakerFile, trainFraction, validFraction, storeDir=None, stor
                 logger_prepComb.info("loading stored files X's...")
                 return unpickle(store_path)
             return
-
-
     logger_prepComb.info(" %s processed data doesn't exist yet; generating...", speakerFile)
 
     # load the images
     # first initialize the matrices
-    
-    # TODO: add masks here as well?  masks depend on batch size...
 
     logger_prepComb.info('loading file %s', speakerFile)
     data = unpickle(speakerFile)  #    mydict = {'images': allvideosImages, 'mfccs': allvideosMFCCs, 'audioLabels': allvideosAudioLabels, 'validLabels': allvideosValidLabels, 'validAudioFrames': allvideosValidAudioFrames}
@@ -102,6 +98,6 @@ def getOneSpeaker(speakerFile, trainFraction, validFraction, storeDir=None, stor
     dataList = [[images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train],
                 [images_val, mfccs_val, audioLabels_val, validLabels_val, validAudioFrames_val],
                 [images_test, mfccs_test, audioLabels_test, validLabels_test, validAudioFrames_test]]
-    if store_path != None: saveToPkl(store_path, dataList)
+    if store_path != None and storeProcessed: saveToPkl(store_path, dataList)
 
     return dataList

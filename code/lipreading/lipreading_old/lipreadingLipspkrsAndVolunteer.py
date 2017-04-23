@@ -106,7 +106,7 @@ def main ():
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
     # get the network structure
-    cnn = build_network_google(activation, alpha, epsilon, input)
+    cnn = build_network_google(activation, alpha, epsilon, input, 39)
     #cnn = build_network_cifar10(activation, alpha, epsilon, input)
 
     ## resnet50; replace cnn by cnn['prob'] everywhere

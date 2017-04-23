@@ -35,13 +35,12 @@ else:
 datasetFiles = [sorted(trainingSpeakerFiles), sorted(testSpeakerFiles)]
 
 
-
-
 import pdb;pdb.set_trace()
 
 
 ## TEST split train/val/test
 import preprocessingCombined
-train, val, test = preprocessingCombined.getOneSpeaker(database_binaryDir + os.sep + trainingSpeakerFiles[0], storeDir=database_binaryDir, trainFraction=0.7, validFraction=0.1, verbose=True)
+train, val, test = preprocessingCombined.getOneSpeaker(database_binaryDir + os.sep + trainingSpeakerFiles[0], storeDir=database_binaryDir, trainFraction=1.0, validFraction=0.0, verbose=True)
 
+images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = train
 import pdb;pdb.set_trace()

@@ -34,7 +34,7 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 32
+batch_size = 1
 num_epochs = 50
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
@@ -132,7 +132,7 @@ RNN_network.load_model(model_load)
 
 ##### COMPILING FUNCTIONS #####
 logger_RNN.info("\n* Compiling functions ...")
-RNN_network.build_functions(train=True, debug=False)
+RNN_network.build_functions(train=True, debug=True)
 
 ##### TRAINING #####
 logger_RNN.info("\n* Training ...")
