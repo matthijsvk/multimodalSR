@@ -1,0 +1,182 @@
+Using gpu device 0: GeForce GTX TITAN X (CNMeM is enabled with initial size: 20.0% of memory, cuDNN 5103)
+WARNING (theano.sandbox.cuda): Ignoring call to use(1), GPU number 0 is already in use.
+batch_size = 32
+alpha = 0.1
+epsilon = 0.0001
+activation = T.nnet.relu
+num_epochs = 40
+LR_start = 0.002
+LR_fin = 3e-07
+LR_decay = 0.802420991651
+shuffle_parts = 1
+Loading TCDTIMIT dataset...
+Total loaded till now:  0  out of  100000
+nbTrainLoaded:  0
+nbValidLoaded:  0
+nbTestLoaded:  0
+loading file /users/start2016/r0364010/TCDTIMIT/database_binary/Lipspkr1.pkl
+This dataset contains  14617  images
+now loading : nbTrain, nbValid, nbTest
+               11693 1461 1463
+Total loaded till now:  14617  out of  100000
+nbTrainLoaded:  11693
+nbValidLoaded:  1461
+nbTestLoaded:  1463
+loading file /users/start2016/r0364010/TCDTIMIT/database_binary/Lipspkr2.pkl
+This dataset contains  13707  images
+now loading : nbTrain, nbValid, nbTest
+               10965 1370 1372
+Total loaded till now:  28324  out of  100000
+nbTrainLoaded:  22658
+nbValidLoaded:  2831
+nbTestLoaded:  2835
+loading file /users/start2016/r0364010/TCDTIMIT/database_binary/Lipspkr3.pkl
+This dataset contains  14153  images
+now loading : nbTrain, nbValid, nbTest
+               11322 1415 1416
+Total loaded till now:  42477  out of  100000
+nbTrainLoaded:  33980
+nbValidLoaded:  4246
+nbTestLoaded:  4251
+memory consumption (MB) of given matrix:  489
+memory consumption (MB) after cast to float:  1957
+memory consumption (MB) of given matrix:  61
+memory consumption (MB) after cast to float:  244
+memory consumption (MB) of given matrix:  61
+memory consumption (MB) after cast to float:  244
+the number of training examples is:  33980
+the number of valid examples is:  4246
+the number of test examples is:  4251
+Building the CNN...
+Training...
+starting training for  40  epochs...
+epoch  1 started...
+Epoch 1 of 40 took 503.594640017s
+  LR:                            0.002
+  training loss:                 1.04912607969
+  validation loss:               1.04598586487
+  validation error rate:         86.1979166667%
+  best epoch:                    1
+  best validation error rate:    86.1979166667%
+  test loss:                     1.04619110895
+  test error rate:               86.3873106061%
+epoch  2 started...
+Epoch 2 of 40 took 495.263960838s
+  LR:                            0.0016048419833
+  training loss:                 1.04561364089
+  validation loss:               1.04355986461
+  validation error rate:         81.7708333333%
+  best epoch:                    2
+  best validation error rate:    81.7708333333%
+  test loss:                     1.04367232323
+  test error rate:               82.6231060606%
+epoch  3 started...
+Epoch 3 of 40 took 490.961393118s
+  LR:                            0.00128775889568
+  training loss:                 1.04219767027
+  validation loss:               1.04284339511
+  validation error rate:         80.634469697%
+  best epoch:                    3
+  best validation error rate:    80.634469697%
+  test loss:                     1.04310669773
+  test error rate:               81.4867424242%
+epoch  4 started...
+Epoch 4 of 40 took 490.592296124s
+  LR:                            0.00103332477008
+  training loss:                 1.0397265654
+  validation loss:               1.03914089907
+  validation error rate:         75.1183712121%
+  best epoch:                    4
+  best validation error rate:    75.1183712121%
+  test loss:                     1.03898704504
+  test error rate:               74.834280303%
+epoch  5 started...
+Epoch 5 of 40 took 494.257977009s
+  LR:                            0.000829161486705
+  training loss:                 1.03774126648
+  validation loss:               1.03710427971
+  validation error rate:         71.5435606061%
+  best epoch:                    5
+  best validation error rate:    71.5435606061%
+  test loss:                     1.03718669035
+  test error rate:               71.8276515152%
+epoch  6 started...
+Epoch 6 of 40 took 491.662353992s
+  LR:                            0.0006653365824
+  training loss:                 1.03635734202
+  validation loss:               1.03451874401
+  validation error rate:         68.5369318182%
+  best epoch:                    6
+  best validation error rate:    68.5369318182%
+  test loss:                     1.03441061667
+  test error rate:               67.8977272727%
+epoch  7 started...
+Epoch 7 of 40 took 478.804038048s
+  LR:                            0.000533880040231
+  training loss:                 1.03462687536
+  validation loss:               1.03567182927
+  validation error rate:         69.2234848485%
+  best epoch:                    6
+  best validation error rate:    68.5369318182%
+  test loss:                     1.03441061667
+  test error rate:               67.8977272727%
+epoch  8 started...
+Epoch 8 of 40 took 491.396810055s
+  LR:                            0.000428396551305
+  training loss:                 1.03322327429
+  validation loss:               1.03300798662
+  validation error rate:         65.5066287879%
+  best epoch:                    8
+  best validation error rate:    65.5066287879%
+  test loss:                     1.0331843685
+  test error rate:               66.0274621212%
+epoch  9 started...
+Epoch 9 of 40 took 493.069682121s
+  LR:                            0.000343754385517
+  training loss:                 1.03190972971
+  validation loss:               1.03214035702
+  validation error rate:         65.0804924242%
+  best epoch:                    9
+  best validation error rate:    65.0804924242%
+  test loss:                     1.03163062262
+  test error rate:               63.9914772727%
+epoch  10 started...
+Epoch 10 of 40 took 518.263509035s
+  LR:                            0.000275835734911
+  training loss:                 1.03095325729
+  validation loss:               1.03141140667
+  validation error rate:         63.0681818182%
+  best epoch:                    10
+  best validation error rate:    63.0681818182%
+  test loss:                     1.03150480715
+  test error rate:               64.2992424242%
+epoch  11 started...
+Epoch 11 of 40 took 495.170944929s
+  LR:                            0.00022133638394
+  training loss:                 1.03001924981
+  validation loss:               1.03090969902
+  validation error rate:         62.5710227273%
+  best epoch:                    11
+  best validation error rate:    62.5710227273%
+  test loss:                     1.03051889123
+  test error rate:               62.6420454545%
+epoch  12 started...
+Epoch 12 of 40 took 477.1307621s
+  LR:                            0.00017760496069
+  training loss:                 1.02898417252
+  validation loss:               1.03045945276
+  validation error rate:         62.7367424242%
+  best epoch:                    11
+  best validation error rate:    62.5710227273%
+  test loss:                     1.03051889123
+  test error rate:               62.6420454545%
+epoch  13 started...
+Epoch 13 of 40 took 490.859997988s
+  LR:                            0.000142513948679
+  training loss:                 1.02818007856
+  validation loss:               1.03084834055
+  validation error rate:         62.4526515152%
+  best epoch:                    13
+  best validation error rate:    62.4526515152%
+  test loss:                     1.0305969688
+  test error rate:               61.9554924242%

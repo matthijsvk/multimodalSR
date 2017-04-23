@@ -1,0 +1,30 @@
+Epoch 42 of 500 took 168.624515057s
+  LR:                            0.000971559670476
+  training loss:                 1108736.37378
+  validation loss:               572903.463542
+  validation error rate:         87.3333329246%
+  best epoch:                    42
+  best validation error rate:    87.3333329246%
+  test loss:                     569707.660662
+  test error rate:               88.0705878314%
+epoch  43 started...
+Epoch 43 of 500 took 162.860729933s
+  LR:                            0.000954600508616
+  training loss:                 65102816.218
+  validation loss:               1433653.9561
+  validation error rate:         93.3571428061%
+  best epoch:                    42
+  best validation error rate:    87.3333329246%
+  test loss:                     569707.660662
+  test error rate:               88.0705878314%
+epoch  44 started...
+Epoch 44 of 500 took 163.038607836s
+  LR:                            0.000937937379187
+  training loss:                 484387.013922
+  validation loss:               607185.053199
+  validation error rate:         90.7142853453%
+  best epoch:                    42
+  best validation error rate:    87.3333329246%
+  test loss:                     569707.660662
+  test error rate:               88.0705878314%
+
