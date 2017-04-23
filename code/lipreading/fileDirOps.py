@@ -23,16 +23,16 @@ def main():
     # use this to copy the grayscale files from 'processDatabase' to another location, and fix their names with phonemes
     # then convert to files usable by lipreading network
 
-    processedDir = os.path.expanduser("~/TCDTIMIT/lipreading/processed")
-    databaseDir = os.path.expanduser("~/TCDTIMIT/lipreading/database")
-    databaseBinaryDir = os.path.expanduser("~/TCDTIMIT/lipreading/database_binary")
+    processedDir = os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/processed")
+    databaseDir = os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/database")
+    databaseBinaryDir = os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binary")
 
     # 1. copy mouths_gray_120 images and PHN.txt files to targetRoot. Move files up from their mouths_gray_120 dir to the video dir (eg sa1)
     print("\n\nCopying mouth_120 directories to database location...")
     copyDBFiles(processedDir, ["mouths_120"], databaseDir)
     print("-----------------------------------------")
 
-    import time;time.sleep(20)
+    import pdb; pdb.set_trace()
 
     # # 2. extract phonemes for each image, put them in the image name
     # if two phonemes for one frame, copy the image so we have 2 times the same frame, but with a different phoneme (in the name)
@@ -138,6 +138,8 @@ def copyDBFiles(rootDir, names, targetRoot):
                 path = ''.join([root, os.sep, file])
                 fileList.append(path)
 
+    dirList = sorted(dirList)
+    fileList = sorted(fileList)
     print("First 10 files to be copied: ", fileList[0:10])
     print("first 10 dirs to be copied: ", dirList[0:10])
 
@@ -148,18 +150,21 @@ def copyDBFiles(rootDir, names, targetRoot):
 
         for dir in dirList:
             relativePath = relpath(rootDir, dir)
-            relativePath = relativePath.replace('/mouths_123', '')
+            relativePath = relativePath.replace('/mouths_120', '')
             dest = ''.join([targetRoot + os.sep + relativePath])
             # print("copying dir:", dir, " to: ", dest)
-            copytree(dir, dest)
-            nbCopiedDirs += 1
+            if not os.path.exists(dest):
+                copytree(dir, dest)
+                nbCopiedDirs += 1
 
         for file in fileList:
             relativePath = relpath(rootDir, file)
             # print("copying file:", file, " to: ", targetRoot+os.sep+relativePath)
             dest = ''.join([targetRoot + os.sep + relativePath])
-            copyfile(file, dest)
-            nbCopiedFiles += 1
+            if not os.path.exists(dest):
+                print(file)
+                copyfile(file, dest)
+                nbCopiedFiles += 1
 
         print(nbCopiedDirs, " directories have been copied to ", targetRoot)
         print(nbCopiedFiles, " files have been copied to ", targetRoot)
@@ -256,7 +261,7 @@ def addPhonemesToImagesDB(rootDir, moveToSpeakerDir=False):
     badDirs = []
 
     dirList = []
-    for dir in directories(rootDir):
+    for dir in sorted(directories(rootDir)):
         # print(dir)
         # print(relpath(rootDir,dir))
         # print(depth(relpath(rootDir,dir)))

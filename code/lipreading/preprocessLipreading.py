@@ -16,12 +16,12 @@ def unpickle(file):
     return a
 
 
-def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbose=False, storeDir=None, storeProcessed=False, loadData=True):
+def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbose=False, storeDir=None, storeProcessed=False, loadData=True, viseme=False):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
     if storeDir != None:
-        store_path = ''.join([storeDir, "_train", str(trainFraction).replace("0.",""), "valid",
+        store_path = ''.join([storeDir, ("_viseme" if viseme else "_phoneme"), "_train", str(trainFraction).replace("0.",""), "valid",
                               str(validFraction).replace("0.", ""), os.sep, os.path.basename(speakerFile)])
         #import pdb;pdb.set_trace()
         # if already processed, just load it from disk
@@ -46,6 +46,15 @@ def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbos
 
     #logger_prepLip.info('loading file %s', speakerFile)
     data = unpickle(''.join([storeDir, os.sep, speakerFile]))
+
+    # convert phonemes to viseme labels if needed
+    if viseme:
+        from phoneme_set import phoneme_set_39, classToPhoneme39, phonemeToViseme, viseme_set, classToViseme
+        for i in range(len(data['labels'])):
+            phoneme = classToPhoneme39(data['labels'][i])
+            data['labels'][i] = viseme_set[phonemeToViseme[phoneme]]
+
+
     thisN = data['data'].shape[0]
     thisTrain = int(trainFraction * thisN)
     thisValid = int(validFraction * thisN)
@@ -57,6 +66,7 @@ def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbos
         logger_prepLip.info("This dataset contains %s images", thisN)
         logger_prepLip.info("now loading : nbTrain, nbValid, nbTest")
         logger_prepLip.info("\t\t\t %s %s %s", thisTrain, thisValid, thisTest)
+
 
     X_train = X_train + list(data['data'][0:thisTrain])
     X_val   = X_val   + list(data['data'][thisTrain:thisTrain + thisValid])

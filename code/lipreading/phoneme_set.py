@@ -12,6 +12,25 @@ values = [i for i in range(0, len(viseme_set_list))]
 viseme_set = dict(zip(viseme_set_list, values))
 classToViseme = dict((v, k) for k, v in viseme_set.iteritems())
 
+
+# for training on visemes
+phonemeToViseme = {
+        'f':   'A', 'v': 'A',
+        'er':  'B', 'ow': 'B', 'r': 'B', 'q': 'B', 'w': 'B', 'uh': 'B', 'uw': 'B', 'axr': 'B', 'ux': 'B',
+        'b':   'C', 'p': 'C', 'm': 'C', 'em': 'C',
+        'aw':  'D',
+        ' dh': 'E', 'th': 'E',
+        'ch':  'F', 'jh': 'F', 'sh': 'F', 'zh': 'F',
+        'oy':  'G', 'ao': 'G',
+        's':   'H', 'z': 'H',
+        'aa':  'I', 'ae': 'I', 'ah': 'I', 'ay': 'I', 'ey': 'I', 'ih': 'I', 'iy': 'I', 'y': 'I', 'eh': 'I', 'ax-h': 'I',
+        'ax':  'I', 'ix': 'I',
+        'd':   'J', 'l': 'J', 'n': 'J', 't': 'J', 'el': 'J', 'nx': 'J', 'en': 'J', 'dx': 'J',
+        'g':   'K', 'k': 'K', 'ng': 'K', 'eng': 'K',
+        'sil': 'S', 'pcl': 'S', 'tcl': 'S', 'kcl': 'S', 'bcl': 'S', 'dcl': 'S', 'gcl': 'S', 'h#': 'S', '#h': 'S',
+        'pau': 'S', 'epi': 'S'
+    }
+
 ###########  PHONMEMES   ##############
 phoneme_set_61_39 = {
     'ao':   'aa',  # 1
