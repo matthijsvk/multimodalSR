@@ -96,8 +96,8 @@ def main():
     root_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/'))
     results_dir = root_dir + "results";
     if not os.path.exists(results_dir): os.makedirs(results_dir)
-    if viseme: database_binaryDir = root_dir + 'database_binaryViseme'
-    else:      database_binaryDir = root_dir + 'database_binary'
+    if viseme: database_binaryDir = root_dir + 'binaryViseme'
+    else:      database_binaryDir = root_dir + 'binary'
     datasetType = "lipspeakers";
     ##############################################
 
@@ -118,12 +118,13 @@ def main():
         # you can just run this program and it will generate the files the first time it encounters them, or generate them manually with datasetToPkl.py
 
         # just get the names
-        testVolunteerNumbers = [13, 15, 21, 23, 24, 25, 28, 29, 30, 31, 34, 36, 37, 43, 47, 51, 54];
-        testVolunteers = ["Volunteer" + str(testNumber) + ".pkl" for testNumber in testVolunteerNumbers];
+        testVolunteerNumbers = ["13F", "15F", "21M", "23M", "24M", "25M", "28M", "29M", "30F", "31F", "34M", "36F",
+                                "37F", "43F", "47M", "51F", "54M"];
+        testVolunteers = [str(testNumber) + ".pkl" for testNumber in testVolunteerNumbers];
         lipspeakers = ["Lipspkr1.pkl", "Lipspkr2.pkl", "Lipspkr3.pkl"];
         allSpeakers = [f for f in os.listdir(database_binaryDir) if
                        os.path.isfile(os.path.join(database_binaryDir, f)) and os.path.splitext(f)[1] == ".pkl"]
-        trainVolunteers = [f if not (f in testVolunteers or f in lipspeakers) else None for f in allSpeakers];
+        trainVolunteers = [f for f in allSpeakers if not (f in testVolunteers or f in lipspeakers)];
         trainVolunteers = [vol for vol in trainVolunteers if vol is not None]
 
         if datasetType == "combined":
