@@ -98,39 +98,53 @@ def main():
     if not os.path.exists(results_dir): os.makedirs(results_dir)
     if viseme: database_binaryDir = root_dir + 'database_binaryViseme'
     else:      database_binaryDir = root_dir + 'database_binary'
-    dataset = "volunteers";
+    datasetType = "volunteers";
     ##############################################
 
-    if dataset == "lipspeakers":
+    if datasetType == "lipspeakers":
         loadPerSpeaker = False  # only lipspeakers small enough to fit in CPU RAM, generate X_train etc here
-        pkl_path = database_binaryDir + "processed" + os.sep + dataset + ".pkl"
+        pkl_path = database_binaryDir + "processed" + os.sep + datasetType + ".pkl"
         if not os.path.exists(pkl_path):
             logger_lip.info("dataset not yet processed. Processing...")
             preprocessLipreading.prepLip_all(data_path=database_binaryDir, store_path=pkl_path, trainFraction=0.8, validFraction=0.1,
                         testFraction=0.1,
-                        nbClasses=nbClasses, onehot=oneHot, type=dataset, verbose=True)
+                        nbClasses=nbClasses, onehot=oneHot, type=datasetType, verbose=True)
         datasetFiles = general_tools.unpickle(pkl_path)
 
     else:  # we need to load and preprocess each speaker before we evaluate, because dataset is too large and doesn't fit in CPU RAM
         loadPerSpeaker = True
-        processed_store_dir = os.path.expanduser("~/TCDTIMIT/lipreading/database_binaryViseme")
-        trainingPKL_dir = processed_store_dir +"_train8valid2"
-        trainingPKL_files = [os.path.join(trainingPKL_dir, f) for f in os.listdir(trainingPKL_dir) if os.path.isfile(os.path.join(trainingPKL_dir, f))]
-        testPKL_dir = processed_store_dir +"_train0valid0"
-        testPKL_files = [os.path.join(testPKL_dir, f) for f in os.listdir(testPKL_dir) if os.path.isfile(os.path.join(testPKL_dir, f))]
+        storeProcessed = False #if you have about 10GB hdd space, you can increase the speed by not reprocessing it each iteration
+        # you can just run this program and it will generate the files the first time it encounters them, or generate them manually with datasetToPkl.py
 
-        datasetFiles = [trainingPKL_files, testPKL_files]
+        # just get the names
+        testVolunteerNumbers = [13, 15, 21, 23, 24, 25, 28, 29, 30, 31, 34, 36, 37, 43, 47, 51, 54];
+        testVolunteers = ["Volunteer" + str(testNumber) + ".pkl" for testNumber in testVolunteerNumbers];
+        lipspeakers = ["Lipspkr1.pkl", "Lipspkr2.pkl", "Lipspkr3.pkl"];
+        allSpeakers = [f for f in os.listdir(database_binaryDir) if
+                       os.path.isfile(os.path.join(database_binaryDir, f)) and os.path.splitext(f)[1] == ".pkl"]
+        trainVolunteers = [f if not (f in testVolunteers or f in lipspeakers) else None for f in allSpeakers];
+        trainVolunteers = [vol for vol in trainVolunteers if vol is not None]
+
+        if datasetType == "combined":
+            trainingSpeakerFiles = trainVolunteers + lipspeakers
+            testSpeakerFiles = testVolunteers
+        elif datasetType == "volunteers":
+            trainingSpeakerFiles = trainVolunteers
+            testSpeakerFiles = testVolunteers
+        else:
+            raise Exception("invalid dataset entered")
+        datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
 
 
-    model_name = dataset + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")
+    model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")
     model_save_name = os.path.join(results_dir,model_name)
 
     # log file
     logFile = results_dir + os.sep + model_name + '.log'
-    if os.path.exists(logFile):
-        fh = logging.FileHandler(logFile)  # append to existing log
-    else:
-        fh = logging.FileHandler(logFile, 'w')  # create new logFile
+    # if os.path.exists(logFile):
+    #     fh = logging.FileHandler(logFile)  # append to existing log
+    # else:
+    fh = logging.FileHandler(logFile, 'w')  # create new logFile
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
     logger_lip.addHandler(fh)
@@ -193,7 +207,8 @@ def main():
         LR_start=LR_start, LR_decay=LR_decay,
         num_epochs=num_epochs,
         dataset=datasetFiles,
-        processed_store_dir=processed_store_dir,
+        database_binaryDir=database_binaryDir,
+        storeProcessed=storeProcessed,
         loadPerSpeaker=loadPerSpeaker,
         save_name=model_save_name,
         shuffleEnabled=True)

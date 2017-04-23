@@ -16,14 +16,14 @@ def unpickle(file):
     return a
 
 
-def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbose=False, storeDir=None, loadData=True):
+def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbose=False, storeDir=None, storeProcessed=False, loadData=True):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
     if storeDir != None:
         store_path = ''.join([storeDir, "_train", str(trainFraction).replace("0.",""), "valid",
                               str(validFraction).replace("0.", ""), os.sep, os.path.basename(speakerFile)])
-        #import pdb;pdb.set_trace()
+        import pdb;pdb.set_trace()
         # if already processed, just load it from disk
         if os.path.exists(store_path):
             if loadData:  #before starting training, we just want to check if it exists, and generate otherwise. Not load the data
@@ -31,6 +31,7 @@ def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbos
                 X_train, y_train, X_val, y_val, X_test, y_test = unpickle(store_path)
                 return X_train, y_train, X_val, y_val, X_test, y_test
             return
+    logger_prepLip.info("processed data doesn't exist yet; generating...")
 
     dtype = 'uint8'
     memAvaliableMB = 6000;
@@ -45,7 +46,7 @@ def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbos
     X_test  = [];   y_test = []
 
     #logger_prepLip.info('loading file %s', speakerFile)
-    data = unpickle(speakerFile)
+    data = unpickle(''.join([storeDir, os.sep, speakerFile]))
     thisN = data['data'].shape[0]
     thisTrain = int(trainFraction * thisN)
     thisValid = int(validFraction * thisN)
@@ -143,8 +144,8 @@ def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbos
         logger_prepLip.info("%s", y_test.shape)
 
     ### STORE DATA ###
-    dataList = [X_train, y_train, X_val, y_val, X_test, y_test]
-    if store_path != None: general_tools.saveToPkl(store_path, dataList)
+    if storeProcessed and store_path != None: general_tools.saveToPkl(store_path,
+                                                                      [X_train, y_train, X_val, y_val, X_test, y_test])
 
     return X_train, y_train, X_val, y_val, X_test, y_test
 
