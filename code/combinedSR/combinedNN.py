@@ -13,7 +13,6 @@ logger_combined = logging.getLogger('combined')
 logger_combined.setLevel(logging.DEBUG)
 FORMAT = '[$BOLD%(filename)s$RESET:%(lineno)d][%(levelname)-5s]: %(message)s '
 formatter = logging.Formatter(formatting.formatter_message(FORMAT, False))
-formatter2 = logging.Formatter('%(asctime)s - %(name)-5s - %(levelname)-10s - (%(filename)s:%(lineno)d): %(message)s')
 
 # create console handler with a higher log level
 ch = logging.StreamHandler()
@@ -59,15 +58,12 @@ logger_combined.info("LR_decay = %s", str(LR_decay))
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
 dataset = "TCDTIMIT"
-root_dir = os.path.expanduser("~/TCDTIMIT/combinedSR/")
-store_dir = root_dir + dataset + "/results"
+root_dir = os.path.expanduser('~/TCDTIMIT/lipreading/' + dataset)
+store_dir = root_dir + "/results"
 if not os.path.exists(store_dir): os.makedirs(store_dir)
 
-
-if not os.path.exists(store_dir): os.makedirs(store_dir)
-database_binaryDir = root_dir + 'database_binary'
+database_binaryDir = root_dir + '/database_binary'
 datasetType = "volunteers";
-
 
 # audio network + cnnNetwork + classifierNetwork
 model_name = str(len(LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in LSTM_HIDDEN_LIST]) \
@@ -102,13 +98,13 @@ storeProcessed = False  # if you have about 10GB hdd space, you can increase the
 # you can just run this program and it will generate the files the first time it encounters them, or generate them manually with datasetToPkl.py
 
 # just get the names
-testVolunteerNumbers = [13, 15, 21, 23, 24, 25, 28, 29, 30, 31, 34, 36, 37, 43, 47, 51, 54];
-testVolunteers = ["Volunteer" + str(testNumber) + ".pkl" for testNumber in testVolunteerNumbers];
+testVolunteerNumbers = ["13F", "15F", "21M", "23M", "24M", "25M", "28M", "29M", "30F", "31F", "34M", "36F", "37F",
+                        "43F", "47M", "51F", "54M"];
+testVolunteers = [str(testNumber) + ".pkl" for testNumber in testVolunteerNumbers];
 lipspeakers = ["Lipspkr1.pkl", "Lipspkr2.pkl", "Lipspkr3.pkl"];
 allSpeakers = [f for f in os.listdir(database_binaryDir) if
                os.path.isfile(os.path.join(database_binaryDir, f)) and os.path.splitext(f)[1] == ".pkl"]
-trainVolunteers = [f if not (f in testVolunteers or f in lipspeakers) else None for f in allSpeakers];
-trainVolunteers = [vol for vol in trainVolunteers if vol is not None]
+trainVolunteers = [f for f in allSpeakers if not (f in testVolunteers or f in lipspeakers)];
 
 if datasetType == "combined":
     trainingSpeakerFiles = trainVolunteers + lipspeakers
@@ -120,13 +116,11 @@ else:
     raise Exception("invalid dataset entered")
 datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
 
-# add the directory to create paths
-trainingSpeakerFiles = sorted([database_binaryDir + os.sep + file for file in trainingSpeakerFiles])
-testSpeakerFiles = sorted([database_binaryDir + os.sep + file for file in testSpeakerFiles])
-datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
+
 # get a sample of the dataset to debug the network
 
-dataset_test = preprocessingCombined.getOneSpeaker()
+train_ = preprocessingCombined.getOneSpeaker( database_binaryDir + os.sep + trainingSpeakerFiles[0], t)
+
 ##### BUIDING MODEL #####
 logger_combined.info('\n* Building network ...')
 RNN_network = NeuralNetwork('combined', dataset_test,

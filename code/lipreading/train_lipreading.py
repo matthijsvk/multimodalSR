@@ -200,7 +200,7 @@ def train(train_fn, val_fn,
             X_train, y_train = shuffle(X_train, y_train)
 
             val_err, val_cost, nb_val_batches = val_epoch(X=X_val, y=y_val)
-            val_err = val_err / nb_val_batches; val_cost /=nb_val_batches
+            val_err = val_err / nb_val_batches * 100; val_cost /=nb_val_batches
 
         else:
             train_cost, val_cost, val_err = evalTRAINING(trainingSpeakerFiles, LR, shuffleEnabled, storeDir=database_binaryDir)
@@ -216,7 +216,7 @@ def train(train_fn, val_fn,
 
             if not loadPerSpeaker:  #all at once
                 test_err, test_cost, nb_test_batches = val_epoch(X_test, y_test)
-                test_err = test_err / nb_test_batches;  test_cost /= nb_test_batches
+                test_err = test_err / nb_test_batches * 100;  test_cost /= nb_test_batches
 
             else:  # process each speaker seperately
                 test_cost, test_err = evalTEST(testSpeakerFiles, storeDir=database_binaryDir)

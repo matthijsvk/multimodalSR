@@ -28,8 +28,7 @@ def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbos
         if os.path.exists(store_path):
             if loadData:  #before starting training, we just want to check if it exists, and generate otherwise. Not load the data
                 logger_prepLip.info("loading stored files X's...")
-                X_train, y_train, X_val, y_val, X_test, y_test = unpickle(store_path)
-                return X_train, y_train, X_val, y_val, X_test, y_test
+                return unpickle(store_path)
             return
     logger_prepLip.info(" %s processed data doesn't exist yet; generating...", speakerFile)
 
@@ -258,7 +257,7 @@ def prepLip_all(data_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading
 
     if verbose:
         logger_prepLip.info("TRAIN: %s %s", X_train.shape, X_train[0][0].dtype)
-        logger_prepLip.info("%s", y_train.shape, y_train[0].dtype)
+        logger_prepLip.info("%s %s", y_train.shape, y_train[0].dtype)
         logger_prepLip.info("VALID: %s", X_val.shape)
         logger_prepLip.info("%s",y_val.shape)
         logger_prepLip.info("TEST: %s", X_test.shape)

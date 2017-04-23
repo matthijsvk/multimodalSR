@@ -93,18 +93,19 @@ def main():
     # get the database
     # If it's small (lipspeakers) -> generate X_train, y_train etc here
     # otherwise we need to load and generate each speaker seperately in the training loop
-    root_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/'))
+    dataset = "TCDTIMIT"
+    root_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/'+dataset))
     results_dir = root_dir + "results";
     if not os.path.exists(results_dir): os.makedirs(results_dir)
-    if viseme: database_binaryDir = root_dir + 'binaryViseme'
-    else:      database_binaryDir = root_dir + 'binary'
+    if viseme: database_binaryDir = root_dir + '/binaryViseme'
+    else:      database_binaryDir = root_dir + '/binary'
     datasetType = "lipspeakers";
     ##############################################
 
     if datasetType == "lipspeakers":
         loadPerSpeaker = False  # only lipspeakers small enough to fit in CPU RAM, generate X_train etc here
         storeProcessed = False
-        pkl_path = database_binaryDir + "processed" + os.sep + datasetType + ".pkl"
+        pkl_path = database_binaryDir + "_processed" + os.sep + datasetType + ".pkl"
         if not os.path.exists(pkl_path):
             logger_lip.info("dataset not yet processed. Processing...")
             preprocessLipreading.prepLip_all(data_path=database_binaryDir, store_path=pkl_path, trainFraction=0.8, validFraction=0.1,

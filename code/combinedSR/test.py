@@ -1,4 +1,10 @@
 import os
+import logging, formatting
+logger_combined = logging.getLogger('combined')
+logger_combined.setLevel(logging.DEBUG)
+FORMAT = '[$BOLD%(filename)s$RESET:%(lineno)d][%(levelname)-5s]: %(message)s '
+formatter = logging.Formatter(formatting.formatter_message(FORMAT, False))
+
 
 dataset = "TCDTIMIT"
 root_dir = os.path.expanduser("~/TCDTIMIT/combinedSR/")
@@ -12,11 +18,11 @@ datasetType = "combined";
 
 # just get the names
 testVolunteerNumbers = ["13F", "15F", "21M", "23M", "24M", "25M", "28M", "29M", "30F", "31F", "34M", "36F", "37F", "43F", "47M", "51F", "54M"];
-testVolunteers = [str(testNumber) + ".pkl" for testNumber in testVolunteerNumbers];
+testVolunteers = sorted([str(testNumber) + ".pkl" for testNumber in testVolunteerNumbers])
 lipspeakers = ["Lipspkr1.pkl", "Lipspkr2.pkl", "Lipspkr3.pkl"];
-allSpeakers = [f for f in os.listdir(database_binaryDir) if
-               os.path.isfile(os.path.join(database_binaryDir, f)) and os.path.splitext(f)[1] == ".pkl"]
-trainVolunteers = [f for f in allSpeakers if not (f in testVolunteers or f in lipspeakers)];
+allSpeakers = sorted([f for f in os.listdir(database_binaryDir) if
+               os.path.isfile(os.path.join(database_binaryDir, f)) and os.path.splitext(f)[1] == ".pkl"])
+trainVolunteers = sorted([f for f in allSpeakers if not (f in testVolunteers or f in lipspeakers)])
 
 if datasetType == "combined":
     trainingSpeakerFiles = trainVolunteers + lipspeakers
@@ -26,6 +32,16 @@ elif datasetType == "volunteers":
     testSpeakerFiles = testVolunteers
 else:
     raise Exception("invalid dataset entered")
-datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
+datasetFiles = [sorted(trainingSpeakerFiles), sorted(testSpeakerFiles)]
+
+
+
+
+import pdb;pdb.set_trace()
+
+
+## TEST split train/val/test
+import preprocessingCombined
+train, val, test = preprocessingCombined.getOneSpeaker(database_binaryDir + os.sep + trainingSpeakerFiles[0], storeDir=database_binaryDir, trainFraction=0.7, validFraction=0.1, verbose=True)
 
 import pdb;pdb.set_trace()

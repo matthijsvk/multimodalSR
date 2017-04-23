@@ -275,4 +275,9 @@ def alphanum_key(s):
 def sort_nicely(l):
     return sorted(l, key=alphanum_key)
 
+def set_type(X, type):
+    for i in range(len(X)):
+        X[i] = X[i].astype(type)
+    return X
+
 
