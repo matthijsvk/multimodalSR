@@ -23,7 +23,7 @@ def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbos
     if storeDir != None:
         store_path = ''.join([storeDir, "_train", str(trainFraction).replace("0.",""), "valid",
                               str(validFraction).replace("0.", ""), os.sep, os.path.basename(speakerFile)])
-        import pdb;pdb.set_trace()
+        #import pdb;pdb.set_trace()
         # if already processed, just load it from disk
         if os.path.exists(store_path):
             if loadData:  #before starting training, we just want to check if it exists, and generate otherwise. Not load the data
@@ -31,7 +31,7 @@ def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbos
                 X_train, y_train, X_val, y_val, X_test, y_test = unpickle(store_path)
                 return X_train, y_train, X_val, y_val, X_test, y_test
             return
-    logger_prepLip.info("processed data doesn't exist yet; generating...")
+    logger_prepLip.info(" %s processed data doesn't exist yet; generating...", speakerFile)
 
     dtype = 'uint8'
     memAvaliableMB = 6000;
@@ -100,12 +100,12 @@ def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbos
         logger_prepLip.info("%s",y_test.shape)
 
     memTot = X_train.nbytes + X_val.nbytes + X_test.nbytes + y_train.nbytes + y_val.nbytes + y_test.nbytes
-    logger_prepLip.info("Total memory size required as float32: %s MB", memTot / 1000000)
+    if verbose: logger_prepLip.info("Total memory size required as float32: %s MB", memTot / 1000000)
 
     # fix labels (labels start at 1, but the library expects them to start at 0)
-    y_train = y_train - 1
-    y_val = y_val - 1
-    y_test = y_test - 1
+    # y_train = y_train - 1
+    # y_val = y_val - 1
+    # y_test = y_test - 1
 
     # rescale to interval [-1,1], cast to float32 for GPU use
     X_train = np.multiply(2. / 255., X_train, dtype='float32')
@@ -258,19 +258,19 @@ def prepLip_all(data_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading
 
     if verbose:
         logger_prepLip.info("TRAIN: %s %s", X_train.shape, X_train[0][0].dtype)
-        logger_prepLip.info(y_train.shape, y_train[0].dtype)
+        logger_prepLip.info("%s", y_train.shape, y_train[0].dtype)
         logger_prepLip.info("VALID: %s", X_val.shape)
-        logger_prepLip.info(y_val.shape)
+        logger_prepLip.info("%s",y_val.shape)
         logger_prepLip.info("TEST: %s", X_test.shape)
-        logger_prepLip.info(y_test.shape)
+        logger_prepLip.info("%s",y_test.shape)
 
     memTot = X_train.nbytes + X_val.nbytes + X_test.nbytes + y_train.nbytes + y_val.nbytes + y_test.nbytes
     logger_prepLip.info("Total memory size required as float32: %s MB", memTot / 1000000)
 
     # fix labels (labels start at 1, but the library expects them to start at 0)
-    y_train = y_train - 1
-    y_val = y_val - 1
-    y_test = y_test - 1
+    # y_train = y_train - 1
+    # y_val = y_val - 1
+    # y_test = y_test - 1
 
     # rescale to interval [-1,1], cast to float32 for GPU use
     X_train = np.multiply(2. / 255., X_train, dtype='float32')
@@ -318,11 +318,11 @@ def prepLip_all(data_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading
     if verbose:
         logger_prepLip.info("\n Final datatype: ")
         logger_prepLip.info("TRAIN: %s %s ", X_train.shape, X_train[0][0].dtype)
-        logger_prepLip.info(y_train.shape, y_train[0].dtype)
+        logger_prepLip.info("%s %s", y_train.shape, y_train[0].dtype)
         logger_prepLip.info("VALID: %s", X_val.shape)
-        logger_prepLip.info(y_val.shape)
+        logger_prepLip.info("%s", y_val.shape)
         logger_prepLip.info("TEST: %s", X_test.shape)
-        logger_prepLip.info(y_test.shape)
+        logger_prepLip.info("%s", y_test.shape)
 
     ### STORE DATA ###
     dataList = [X_train, y_train, X_val, y_val, X_test, y_test]

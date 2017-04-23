@@ -98,11 +98,12 @@ def main():
     if not os.path.exists(results_dir): os.makedirs(results_dir)
     if viseme: database_binaryDir = root_dir + 'database_binaryViseme'
     else:      database_binaryDir = root_dir + 'database_binary'
-    datasetType = "volunteers";
+    datasetType = "lipspeakers";
     ##############################################
 
     if datasetType == "lipspeakers":
         loadPerSpeaker = False  # only lipspeakers small enough to fit in CPU RAM, generate X_train etc here
+        storeProcessed = False
         pkl_path = database_binaryDir + "processed" + os.sep + datasetType + ".pkl"
         if not os.path.exists(pkl_path):
             logger_lip.info("dataset not yet processed. Processing...")
