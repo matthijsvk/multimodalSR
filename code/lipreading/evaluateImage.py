@@ -3,6 +3,7 @@ from __future__ import print_function
 import argparse
 import time
 from PIL import Image
+from tqdm import tqdm
 
 # this imported file contains build_model(), which constructs the network structure that you van fill using the pkl file
 # to generate the pkl file, you need to run the main function in resnet50CaffeToLasagne_ImageNet,
@@ -98,7 +99,7 @@ def prep_image(fname):
 def get_net_fun(phonemeViseme, networkType, k=5, print_network= False):
     outputLayer, inputs = load_model(phonemeViseme, networkType, print_network)
 
-    target = T.ivector('targets')
+    targets = T.ivector('targets')
 
     all_predictions = lasagne.layers.get_output(outputLayer, deterministic=True)
     get_all_prob = theano.function([inputs], all_predictions)
@@ -106,18 +107,23 @@ def get_net_fun(phonemeViseme, networkType, k=5, print_network= False):
     maxprob = T.argmax(all_predictions, axis=1)
     get_first_prediction = theano.function([inputs], maxprob)
 
-    accuracy = T.mean(T.eq(maxprob, target), dtype=theano.config.floatX)
-    get_accuracy = theano.function([inputs, target], accuracy)
+    accuracy = T.eq(maxprob, targets)
+    avg_accuracy= T.mean(accuracy, dtype=theano.config.floatX)
+    get_accuracy = theano.function([inputs, targets], avg_accuracy)
 
     # Top k accuracy
-    topk_accuracy = T.mean(T.any(T.eq(T.argsort(all_predictions, axis=1)[:, -k:], target.dimshuffle(0, 'x')), axis=1),
-                           dtype=theano.config.floatX)
-    get_topk_accuracy = theano.function([inputs, target], topk_accuracy)
+    # topk_accuracy = T.mean(T.any(T.eq(T.argsort(all_predictions, axis=1)[:, -k:], targets.dimshuffle(0, 'x')), axis=1), axis=1)
+    topk_accuracy = T.any(T.eq(T.argsort(all_predictions, axis=1)[:, -k:], targets.dimshuffle(0, 'x')), axis=1)
+
+    avg_topk_accuracy = T.mean(topk_accuracy, dtype=theano.config.floatX)
+    get_topk_accuracy = theano.function([inputs, targets], avg_topk_accuracy)
+
+    val_fn = theano.function([inputs, targets], [all_predictions, maxprob, accuracy, topk_accuracy])
 
     def print_topk(im_path, k):
         im = prep_image(im_path)
-        prob = get_all_prob(im)#[0]
-        print(prob)
+        prob = get_all_prob(im)[0]
+        #print(prob)
         phonemeNumberMap = classToPhoneme39
         pred = []
         for i in range(0, len(prob)):
@@ -130,7 +136,7 @@ def get_net_fun(phonemeViseme, networkType, k=5, print_network= False):
         for p in pred:
             print(p)
 
-    return get_all_prob, get_first_prediction, print_topk, get_accuracy, get_topk_accuracy
+    return get_all_prob, get_first_prediction, print_topk, get_accuracy, get_topk_accuracy, val_fn
 
 
 def prob_to_class(prob):
@@ -138,6 +144,26 @@ def prob_to_class(prob):
     for p in list(prob):
         a.append(classToPhoneme39[p])
     return a
+
+
+batch_size = 100
+def val_epoch(X, y, val_fn):
+    all_preds = []
+    max_probs = []
+    accs = []
+    topk_accs = []
+    nb_batches = len(X) / batch_size
+
+    for i in tqdm(range(nb_batches)):
+        batch_X = X[i * batch_size:(i + 1) * batch_size]
+        batch_y = y[i * batch_size:(i + 1) * batch_size]
+        all_predictions, maxprob, accuracy, topk_accuracy = val_fn(batch_X, batch_y)
+        all_preds += list(all_predictions)
+        max_probs += list(maxprob)
+        accs      += list(accuracy)
+        topk_accs += list(topk_accuracy)
+
+    return all_preds, max_probs, accs, topk_accs
 
 
 if __name__ == "__main__":
@@ -151,12 +177,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print("Compiling functions...")
-    get_all_prob, get_top1_prob, print_topk, get_accuracy, get_topk_accuracy = get_net_fun(args.output,
+    k=5
+    get_all_prob, get_top1_prob, print_topk, get_accuracy, get_topk_accuracy, val_fn = get_net_fun(args.output,
                                                                                            args.network_type,
-                                                                                           10,
+                                                                                           k,
                                                                                            print_network=True)
     t0 = time.clock()
-    print_topk(args.input_image, 10)
+    print_topk(args.input_image, k)
     t1 = time.clock()
     print("Total time taken {:.4f}".format(t1 - t0))
 
@@ -169,6 +196,30 @@ if __name__ == "__main__":
     print("Top 1 accuracy: ", get_accuracy(im, classNumber))
     print("Top 5 accuracy: ", get_topk_accuracy(im, classNumber))
 
+    # evaluate volunteer
+    # processedDir = os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binary_finalProcessed")
+    # speakerFile = "29M.pkl"
+    # X_train, y_train, X_val, y_val, X_test, y_test = preprocessLipreading.prepLip_one(
+    #         speakerFile=speakerFile, processedDir = processedDir, trainFraction=0.0, validFraction=0.0)
+
+    # evaluate lipspeakers
+    X_train, y_train, X_val, y_val, X_test, y_test = unpickle(os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binary_allLipspeakersProcessed/lipspeakers.pkl"))
+
+    all_predictions, maxprob, accuracy, topk_accuracy = val_epoch(X_test, y_test, val_fn)
+    #import pdb;pdb.set_trace()
+    nbShown = 1
+    print("TEST results: ")
+    print("\t  test cost:        %s", str(maxprob[:nbShown]))
+    print("\t  test error rate:  %s %%", str(accuracy[:nbShown]))
+    print("\t  test top k acc:  %s %%", str(topk_accuracy[:nbShown]))
+    import pdb;pdb.set_trace()
+
+    # # for one image out of X_test:
+    # get_accuracy(np.reshape(X_test[0],(1,1,120,120)),np.reshape(y_test[0],(1,)))
+
+    # # get overall accuracy:
+    #np.sum([topk_accuracy[i] == True for i in range(len(accuracy))])
+
     # Usage example
     # (to extract mouth, convert to grayscale etc: python preprocessImage.py -i testImages/w.jpg)
-    # python evaluateImage2.py testImages/sa1_120_aa.jpg aa
+    # python evaluateImage.py testImages/sa1_120_aa.jpg aa

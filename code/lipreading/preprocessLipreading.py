@@ -16,14 +16,14 @@ def unpickle(file):
     return a
 
 
-def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbose=False, sourcestoreDir=None, storeProcessed=False, loadData=True, viseme=False):
+def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbose=False, sourceDataDir=None, storeProcessed=False, processedDir=None, loadData=True, viseme=False):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
-    if storeDir != None:
-        store_path = ''.join([storeDir, ("_viseme" if viseme else "_phoneme"), "_train", str(trainFraction).replace("0.",""), "valid",
+    if processedDir != None:
+        store_path = ''.join([processedDir, ("_viseme" if viseme else "_phoneme"), "_train", str(trainFraction).replace("0.", ""), "valid",
                               str(validFraction).replace("0.", ""), os.sep, os.path.basename(speakerFile)])
-        #import pdb;pdb.set_trace()
+        print(store_path)
         # if already processed, just load it from disk
         if os.path.exists(store_path):
             if loadData:  #before starting training, we just want to check if it exists, and generate otherwise. Not load the data
@@ -45,7 +45,7 @@ def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbos
     X_test  = [];   y_test = []
 
     #logger_prepLip.info('loading file %s', speakerFile)
-    data = unpickle(''.join([storeDir, os.sep, speakerFile]))
+    data = unpickle(''.join([sourceDataDir, os.sep, speakerFile]))
 
     # convert phonemes to viseme labels if needed
     if viseme:

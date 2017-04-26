@@ -52,7 +52,7 @@ import lasagne.objectives as LO
 def main():
 
     # BN parameters
-    batch_size = 100
+    batch_size = 80
     logger_lip.info("batch_size = %s",batch_size)
     # alpha is the exponential moving average factor
     alpha = .1
@@ -65,7 +65,7 @@ def main():
     logger_lip.info("activation = T.nnet.relu")
 
     # Training parameters
-    num_epochs = 50
+    num_epochs = 20
     logger_lip.info("num_epochs = %s", num_epochs)
 
     # Decaying LR
@@ -99,13 +99,14 @@ def main():
     if not os.path.exists(results_dir): os.makedirs(results_dir)
     if viseme: database_binaryDir = root_dir + '/binaryViseme'
     else:      database_binaryDir = root_dir + '/binary'
-    datasetType = "volunteers" #""lipspeakers";
+    datasetType = "lipspeakers" #""lipspeakers";
     ##############################################
 
     if datasetType == "lipspeakers":
         loadPerSpeaker = False  # only lipspeakers small enough to fit in CPU RAM, generate X_train etc here
-        storeProcessed = False
-        pkl_path = database_binaryDir + "_allLipspeakersProcessed" + os.sep + datasetType + ".pkl"
+        storeProcessed = True
+        processedDir = database_binaryDir + "_allLipspeakersProcessed"
+        pkl_path =  processedDir + os.sep + datasetType + ".pkl"
         if not os.path.exists(pkl_path):
             logger_lip.info("dataset not yet processed. Processing...")
             preprocessLipreading.prepLip_all(data_path=database_binaryDir, store_path=pkl_path, trainFraction=0.8, validFraction=0.1,
@@ -115,7 +116,8 @@ def main():
 
     else:  # we need to load and preprocess each speaker before we evaluate, because dataset is too large and doesn't fit in CPU RAM
         loadPerSpeaker = True
-        storeProcessed = False #if you have about 10GB hdd space, you can increase the speed by not reprocessing it each iteration
+        storeProcessed = True #if you have about 10GB hdd space, you can increase the speed by not reprocessing it each iteration
+        processedDir = database_binaryDir + "_finalProcessed"
         # you can just run this program and it will generate the files the first time it encounters them, or generate them manually with datasetToPkl.py
 
         # just get the names
@@ -138,8 +140,7 @@ def main():
             raise Exception("invalid dataset entered")
         datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
 
-
-    model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")+"_2"
+    model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")+str(nbClasses)
     model_save_name = os.path.join(results_dir,model_name)
 
     # log file
@@ -176,6 +177,7 @@ def main():
     logger_lip.info("The number of parameters of this network: %s", L.count_params(l_out))
 
 
+    logger_lip.info("loading %s", model_save_name + '.npz')
     load_model(model_save_name +'.npz', l_out)
 
 
@@ -186,7 +188,16 @@ def main():
                       dtype=theano.config.floatX)  # T.zeros((1,))
     test_loss = LO.categorical_crossentropy(test_network_output, targets);
     test_loss = test_loss.mean()
-    val_fn = theano.function([inputs, targets], [test_loss, test_err])
+
+    # Top k accuracy
+    k = 3
+    topk_error = T.mean( 1. - T.any(T.eq(T.argsort(test_network_output, axis=1)[:, -k:], targets.dimshuffle(0, 'x')), axis=1),
+        dtype=theano.config.floatX)
+    topk_error_fn = theano.function([inputs, targets], topk_error)
+
+    val_fn = theano.function([inputs, targets], [test_loss, test_err, topk_error])
+
+
 
     # For training, use nondeterministic output
     network_output = L.get_output(l_out, deterministic=False)
@@ -196,7 +207,7 @@ def main():
     loss = loss.mean()
     # # Also add weight decay to the cost function
     # weight_decay = 1e-5
-    # weightsl2 = lasagne.regularization.regularize_network_params(net['out'], lasagne.regularization.l2)
+    # weightsl2 = lasagne.regularization.regularize_network_params(l_out lasagne.regularization.l2)
     # loss += weight_decay * weightsl2
 
     # error
@@ -212,7 +223,7 @@ def main():
     logger_lip.info('Training...')
 
     train_lipreading.train(
-        train_fn=train_fn, val_fn=val_fn, out_fn=out_fn,
+        train_fn=train_fn, val_fn=val_fn, out_fn=out_fn, topk_error_fn = topk_error_fn, k=k,
         network_output_layer=l_out,
         batch_size=batch_size,
         LR_start=LR_start, LR_decay=LR_decay,
@@ -220,6 +231,7 @@ def main():
         dataset=datasetFiles,
         database_binaryDir=database_binaryDir,
         storeProcessed=storeProcessed,
+        processedDir=processedDir,
         loadPerSpeaker=loadPerSpeaker,
         save_name=model_save_name,
         shuffleEnabled=True)

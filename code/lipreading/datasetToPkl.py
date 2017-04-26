@@ -62,9 +62,9 @@ logger_combinedPKL.info("Generating Training data... ")
 for speakerFile in trainingSpeakerFiles:
     logger_combinedPKL.info("%s", os.path.basename(speakerFile))
     preprocessLipreading.prepLip_one(speakerFile=speakerFile, trainFraction=0.8, validFraction=0.2,
-                                     storeDir=database_binaryDir, loadData=False, viseme=viseme, storeProcessed=True)
+                                     sourceDataDir=database_binaryDir, loadData=False, viseme=viseme, storeProcessed=True)
 logger_combinedPKL.info("Generating Test data... ")
 for speakerFile in testSpeakerFiles:
     logger_combinedPKL.info("%s", os.path.basename(speakerFile))
     preprocessLipreading.prepLip_one(speakerFile=speakerFile, trainFraction=0.0, validFraction=0.0,
-                                     storeDir=database_binaryDir, loadData=False, viseme=viseme, storeProcessed=True)
+                                     sourceDataDir=database_binaryDir, loadData=False, viseme=viseme, storeProcessed=True)
