@@ -16,7 +16,7 @@ logger_combinedPKL.addHandler(ch)
 
 ### The raw data was already saved in pkl files by FileDirOps, now we need to preprocess it (normalize and split in train/val/test sets)
 dataset = "TCDTIMIT"
-datasetType = "volunteers";
+datasetType = "lipspeakers";
 viseme = False
 root_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/' + dataset))
 database_binaryDir = root_dir + "/binary" # the raw data

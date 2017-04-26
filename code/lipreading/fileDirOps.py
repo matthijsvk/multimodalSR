@@ -32,7 +32,7 @@ def main():
     copyDBFiles(processedDir, ["mouths_120"], databaseDir)
     print("-----------------------------------------")
 
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
 
     # # 2. extract phonemes for each image, put them in the image name
     # if two phonemes for one frame, copy the image so we have 2 times the same frame, but with a different phoneme (in the name)
@@ -162,7 +162,7 @@ def copyDBFiles(rootDir, names, targetRoot):
             # print("copying file:", file, " to: ", targetRoot+os.sep+relativePath)
             dest = ''.join([targetRoot + os.sep + relativePath])
             if not os.path.exists(dest):
-                print(file)
+                #print(file)
                 copyfile(file, dest)
                 nbCopiedFiles += 1
 
@@ -343,6 +343,8 @@ def speakerToBinary(speakerDir, binaryDatabaseDir, phoneme=True):
 
         if phoneme:# for mapping to phonemes (nbClasses = 39)
             labelNumber = phoneme_set_39[label]  # you could also use the phoneme to viseme map afterwards.
+            try:assert labelNumber >=0 and labelNumber <=38
+            except: import pdb;pdb.set_trace()
 
         else: # for mapping to visemes (nbClasses = 12)
             phonemeToViseme = getPhonemeToVisemeMap()  # dictionary of phoneme-viseme key-value pairs

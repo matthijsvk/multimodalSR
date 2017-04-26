@@ -16,7 +16,7 @@ logger_train.setLevel(logging.DEBUG)
 
 # Given a dataset and a model, this function trains the model on the dataset for several epochs
 # (There is no default trainer function in Lasagne yet)
-def train(train_fn, val_fn,
+def train(train_fn, val_fn, out_fn,
           network_output_layer,
           batch_size,
           LR_start, LR_decay,
@@ -37,6 +37,9 @@ def train(train_fn, val_fn,
         logger_train.info("the number of training examples is: %s", len(X_train))
         logger_train.info("the number of valid examples is:    %s", len(X_val))
         logger_train.info("the number of test examples is:     %s", len(X_test))
+
+    #import pdb; pdb.set_trace()
+
 
     # A function which shuffles a dataset
     def shuffle(X, y):
@@ -65,12 +68,17 @@ def train(train_fn, val_fn,
         cost = 0
         nb_batches = len(X) / batch_size
 
+        i=0
         for i in tqdm(range(nb_batches), total=nb_batches):
             batch_X = X[i * batch_size:(i + 1) * batch_size]
             batch_y = y[i * batch_size:(i + 1) * batch_size]
             # print("batch_X.shape: ", batch_X.shape)
             # print("batch_y.shape: ", batch_y.shape)
             cost += train_fn(batch_X, batch_y, LR)
+
+            # if i==0:
+            #     out = out_fn(batch_X)
+            #     import pdb;pdb.set_trace()
 
         return cost, nb_batches
 
@@ -181,8 +189,15 @@ def train(train_fn, val_fn,
             return LR, epochsNotImproved
 
 
+    # try to load stored model
+    if os.path.exists(save_name + ".npz") and os.path.exists(save_name+ "_trainInfo.pkl"):
+        old_train_info = general_tools.unpickle(save_name + '_trainInfo.pkl')
+        best_val_err = min(old_train_info[2])
+        test_cost = min(old_train_info[3])
+        test_err = min(old_train_info[3])
 
-    best_val_err = 100
+    else:    best_val_err = 100
+
     best_epoch = 1
     LR = LR_start
     # for storage of training info
@@ -257,8 +272,8 @@ def train(train_fn, val_fn,
         logger_train.info("Train info written to:\t %s", store_path)
 
         # decay the LR
-        # LR *= LR_decay
-        LR, epochsNotImproved = updateLR(LR, LR_decay, network_train_info, epochsNotImproved)
+        LR *= LR_decay
+        #LR, epochsNotImproved = updateLR(LR, LR_decay, network_train_info, epochsNotImproved)
 
         if epochsNotImproved > 5:
             logger_train.warning("\n\n NO MORE IMPROVEMENTS -> stop training")

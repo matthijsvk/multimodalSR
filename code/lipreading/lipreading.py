@@ -52,7 +52,7 @@ import lasagne.objectives as LO
 def main():
 
     # BN parameters
-    batch_size = 10
+    batch_size = 100
     logger_lip.info("batch_size = %s",batch_size)
     # alpha is the exponential moving average factor
     alpha = .1
@@ -65,16 +65,16 @@ def main():
     logger_lip.info("activation = T.nnet.relu")
 
     # Training parameters
-    num_epochs = 20
+    num_epochs = 50
     logger_lip.info("num_epochs = %s", num_epochs)
 
     # Decaying LR
-    LR_start = 0.01
+    LR_start = 0.001
     logger_lip.info("LR_start = %s", LR_start)
     LR_fin = 0.0000003
     logger_lip.info("LR_fin = %s",LR_fin)
-    # LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)
-    LR_decay = 0.5
+    #LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)
+    LR_decay = 0.707  # sqrt(0.5)
     logger_lip.info("LR_decay = %s",LR_decay)
     # BTW, LR decay might good for the BN moving average...
 
@@ -99,7 +99,7 @@ def main():
     if not os.path.exists(results_dir): os.makedirs(results_dir)
     if viseme: database_binaryDir = root_dir + '/binaryViseme'
     else:      database_binaryDir = root_dir + '/binary'
-    datasetType = "lipspeakers";
+    datasetType = "volunteers" #""lipspeakers";
     ##############################################
 
     if datasetType == "lipspeakers":
@@ -139,7 +139,7 @@ def main():
         datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
 
 
-    model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")
+    model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")+"_2"
     model_save_name = os.path.join(results_dir,model_name)
 
     # log file
@@ -175,21 +175,30 @@ def main():
     logger_lip.info("Using the %s network", network_type)
     logger_lip.info("The number of parameters of this network: %s", L.count_params(l_out))
 
-    # try to load stored model
+
     load_model(model_save_name +'.npz', l_out)
 
-    logger_lip.info("* COMPILING FUNCTIONS...")
 
+    logger_lip.info("* COMPILING FUNCTIONS...")
     # for validation: disable dropout etc layers -> deterministic
-    test_network_output = L.get_output(l_out, inputs, deterministic=True)
-    test_err = T.mean(T.neq(T.argmax(test_network_output, axis=1), targets), dtype=theano.config.floatX)
-    test_loss = LO.aggregate(LO.categorical_crossentropy(test_network_output, targets))
+    test_network_output = L.get_output(l_out, deterministic=True)
+    test_err = T.mean(T.neq(T.argmax(test_network_output, axis=1), targets),
+                      dtype=theano.config.floatX)  # T.zeros((1,))
+    test_loss = LO.categorical_crossentropy(test_network_output, targets);
+    test_loss = test_loss.mean()
     val_fn = theano.function([inputs, targets], [test_loss, test_err])
 
     # For training, use nondeterministic output
     network_output = L.get_output(l_out, deterministic=False)
+    out_fn = theano.function([inputs], network_output)
     # cross-entropy loss
-    loss = T.mean(LO.categorical_crossentropy(network_output, targets))
+    loss = LO.categorical_crossentropy(network_output, targets);
+    loss = loss.mean()
+    # # Also add weight decay to the cost function
+    # weight_decay = 1e-5
+    # weightsl2 = lasagne.regularization.regularize_network_params(net['out'], lasagne.regularization.l2)
+    # loss += weight_decay * weightsl2
+
     # error
     err = T.mean(T.neq(T.argmax(network_output, axis=1), targets), dtype=theano.config.floatX)
 
@@ -200,11 +209,10 @@ def main():
     # and returning the corresponding training loss:
     train_fn = theano.function([inputs, targets, LR], loss, updates=updates)
 
-
     logger_lip.info('Training...')
 
     train_lipreading.train(
-        train_fn=train_fn, val_fn=val_fn,
+        train_fn=train_fn, val_fn=val_fn, out_fn=out_fn,
         network_output_layer=l_out,
         batch_size=batch_size,
         LR_start=LR_start, LR_decay=LR_decay,

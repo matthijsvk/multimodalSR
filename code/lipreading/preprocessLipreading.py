@@ -16,7 +16,7 @@ def unpickle(file):
     return a
 
 
-def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbose=False, storeDir=None, storeProcessed=False, loadData=True, viseme=False):
+def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbose=False, sourcestoreDir=None, storeProcessed=False, loadData=True, viseme=False):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
@@ -275,11 +275,6 @@ def prepLip_all(data_path=os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading
 
     memTot = X_train.nbytes + X_val.nbytes + X_test.nbytes + y_train.nbytes + y_val.nbytes + y_test.nbytes
     logger_prepLip.info("Total memory size required as float32: %s MB", memTot / 1000000)
-
-    # fix labels (labels start at 1, but the library expects them to start at 0)
-    # y_train = y_train - 1
-    # y_val = y_val - 1
-    # y_test = y_test - 1
 
     # rescale to interval [-1,1], cast to float32 for GPU use
     X_train = np.multiply(2. / 255., X_train, dtype='float32')

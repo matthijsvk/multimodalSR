@@ -43,9 +43,23 @@ pdb.set_trace()
 ## TEST split train/val/test
 from preprocessLipreading import *
 
-X_train, y_train, X_val, y_val, X_test, y_test = prepLip_one(trainingSpeakerFiles[0],
+X_train, y_train, X_val, y_val, X_test, y_test = prepLip_one("Lipspkr1.pkl",
                                                        storeDir=database_binaryDir, trainFraction=0.7,
                                                        validFraction=0.1, storeProcessed=True, verbose=True)
+
+y1 = list(y_train) + list(y_val) + list(y_test)
+
+X_train, y_train, X_val, y_val, X_test, y_test = prepLip_one("Lipspkr2.pkl",
+                                                             storeDir=database_binaryDir, trainFraction=0.7,
+                                                             validFraction=0.1, storeProcessed=True, verbose=True)
+
+y2 = list(y_train) + list(y_val) + list(y_test)
+
+X_train, y_train, X_val, y_val, X_test, y_test = prepLip_one("Lipspkr3.pkl",
+                                                             storeDir=database_binaryDir, trainFraction=0.7,
+                                                             validFraction=0.1, storeProcessed=True, verbose=True)
+
+y3 = list(y_train) + list(y_val) + list(y_test)
 
 import pdb;
 

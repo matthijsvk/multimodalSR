@@ -441,7 +441,7 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
     cnn = lasagne.layers.DenseLayer(
             cnn,
             nonlinearity=lasagne.nonlinearities.identity,
-            num_units=1024)
+            num_units=256)
     #
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
