@@ -26,7 +26,7 @@ import time
 program_start_time = time.time()
 
 print("\n * Importing libraries...")
-from RNN_tools_lstm import *
+from RNN_tools_lstm_SliceLayer import *
 from general_tools import *
 
 
@@ -34,7 +34,7 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 256
+batch_size = 1
 num_epochs = 50
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
@@ -136,7 +136,7 @@ RNN_network.load_model(model_load)
 
 ##### COMPILING FUNCTIONS #####
 logger_RNN.info("\n* Compiling functions ...")
-RNN_network.build_functions(train=True, debug=False)
+RNN_network.build_functions(train=True, debug=True)
 
 ##### TRAINING #####
 logger_RNN.info("\n* Training ...")

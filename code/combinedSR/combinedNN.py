@@ -70,11 +70,23 @@ datasetType = "volunteers";
 model_name = str(len(LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in LSTM_HIDDEN_LIST]) \
              + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") +  "_" \
              + CNN_NETWORK + "_" + '_'.join([str(layer) for layer in DENSE_HIDDEN_LIST]) + dataset + "_" + datasetType
-
-
-# model parameters and network_training_info
 model_load = os.path.join(store_dir, model_name + ".npz")
 model_save = os.path.join(store_dir, model_name)
+
+# for loading stored audio models
+audio_model_name = str(len(LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join(
+        [str(layer) for layer in LSTM_HIDDEN_LIST])  + "_nbMFCC" + str(nbMFCCs) + \
+        ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + "_" + dataset
+audio_model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/"+dataset+"/results")
+audio_model_path = os.path.join(audio_model_dir, audio_model_name + ".npz")
+
+# for loading stored lipreading models
+viseme = False; network_type = "google"
+lip_model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme") + str(nbPhonemes)
+lip_model_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/' + dataset + "/results"))
+lip_model_path = os.path.join(lip_model_dir, lip_model_name+".npz")
+
+
 
 # log file
 logFile = store_dir + os.sep + model_name + '.log'
@@ -129,7 +141,7 @@ dataset_test, _, _ = train, val, test = preprocessingCombined.getOneSpeaker(trai
 
 ##### BUIDING MODEL #####
 logger_combined.info('\n* Building network ...')
-RNN_network = NeuralNetwork('combined', dataset_test,
+network = NeuralNetwork('combined', dataset_test,
                             num_features=nbMFCCs, lstm_hidden_list=LSTM_HIDDEN_LIST,
                             num_output_units=nbPhonemes, bidirectional=BIDIRECTIONAL,
                             cnn_network=CNN_NETWORK,
@@ -137,20 +149,31 @@ RNN_network = NeuralNetwork('combined', dataset_test,
                             debug=True)
 
 # print number of parameters
-nb_params = lasagne.layers.count_params(RNN_network.network_output_layer)
-logger_combined.info(" Number of parameters of this network: %s", nb_params)
+nb_params_CNN = lasagne.layers.count_params(network.RNN_lout)
+nb_params_RNN = lasagne.layers.count_params(network.CNN_lout)
+nb_params = lasagne.layers.count_params(network.combined_lout)
+logger_combined.info(" # params CNN: %s", nb_params_CNN)
+logger_combined.info(" # params RNN: %s", nb_params_RNN)
+logger_combined.info(" # params combining: %s", nb_params - nb_params_CNN - nb_params_RNN)
+logger_combined.info(" # params whole network: %s", nb_params)
 
 # Try to load stored model
 logger_combined.info(' Network built. Trying to load stored model: %s', model_load)
-RNN_network.load_model(model_load)
+try: network.load_model(model_type='combined', model_path=model_load)
+except:
+    network.load_model(model_type='CNN', model_path=lip_model_path)
+    network.load_model(model_type='RNN', model_path=audio_model_path)
+
+import pdb;pdb.set_trace()
+
 
 ##### COMPILING FUNCTIONS #####
 logger_combined.info("\n* Compiling functions ...")
-RNN_network.build_functions(train=True, debug=False)
+network.build_functions(train=True, debug=False)
 
 ##### TRAINING #####
 logger_combined.info("\n* Training ...")
-RNN_network.train(dataset, model_save, num_epochs=num_epochs,
+network.train(dataset, model_save, num_epochs=num_epochs,
                   batch_size_audio=batch_size_audio, batch_size_lip=batch_size_lip, LR_start=LR_start, LR_decay=LR_decay,
                   compute_confusion=False, debug=False)
 
