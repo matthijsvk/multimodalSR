@@ -13,10 +13,12 @@ logger_prepComb = logging.getLogger('combined.prep')
 logger_prepComb.setLevel(logging.DEBUG)
 
 # just split the thing up in training and validation set
-def getOneSpeaker(speakerFile, trainFraction, validFraction, storeDir=None, storeProcessed=False, loadData=True, verbose=False):
+def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
+                sourceDataDir=None, storeProcessed=False, processedDir=None,
+                verbose=False, loadData=True, viseme=False):
 
-    if storeDir != None:
-        store_path = ''.join([storeDir, "_train", str(trainFraction).replace("0.", ""), "valid",
+    if processedDir != None:
+        store_path = ''.join([processedDir, "_train", str(trainFraction).replace("0.", ""), "valid",
                               str(validFraction).replace("0.", ""), os.sep, os.path.basename(speakerFile)])
         # import pdb;pdb.set_trace()
         # if already processed, just load it from disk
@@ -31,7 +33,7 @@ def getOneSpeaker(speakerFile, trainFraction, validFraction, storeDir=None, stor
     # first initialize the matrices
 
     logger_prepComb.info('loading file %s', speakerFile)
-    data = unpickle(speakerFile)  #    mydict = {'images': allvideosImages, 'mfccs': allvideosMFCCs, 'audioLabels': allvideosAudioLabels, 'validLabels': allvideosValidLabels, 'validAudioFrames': allvideosValidAudioFrames}
+    data = unpickle(sourceDataDir + os.sep + speakerFile)  #    mydict = {'images': allvideosImages, 'mfccs': allvideosMFCCs, 'audioLabels': allvideosAudioLabels, 'validLabels': allvideosValidLabels, 'validAudioFrames': allvideosValidAudioFrames}
 
     thisN = len(data['images'])
     thisTrain = int(trainFraction * thisN)
@@ -42,9 +44,8 @@ def getOneSpeaker(speakerFile, trainFraction, validFraction, storeDir=None, stor
         thisTest = 0
 
     if verbose:
-        logger_prepComb.info("This dataset contains %s images_train", thisN)
-        logger_prepComb.info("now loading : nbTrain, nbValid, nbTest")
-        logger_prepComb.info("\t\t\t %s %s %s", thisTrain, thisValid, thisTest)
+        logger_prepComb.info("This dataset contains %s videos", thisN)
+        logger_prepComb.info("train: %s | valid: %s | test: %s", thisTrain, thisValid, thisTest)
 
     images_train =  list(data['images'][0:thisTrain])
     mfccs_train = list(data['mfccs'][0:thisTrain])
@@ -66,10 +67,10 @@ def getOneSpeaker(speakerFile, trainFraction, validFraction, storeDir=None, stor
 
 
     if verbose:
-        logger_prepComb.info("nbTrainLoaded: ", len(images_train))
-        logger_prepComb.info("nbValidLoaded: ", len(images_val))
-        logger_prepComb.info("nbTestLoaded: ", len(images_test))
-        logger_prepComb.info("Total loaded: ", len(images_train) + len(images_val) + len(images_test))
+        logger_prepComb.info("nbTrainLoaded: %s", len(images_train))
+        logger_prepComb.info("nbValidLoaded: %s", len(images_val))
+        logger_prepComb.info("nbTestLoaded: %s", len(images_test))
+        logger_prepComb.info("Total loaded: %s", len(images_train) + len(images_val) + len(images_test))
 
     # cast to numpy array, correct datatype
     dtypeX = 'float32'
@@ -93,6 +94,23 @@ def getOneSpeaker(speakerFile, trainFraction, validFraction, storeDir=None, stor
     if isinstance(validLabels_test, list):          validLabels_test = set_type(validLabels_test,dtypeY);
     if isinstance(validAudioFrames_test, list):     validAudioFrames_test = set_type(validAudioFrames_test,dtypeY);
 
+    # add dimension so the audio functions still work
+    for i in range(len(audioLabels_train)):
+        audioLabels_train[i] = audioLabels_train[i][np.newaxis, ...]
+        validLabels_train [i]= validLabels_train[i][np.newaxis, ...]
+        validAudioFrames_train[i] = validAudioFrames_train[i][np.newaxis, ...]
+
+    # add dimension so the audio functions still work
+    for i in range(len(audioLabels_val)):
+        audioLabels_val[i] = audioLabels_val[i][np.newaxis, ...]
+        validLabels_val[i] = validLabels_val[i][np.newaxis, ...]
+        validAudioFrames_val[i] = validAudioFrames_val[i][np.newaxis, ...]
+
+    # add dimension so the audio functions still work
+    for i in range(len(audioLabels_test)):
+        audioLabels_test[i] = audioLabels_test[i][np.newaxis, ...]
+        validLabels_test[i] = validLabels_test[i][np.newaxis, ...]
+        validAudioFrames_test[i] = validAudioFrames_test[i][np.newaxis, ...]
 
     ### STORE DATA ###
     dataList = [[images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train],

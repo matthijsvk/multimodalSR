@@ -22,76 +22,7 @@ import lasagne
 import numpy as np
 from preprocessingCombined import *
 
-
-
-def iterate_minibatches(inputs, targets, valid_frames, batch_size, shuffle=False):
-    """
-    Helper function that returns an iterator over the training data of a particular
-    size, optionally in a random order.
-    """
-    assert len(inputs) == len(targets) == len(valid_frames)
-    if len(inputs) < batch_size:
-        batch_size = len(inputs)
-
-    # slice to only use multiple of batch_size. If some files are left, they won't be considered
-    # inputs = inputs[:-(len(inputs) % batch_size) or None]
-    # targets = targets[:-(len(targets) % batch_size) or None]
-    # valid_frames = valid_frames[:-(len(valid_frames) % batch_size) or None]
-
-    if shuffle:
-        indices = np.arange(len(inputs))
-        np.random.shuffle(indices)
-
-    for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
-        if shuffle:
-            excerpt = indices[start_idx:start_idx + batch_size]
-        else:
-            excerpt = range(start_idx, start_idx + batch_size, 1)
-
-        input_iter = [inputs[i] for i in excerpt]
-        target_iter = [targets[i] for i in excerpt]
-        valid_frames_iter = [valid_frames[i] for i in excerpt]
-        mask_iter = generate_masks(input_iter, valid_frames=valid_frames_iter, batch_size=batch_size)
-
-        seq_lengths = np.sum(mask_iter, axis=1)
-
-        # now pad inputs and target to maxLen
-        input_iter = pad_sequences_X(input_iter)
-        target_iter = pad_sequences_y(target_iter)
-
-        yield input_iter, target_iter, mask_iter, seq_lengths, valid_frames_iter
-        #  it's convention that data is presented in the shape (batch_size, n_time_steps, n_features) -> (batch_size, None, 26)
-
-# used for evaluating, when there are no targets
-def iterate_minibatches_noTargets(self, inputs, valid_frames, batch_size=1, shuffle=False):
-    """
-    Helper function that returns an iterator over the training data of a particular
-    size, optionally in a random order.
-    """
-    if len(inputs) < batch_size:
-        batch_size = len(inputs)
-        print("INPUTS < Batch_size")
-
-    # slice to only use multiple of batch_size. If some files are left, they won't be considered
-
-    if shuffle:
-        indices = np.arange(len(inputs))
-        np.random.shuffle(indices)
-
-    for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
-        if shuffle:
-            excerpt = indices[start_idx:start_idx + batch_size]
-        else:
-            excerpt = range(start_idx, start_idx + batch_size, 1)
-
-        input_iter = [inputs[i] for i in excerpt]
-        mask_iter = generate_masks(input_iter, valid_frames=valid_frames, batch_size=batch_size)
-        seq_lengths = np.sum(mask_iter, axis=1)
-
-        # now pad inputs and target to maxLen
-        input_iter = pad_sequences_X(input_iter)
-
-        yield input_iter, mask_iter, seq_lengths
+import pdb
 
 
 class NeuralNetwork:
@@ -105,71 +36,95 @@ class NeuralNetwork:
 
     network_train_info = [[], [], []]
 
-    def __init__(self, architecture, dataset=None, batch_size=1, max_seq_length=1000, num_features=26, n_hidden_list=(100,), num_output_units=61,
-                 bidirectional=False, addDenseLayers=False, seed=int(time.time()), debug=False, logger=logger_combinedtools):
+    def __init__(self, architecture, dataset=None,
+                 batch_size=1, num_features=39, num_output_units=39,
+                 lstm_hidden_list=(100,), bidirectional=True,
+                 cnn_network="google", dense_hidden_list=(512,),
+                 seed=int(time.time()), debug=False, logger=logger_combinedtools):
+
         self.num_output_units = num_output_units
         self.num_features = num_features
         self.batch_size = batch_size
-        self.max_seq_length = max_seq_length #TODO currently unused
         self.epochsNotImproved = 0  #keep track, to know when to stop training
-        self.updates = {}
 
-        if architecture == 'RNN':
+        if architecture == "combined":
             if dataset != None:
-                X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
+                images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = dataset
 
-                X = X_train[:batch_size]
-                y = y_train[:batch_size]
-                self.valid_frames = valid_frames_train[:batch_size]
-                self.masks = generate_masks(X, valid_frames=self.valid_frames, batch_size=len(X))
+                self.images = images_train[0]
+                self.mfccs = mfccs_train[0]
+                self.audioLabels = audioLabels_train[0]
+                self.validLabels = validLabels_train[0]
+                self.validAudioFrames = validAudioFrames_train[0]
 
-                self.X = pad_sequences_X(X)
-                self.Y = pad_sequences_y(y)
+                self.X = self.mfccs # for debugging audio part
+                self.Y = self.audioLabels
+                self.valid_frames = self.validAudioFrames
 
-                logger.debug('X.shape:          %s', self.X.shape)
-                logger.debug('X[0].shape:       %s', self.X[0].shape)
-                logger.debug('X[0][0][0].type:  %s', type(self.X[0][0][0]))
-                logger.debug('y.shape:          %s', self.Y.shape)
-                logger.debug('y[0].shape:       %s', self.Y[0].shape)
-                logger.debug('y[0][0].type:     %s', type(self.Y[0][0]))
+                pdb.set_trace()
+
+                self.masks = generate_masks(self.mfccs, valid_frames=self.validAudioFrames, batch_size=1, logger=logger_combinedtools)
+                logger.debug('images.shape:          %s', self.images.shape)
+                logger.debug('images[0].shape:       %s', self.images[0].shape)
+                logger.debug('images[0][0][0].type:  %s', type(self.images[0][0][0]))
+                logger.debug('y.shape:          %s', self.audioLabels.shape)
+                logger.debug('y[0].shape:       %s', self.audioLabels[0].shape)
+                logger.debug('y[0][0].type:     %s', type(self.audioLabels[0][0]))
                 logger.debug('masks.shape:      %s', self.masks.shape)
                 logger.debug('masks[0].shape:   %s', self.masks[0].shape)
                 logger.debug('masks[0][0].type: %s', type(self.masks[0][0]))
 
             logger.info("NUM FEATURES: %s", num_features)
 
-            self.build_RNN(n_hidden_list=n_hidden_list,  bidirectional=bidirectional, addDenseLayers=addDenseLayers,
+            pdb.set_trace()
+
+            # create Theano variables and generate the networks
+            RNN_input_var = T.tensor3('audio_inputs')
+            RNN_mask_var  = T.matrix('audio_masks')
+            RNN_valid_var = T.imatrix('valid_indices')
+
+            self.RNNdict, self.RNN_lout_batch, self.RNN_lout = \
+                self.build_RNN(RNN_input_var, RNN_mask_var, RNN_valid_var, n_hidden_list=lstm_hidden_list, bidirectional=bidirectional,
                            seed=seed, debug=debug, logger=logger)
+
+            CNN_input_var = T.tensor4('cnn_input')
+            self.CNNdict, self.CNN_lout = self.build_CNN(CNN_input_var)
+
+            self.combined, self.combined_lout = self.build_combined(self.CNN_lout, self.RNN_lout_batch)
+
         else:
             print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
 
-    def build_RNN(self, n_hidden_list=(100,), bidirectional=False, addDenseLayers=False,
+    def build_RNN(self, RNN_input_var, RNN_mask_var, RNN_valid_var,
+                  n_hidden_list=(100,), bidirectional=False,
                   seed=int(time.time()), debug=False, logger=logger_combinedtools):
         # some inspiration from http://colinraffel.com/talks/hammer2015recurrent.pdf
 
         if debug:
-            logger_combinedtools.debug('\nInputs:');
-            logger_combinedtools.debug('  X.shape:    %s', self.X[0].shape)
-            logger_combinedtools.debug('  X[0].shape: %s %s %s \n%s', self.X[0][0].shape, type(self.X[0][0]),
+            logger.debug('\nInputs:');
+            logger.debug('  X.shape:    %s', self.X[0].shape)
+            logger.debug('  X[0].shape: %s %s %s \n%s', self.X[0][0].shape, type(self.X[0][0]),
                                   type(self.X[0][0][0]), self.X[0][0][:5])
 
-            logger_combinedtools.debug('Targets: ');
-            logger_combinedtools.debug('  Y.shape:    %s', self.Y.shape)
-            logger_combinedtools.debug('  Y[0].shape: %s %s %s \n%s', self.Y[0].shape, type(self.Y[0]), type(self.Y[0][0]),
+            logger.debug('Targets: ');
+            logger.debug('  Y.shape:    %s', self.Y.shape)
+            logger.debug('  Y[0].shape: %s %s %s \n%s', self.Y[0].shape, type(self.Y[0]), type(self.Y[0][0]),
                                   self.Y[0][:5])
-            logger_combinedtools.debug('Layers: ')
+            logger.debug('Layers: ')
 
         # fix these at initialization because it allows for compiler opimizations
         num_output_units = self.num_output_units
         num_features = self.num_features
         batch_size = self.batch_size
 
-        audio_inputs = T.tensor3('audio_inputs')
-        audio_masks = T.matrix('audio_masks')       #TODO set MATRIX, not iMatrix!! Otherwise all mask calculations are done by CPU, and everything will be ~2x slowed down!! Also in general_tools.generate_masks()
+        audio_inputs = RNN_input_var
+        audio_masks = RNN_mask_var # set MATRIX, not iMatrix!! Otherwise all mask calculations are done by CPU, and everything will be ~2x slowed down!! Also in general_tools.generate_masks()
+        valid_indices = RNN_valid_var
 
         net = {}
+
         # shape = (batch_size, batch_max_seq_length, num_features)
-        net['l1_in'] = L.InputLayer(shape=(batch_size, None, num_features),input_var=audio_inputs)
+        net['l1_in'] = L.InputLayer(shape=(batch_size, None, num_features), input_var=audio_inputs)
         # We could do this and set all input_vars to None, but that is slower -> fix batch_size and num_features at initialization
         # batch_size, n_time_steps, n_features = net['l1_in'].input_var.shape
 
@@ -180,16 +135,16 @@ class NeuralNetwork:
         if debug:
             get_l_in = L.get_output(net['l1_in'])
             l_in_val = get_l_in.eval({net['l1_in'].input_var: self.X})
-            # logger_combinedtools.debug(l_in_val)
-            logger_combinedtools.debug('  l_in size: %s', l_in_val.shape);
+            # logger.debug(l_in_val)
+            logger.debug('  l_in size: %s', l_in_val.shape);
 
             get_l_mask = L.get_output(net['l1_mask'])
             l_mask_val = get_l_mask.eval({net['l1_mask'].input_var: self.masks})
-            # logger_combinedtools.debug(l_in_val)
-            logger_combinedtools.debug('  l_mask size: %s', l_mask_val.shape);
+            # logger.debug(l_in_val)
+            logger.debug('  l_mask size: %s', l_mask_val.shape);
 
             n_batch, n_time_steps, n_features = net['l1_in'].input_var.shape
-            logger_combinedtools.debug("  n_batch: %s | n_time_steps: %s | n_features: %s", n_batch, n_time_steps,
+            logger.debug("  n_batch: %s | n_time_steps: %s | n_features: %s", n_batch, n_time_steps,
                                   n_features)
 
         ## LSTM parameters
@@ -197,10 +152,10 @@ class NeuralNetwork:
         # weight matrices, the cell-to-gate weight vector, the bias vector, and the nonlinearity.
         # The convention is that gates use the standard sigmoid nonlinearity,
         # which is the default for the Gate class.
-        gate_parameters = lasagne.layers.recurrent.Gate(
+        gate_parameters = L.recurrent.Gate(
                 W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
                 b=lasagne.init.Constant(0.))
-        cell_parameters = lasagne.layers.recurrent.Gate(
+        cell_parameters = L.recurrent.Gate(
                 W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
                 # Setting W_cell to None denotes that no cell connection will be used.
                 W_cell=None, b=lasagne.init.Constant(0.),
@@ -213,10 +168,12 @@ class NeuralNetwork:
         for i in range(len(n_hidden_list)):
             n_hidden = n_hidden_list[i]
 
-            if i==0: input = net['l1_in']
-            else:    input = net['l2_lstm'][i-1]
+            if i == 0:
+                input = net['l1_in']
+            else:
+                input = net['l2_lstm'][i - 1]
 
-            nextForwardLSTMLayer = lasagne.layers.recurrent.LSTMLayer(
+            nextForwardLSTMLayer = L.recurrent.LSTMLayer(
                     input, n_hidden,
                     # We need to specify a separate input for masks
                     mask_input=net['l1_mask'],
@@ -232,7 +189,7 @@ class NeuralNetwork:
                 # Use backward LSTM
                 # The "backwards" layer is the same as the first,
                 # except that the backwards argument is set to True.
-                nextBackwardLSTMLayer = lasagne.layers.recurrent.LSTMLayer(
+                nextBackwardLSTMLayer = L.recurrent.LSTMLayer(
                         input, n_hidden, ingate=gate_parameters,
                         mask_input=net['l1_mask'], forgetgate=gate_parameters,
                         cell=cell_parameters, outgate=gate_parameters,
@@ -244,15 +201,16 @@ class NeuralNetwork:
                     get_l_lstm_back = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
                                                       L.get_output(net['l2_lstm'][-1]))
                     l_lstmBack_val = get_l_lstm_back(self.X, self.masks)
-                    logger_combinedtools.debug('  l_lstm_back size: %s', l_lstmBack_val.shape)
+                    logger.debug('  l_lstm_back size: %s', l_lstmBack_val.shape)
 
                 # We'll combine the forward and backward layer output by summing.
                 # Merge layers take in lists of layers to merge as input.
                 # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
-                net['l2_lstm'].append(lasagne.layers.ElemwiseSumLayer([net['l2_lstm'][-2], net['l2_lstm'][-1]]))
+                net['l2_lstm'].append(L.ElemwiseSumLayer([net['l2_lstm'][-2], net['l2_lstm'][-1]]))
 
-        # we need to convert (batch_size,seq_length, num_features) to (batch_size * seq_length, num_features) because Dense networks can't deal with 2 unknown sizes
-        net['l3_reshape'] = lasagne.layers.ReshapeLayer(net['l2_lstm'][-1], (-1, n_hidden_list[-1]))
+        # we need to convert (batch_size, seq_length, num_features) to (batch_size * seq_length, num_features) because Dense networks can't deal with 2 unknown sizes
+        net['l3_reshape'] = L.ReshapeLayer(net['l2_lstm'][-1], (-1, n_hidden_list[-1]))
+
         if debug:
             get_l_reshape = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
                                             L.get_output(net['l3_reshape']))
@@ -264,31 +222,174 @@ class NeuralNetwork:
             get_l_lstm = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var],
                                          L.get_output(net['l2_lstm'][-1]))
             l_lstm_val = get_l_lstm(self.X, self.masks)
-            logger_combinedtools.debug('  l2_lstm size: %s', l_lstm_val.shape);
+            logger.debug('  l2_lstm size: %s', l_lstm_val.shape);
 
-        if addDenseLayers:
-            net['l4_dense'] = L.DenseLayer(net['l3_reshape'], nonlinearity =lasagne.nonlinearities.rectify, num_units=256)
-            dropoutLayer = L.DropoutLayer(net['l4_dense'], p=0.3)
-            net['l5_dense'] = L.DenseLayer(dropoutLayer, nonlinearity=lasagne.nonlinearities.rectify, num_units=64)
-            # Now we can apply feed-forward layers as usual for classification
-            net['l6_dense'] = L.DenseLayer(net['l5_dense'], num_units=num_output_units,
-                                           nonlinearity=lasagne.nonlinearities.softmax)
-        else:
-            # Now we can apply feed-forward layers as usual for classification
-            net['l6_dense'] = L.DenseLayer(net['l3_reshape'], num_units=num_output_units,
-                                           nonlinearity=lasagne.nonlinearities.softmax)
+
+        # # Now we can apply feed-forward layers as usual for classification
+        net['l6_dense'] = L.DenseLayer(net['l3_reshape'], num_units=num_output_units,
+                                       nonlinearity=lasagne.nonlinearities.softmax)
 
         # # Now, the shape will be (n_batch * n_timesteps, num_output_units). We can then reshape to
         # # n_batch to get num_output_units values for each timestep from each sequence
-        net['l7_out_flattened'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (-1, num_output_units))
-        net['l7_out'] = lasagne.layers.ReshapeLayer(net['l6_dense'], (batch_size, -1, num_output_units))
+        # net['l7_out_flattened'] = L.ReshapeLayer(net['l6_dense'], (-1, num_output_units))
+        net['l7_out'] = L.ReshapeLayer(net['l6_dense'], (batch_size, -1, num_output_units))
 
-        if debug:   self.print_network_structure(net)
-        self.network_output_layer = net['l7_out_flattened']
-        self.network_output_layer_batch = net['l7_out']
-        self.network = net
+        net['l7_out_valid'] = L.SliceLayer(net['l7_out'], indices=valid_indices, axis=1)
+        net['l7_out_valid'] = L.ReshapeLayer(net['l7_out_valid'], (batch_size, -1, num_output_units))
 
-    def print_network_structure(self, net=None, logger=logger_combinedtools):
+        if debug:
+            get_l_out = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var], L.get_output(net['l7_out']))
+            l_out = get_l_out(self.X, self.masks)
+
+            get_l_out_valid = theano.function([audio_inputs, audio_masks, valid_indices],
+                                              L.get_output(net['l7_out_valid']))
+            l_out_valid = get_l_out_valid(self.X, self.masks, self.valid_frames)
+            logger.debug('\n\n\n  l_out: %s  | l_out_valid: %s', l_out.shape, l_out_valid.shape);
+
+        if debug:   self.print_RNN_network_structure(net)
+        network_output_layer = net['l7_out_flattened']
+        network_output_layer_batch = net['l7_out']
+
+        return net, network_output_layer_batch, network_output_layer
+
+    # network from Oxford & Google BBC paper
+    def build_CNN(self, input, activation=T.nnet.relu, alpha=0.1, epsilon=1e-4):
+        nbClasses = self.num_output_units
+
+        # input
+        # store each layer of the network in a dict, for quickly retrieving any layer
+        cnnDict = {}
+        cnnDict['l0_in'] = lasagne.layers.InputLayer(
+                shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
+                input_var=input)
+
+        cnnDict['l1_conv1'] = []
+        cnnDict['l1_conv1'].append(lasagne.layers.Conv2DLayer(
+                cnnDict['l0_in'],
+                num_filters=128,
+                filter_size=(3, 3),
+                pad=1,
+                nonlinearity=lasagne.nonlinearities.identity))
+        cnnDict['l1_conv1'].append(lasagne.layers.MaxPool2DLayer(cnnDict['l1_conv1'][-1], pool_size=(2, 2)))
+        cnnDict['l1_conv1'].append(lasagne.layers.BatchNormLayer(
+                cnnDict['l1_conv1'][-1],
+                epsilon=epsilon,
+                alpha=alpha))
+        cnnDict['l1_conv1'].append(lasagne.layers.NonlinearityLayer(
+                cnnDict['l1_conv1'][-1],
+                nonlinearity=activation))
+
+        # conv 2
+        cnnDict['l2_conv2'] = []
+        cnnDict['l2_conv2'].append(lasagne.layers.Conv2DLayer(
+                cnnDict['l1_conv1'][-1],
+                num_filters=256,
+                filter_size=(3, 3),
+                stride=(2, 2),
+                pad=1,
+                nonlinearity=lasagne.nonlinearities.identity))
+        cnnDict['l2_conv2'].append(lasagne.layers.MaxPool2DLayer(cnnDict['l2_conv2'][-1], pool_size=(2, 2)))
+        cnnDict['l2_conv2'].append(lasagne.layers.BatchNormLayer(
+                cnnDict['l2_conv2'][-1],
+                epsilon=epsilon,
+                alpha=alpha))
+        cnnDict['l2_conv2'].append(lasagne.layers.NonlinearityLayer(
+                cnnDict['l2_conv2'][-1],
+                nonlinearity=activation))
+
+        # conv3
+        cnnDict['l3_conv3'] = []
+        cnnDict['l3_conv3'].append(lasagne.layers.Conv2DLayer(
+                cnnDict['l2_conv2'][-1],
+                num_filters=512,
+                filter_size=(3, 3),
+                pad=1,
+                nonlinearity=lasagne.nonlinearities.identity))
+        cnnDict['l3_conv3'].append(lasagne.layers.NonlinearityLayer(
+                cnnDict['l3_conv3'][-1],
+                nonlinearity=activation))
+
+        # conv 4
+        cnnDict['l4_conv4'] = []
+        cnnDict['l4_conv4'].append(lasagne.layers.Conv2DLayer(
+                cnnDict['l3_conv3'][-1],
+                num_filters=512,
+                filter_size=(3, 3),
+                pad=1,
+                nonlinearity=lasagne.nonlinearities.identity))
+        cnnDict['l4_conv4'].append(lasagne.layers.NonlinearityLayer(
+                cnnDict['l4_conv4'][-1],
+                nonlinearity=activation))
+
+        # conv 5
+        cnnDict['l5_conv5'] = []
+        cnnDict['l5_conv5'].append(lasagne.layers.Conv2DLayer(
+                cnnDict['l4_conv4'][-1],
+                num_filters=512,
+                filter_size=(3, 3),
+                pad=1,
+                nonlinearity=lasagne.nonlinearities.identity))
+        cnnDict['l5_conv5'].append(lasagne.layers.MaxPool2DLayer(
+                cnnDict['l5_conv5'][-1],
+                pool_size=(2, 2)))
+        cnnDict['l5_conv5'].append(lasagne.layers.NonlinearityLayer(
+                cnnDict['l5_conv5'][-1],
+                nonlinearity=activation))
+
+        # disable this layer for normal phoneme recognition
+        # FC layer
+        # cnnDict['l6_fc'] = []
+        # cnnDict['l6_fc'].append(lasagne.layers.DenseLayer(
+        #         cnnDict['l5_conv5'][-1],
+        #        nonlinearity=lasagne.nonlinearities.identity,
+        #        num_units=256))
+        #
+        # cnnDict['l6_fc'].append(lasagne.layers.NonlinearityLayer(
+        #         cnnDict['l6_fc'][-1],
+        #         nonlinearity=activation))
+
+
+        # output layer
+        cnnDict['l7_out'] = lasagne.layers.DenseLayer(
+                # cnnDict['l6_fc'][-1],
+                cnnDict['l5_conv5'][-1],
+                nonlinearity=lasagne.nonlinearities.softmax,
+                num_units=nbClasses)
+
+        # cnn = lasagne.layers.BatchNormLayer(
+        #       cnn,
+        #       epsilon=epsilon,
+        #       alpha=alpha)
+
+        return cnnDict, cnnDict['l7_out']
+
+    def build_combined(self, CNN_lout, RNN_lout, dense_hidden_list):
+
+        # (we process one video at a time)
+        # CNN_lout and RNN_lout should be shaped (batch_size, nbFeatures) with batch_size = nb_valid_frames in this video
+        # for CNN_lout: nbFeatures = 512x7x7 = 25.088
+        # for RNN_lout: nbFeatures = nbUnits(last LSTM layer)
+        l_concat = L.ConcatLayer(CNN_lout, RNN_lout)
+        l_dense = []
+        for i in range(len(dense_hidden_list)):
+            n_hidden = dense_hidden_list[i]
+
+            if i == 0:  input = l_concat
+            else:       input = l_dense[i - 1]
+
+            nextDenseLayer = L.DenseLayer(input,
+                                          nonlinearity=lasagne.nonlinearities.rectify,
+                                          num_units=n_hidden)
+            # TODO add dropout?
+            l_dense.append(nextDenseLayer)
+            
+        # final softmax layer
+        l_out = L.DenseLayer(l_dense[-1], num_units=self.num_output_units,
+                                               nonlinearity=lasagne.nonlinearities.softmax)
+        return l_out
+
+
+    def print_RNN_network_structure(self, net=None, logger=logger_combinedtools):
         if net==None: net = self.network
 
         logger.debug("\n PRINTING Network structure: \n %s ", sorted(net.keys()))
@@ -306,6 +407,27 @@ class NeuralNetwork:
                     logger.debug('Layer: %12s | out: %s', key, net[key].output_shape)
         return 0
 
+    def print_CNN_network_structure(self, net=None, logger=logger_combinedtools):
+        if net == None: cnnDict = self.CNNdict
+        else: cnnDict = net
+
+        print("\n PRINTING Network structure: \n %s " % (sorted(cnnDict.keys())))
+        for key in sorted(cnnDict.keys()):
+            print(key)
+            if 'conv' in key and type(cnnDict[key]) == list:
+                for layer in cnnDict[key]:
+                    try:
+                        print('      %12s \nin: %s | out: %s' % (layer, layer.input_shape, layer.output_shape))
+                    except:
+                        print('      %12s \nout: %s' % (layer, layer.output_shape))
+            else:
+                try:
+                    print('Layer: %12s \nin: %s | out: %s' % (
+                        cnnDict[key], cnnDict[key].input_shape, cnnDict[key].output_shape))
+                except:
+                    print('Layer: %12s \nout: %s' % (cnnDict[key], cnnDict[key].output_shape))
+        return 0
+
     def use_best_param(self):
         lasagne.layers.set_all_param_values(self.network, self.best_param)
         self.curr_epoch = self.best_epoch
@@ -314,27 +436,26 @@ class NeuralNetwork:
         del self.network_train_info[1][self.best_epoch:]
         del self.network_train_info[2][self.best_epoch:]
 
-    def load_model(self, model_name, logger=logger_combinedtools):
+    def load_model(self, model_type, model_path, logger=logger_combinedtools):
         if self.network is not None:
             try:
                 logger.info("Loading stored model...")
 
                 # restore network weights
-                with np.load(model_name) as f:
+                with np.load(model_path) as f:
                     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-                    lasagne.layers.set_all_param_values(self.network_output_layer, *param_values)
+                    if model_type == 'RNN': lout = self.RNN_lout
+                    elif model_type =='CNN': lout = self.CNN_lout
+                    elif model_type =='combined': lout = self.combined_lout
+                    else:  logger.error('Wrong network type. No weights loaded'.format(model_type))
+                    lasagne.layers.set_all_param_values(lout, *param_values)
 
-                # # restore 'updates' training parameters
-                # with np.load(model_name + "_updates.npz") as f:
-                #     updates_values = [f['arr_%d' % i] for i in range(len(f.files))]
-                #     for p, value in zip(self.updates.keys(), updates_values):
-                #         p.set_value(value)
                 logger.info("Loading parameters successful.")
                 return 0
 
             except IOError as e:
                 print(os.strerror(e.errno))
-                logger.warning('Model: {} not found. No weights loaded'.format(model_name))
+                logger.warning('Model: {} not found. No weights loaded'.format(model_path))
                 return -1
         else:
             raise IOError('You must build the network before loading the weights.')
@@ -383,7 +504,9 @@ class NeuralNetwork:
         l_in = self.network['l1_in']
         l_mask = self.network['l1_mask']
 
-        if debug:  import pdb; self.print_network_structure()
+        if debug:
+            import pdb; self.print_RNN_network_structure()
+            import pdb; self.print_CNN_network_structure()
 
         batch = True
         if batch:

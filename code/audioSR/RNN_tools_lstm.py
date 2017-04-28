@@ -327,6 +327,7 @@ class NeuralNetwork:
         # Get the first layer of the network
         l_in = self.network['l1_in']
         l_mask = self.network['l1_mask']
+        l_audio_valid = self.network['l7_out_valid']
 
         if debug:  import pdb; self.print_network_structure()
 
@@ -364,8 +365,8 @@ class NeuralNetwork:
             self.valid_targets_fn = theano.function([l_mask.input_var, target_var], valid_targets, name='valid_targets_fn')
             self.valid_predictions_fn = theano.function([l_in.input_var, l_mask.input_var], valid_predictions, name='valid_predictions_fn')
 
-            get_l_out_valid = theano.function([audio_inputs, audio_masks, valid_indices],
-                                              L.get_output(net['l7_out_valid']))
+            get_l_out_valid = theano.function([l_in.input_var, l_mask.input_var, l_audio_valid.slice],
+                                              L.get_output(self.network['l7_out_valid']))
 
             if debug:
                 try:

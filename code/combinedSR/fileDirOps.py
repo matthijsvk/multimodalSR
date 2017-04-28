@@ -20,7 +20,7 @@ def main():
     # use this to copy the grayscale files from 'processDatabase' to another location, and fix their names with phonemes
     # then convert to files useable by lipreading network
 
-    processedDir = os.path.expanduser("~/TCDTIMIT/lipreading/processed")
+    processedDir = os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/processed")
     databaseDir = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/database")
 
     # 1. copy mouths_gray_120 images and PHN.txt files to targetRoot. Move files up from their mouths_gray_120 dir to the video dir (eg sa1)

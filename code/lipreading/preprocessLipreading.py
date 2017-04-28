@@ -16,7 +16,9 @@ def unpickle(file):
     return a
 
 
-def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbose=False, sourceDataDir=None, storeProcessed=False, processedDir=None, loadData=True, viseme=False):
+def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10,
+                sourceDataDir=None, storeProcessed=False, processedDir=None,
+                verbose=False, loadData=True, viseme=False):
     # from https://www.cs.toronto.edu/~kriz/cifar.html
     # also see http://stackoverflow.com/questions/35032675/how-to-create-dataset-similar-to-cifar-10
 
@@ -45,8 +47,7 @@ def prepLip_one(speakerFile=None, trainFraction=0.70, validFraction=0.10, verbos
     X_test  = [];   y_test = []
 
     #logger_prepLip.info('loading file %s', speakerFile)
-    data = unpickle(''.join([sourceDataDir, os.sep, speakerFile]))
-
+    data = unpickle(sourceDataDir + os.sep + speakerFile)
     # convert phonemes to viseme labels if needed
     if viseme:
         from phoneme_set import phoneme_set_39, classToPhoneme39, phonemeToViseme, viseme_set, classToViseme

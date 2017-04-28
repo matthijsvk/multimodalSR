@@ -156,7 +156,7 @@ def dirToArrays(dir, nbMFCCs=39, verbose=False):
                 else:
                     raise Exception("something wrong: audio and image labels don't match.")
         except:
-            logger_combinedPrep.info("Video: ", dir)
+            logger_combinedPrep.info("Video: %s", dir)
             logger_combinedPrep.info("audio and image labels don't match. Offending indices: %s", getWrongIndices(imageValidFrames_fromImages, imageValidFrames_fromImages))
             #import pdb; pdb.set_trace()
             return [], [], [], [], [], [dir]; # pdb.set_trace()
@@ -175,7 +175,6 @@ def dirToArrays(dir, nbMFCCs=39, verbose=False):
     thisAudioLabels = set_type(thisAudioLabels, label_data_type)
     thisValidLabels = set_type(thisValidLabels, label_data_type)
     thisValidAudioFrames = set_type(thisValidAudioFrames, label_data_type)
-
 
     return thisImages, thisMFCCs, thisValidLabels, thisAudioLabels, thisValidAudioFrames, bad
 
@@ -266,6 +265,7 @@ def allSpeakersToBinary(databaseDir, binaryDatabaseDir, meanStdAudio, test=False
         if depth(relpath(rootDir, dir)) == 1:
             dirList.append(dir)
     logger_combinedPrep.info("\n %s", [os.path.basename(directory) for directory in dirList])
+    dirList = sorted(dirList)
 
     for speakerDir in tqdm(dirList, total=len(dirList)):
         logger_combinedPrep.info("\nExtracting files of speaker: %s", os.path.basename(speakerDir))

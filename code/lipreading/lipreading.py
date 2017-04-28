@@ -146,7 +146,7 @@ def main():
     # log file
     logFile = results_dir + os.sep + model_name + '.log'
     # if os.path.exists(logFile):
-    #     fh = logging.FileHandler(logFile)  # append to existing log
+    #     fh = logging.FileHandler(logFileT)  # append to existing log
     # else:
     fh = logging.FileHandler(logFile, 'w')  # create new logFile
     fh.setLevel(logging.DEBUG)

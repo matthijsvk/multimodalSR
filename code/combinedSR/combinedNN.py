@@ -58,11 +58,12 @@ logger_combined.info("LR_decay = %s", str(LR_decay))
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
 dataset = "TCDTIMIT"
-root_dir = os.path.expanduser('~/TCDTIMIT/lipreading/' + dataset)
+root_dir = os.path.expanduser('~/TCDTIMIT/combinedSR/' + dataset)
 store_dir = root_dir + "/results"
 if not os.path.exists(store_dir): os.makedirs(store_dir)
 
-database_binaryDir = root_dir + '/database_binary'
+database_binaryDir = root_dir + '/binary'
+processedDir = database_binaryDir + "_finalProcessed"
 datasetType = "volunteers";
 
 # audio network + cnnNetwork + classifierNetwork
@@ -118,8 +119,13 @@ datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
 
 
 # get a sample of the dataset to debug the network
-dataset_test, _, _ = preprocessingCombined.getOneSpeaker( storeDir=database_binaryDir, speakerFile=trainingSpeakerFiles[0],
-                                              trainFraction=1.0, validFraction=0.0)
+dataset_test, _, _ = train, val, test = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0],
+                                                                            sourceDataDir=database_binaryDir,
+                                                                            storeProcessed=True,
+                                                                            processedDir=processedDir,
+                                                                            trainFraction=1.0, validFraction=0.0,
+                                                                            verbose=True)
+# import pdb;pdb.set_trace()
 
 ##### BUIDING MODEL #####
 logger_combined.info('\n* Building network ...')

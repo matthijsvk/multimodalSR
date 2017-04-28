@@ -13,6 +13,7 @@ if not os.path.exists(store_dir): os.makedirs(store_dir)
 
 if not os.path.exists(store_dir): os.makedirs(store_dir)
 database_binaryDir = root_dir + dataset + '/binary'
+processedDir = database_binaryDir + "_finalProcessed"
 datasetType = "combined";
 
 
@@ -29,18 +30,18 @@ if datasetType == "combined":
     testSpeakerFiles = testVolunteers
 elif datasetType == "volunteers":
     trainingSpeakerFiles = trainVolunteers
-    testSpeakerFiles = testVolunteers
-else:
-    raise Exception("invalid dataset entered")
 datasetFiles = [sorted(trainingSpeakerFiles), sorted(testSpeakerFiles)]
-
-
-import pdb;pdb.set_trace()
 
 
 ## TEST split train/val/test
 import preprocessingCombined
-train, val, test = preprocessingCombined.getOneSpeaker(database_binaryDir + os.sep + trainingSpeakerFiles[0], storeDir=database_binaryDir, trainFraction=1.0, validFraction=0.0, verbose=True)
+train, val, test = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0],
+                                                       sourceDataDir=database_binaryDir,
+                                                       storeProcessed=False, processedDir=processedDir,
+                                                       trainFraction=1.0, validFraction=0.0, verbose=True)
 
-images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = train
+images, mfccs, audioLabels, validLabels, validAudioFrames = train
 import pdb;pdb.set_trace()
+
+import numpy as np
+validAudioFrames = np.reshape(validAudioFrames[0], (1, validAudioFrames[0].shape))

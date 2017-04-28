@@ -5,8 +5,8 @@ import re
 import numpy as np
 from six.moves import cPickle
 
-logger_GeneralTools = logging.getLogger('RNN.generalTools')
-logger_GeneralTools.setLevel(logging.ERROR)
+logger_GeneralTools = logging.getLogger('combined.generalTools')
+logger_GeneralTools.setLevel(logging.DEBUG)
 
 
 def path_reader(filename):
