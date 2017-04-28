@@ -67,7 +67,7 @@ data_path = os.path.join(dataDir, dataset + '_' + str(nbMFCCs) + '_ch.pkl');
 
 model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) \
              + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + \
-("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset
+("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset + "____TESTSliceLayer"
 
 
 # model parameters and network_training_info
@@ -124,7 +124,7 @@ RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size,
                             num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
                             num_output_units=nbPhonemes,
                             bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS,
-                            seed=0, debug=True)
+                            seed=0, debug=False)
 
 # print number of parameters
 nb_params = lasagne.layers.count_params(RNN_network.network_lout_batch)
@@ -136,7 +136,7 @@ RNN_network.load_model(model_load)
 
 ##### COMPILING FUNCTIONS #####
 logger_RNN.info("\n* Compiling functions ...")
-RNN_network.build_functions(train=True, debug=True)
+RNN_network.build_functions(train=True, debug=False)
 
 ##### TRAINING #####
 logger_RNN.info("\n* Training ...")
