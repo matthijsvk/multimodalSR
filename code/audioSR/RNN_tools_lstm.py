@@ -49,8 +49,6 @@ class NeuralNetwork:
                 self.valid_frames = valid_frames_train[:batch_size]
                 self.masks = generate_masks(X, valid_frames=self.valid_frames, batch_size=len(X))
 
-                #import pdb; pdb.set_trace()
-
                 self.X = pad_sequences_X(X)
                 self.Y = pad_sequences_y(y)
 
@@ -518,14 +516,14 @@ class NeuralNetwork:
                 prediction = list(prediction)
                 predictions = predictions + prediction
             # # some tests of valid predictions functions (this works :) )
-                valid_predictions = self.valid_predictions_fn(inputs, masks)
-                logger.debug("valid predictions: ", valid_predictions.shape)
+                valid_predictions = self.valid_predictions_fn(batch_X, batch_masks)
+                logger_RNNtools.debug("valid predictions: ", valid_predictions.shape)
 
-                # get valid predictions for video 0
-                self.get_validPredictions_video(valid_predictions, valid_frames, 0)
-                # and the targets for video 0
-                targets[0][valid_frames[0]]
-            
+                # # get valid predictions for video 0
+                # self.get_validPredictions_video(valid_predictions, valid_frames, 0)
+                # # and the targets for video 0
+                # targets[0][valid_frames[0]]
+                #
         cost /= nb_batches; accuracy /= nb_batches
         if get_predictions:
             return cost, accuracy, predictions
@@ -565,7 +563,7 @@ class NeuralNetwork:
             logger.info("Training cost:\t{:.6f}".format(train_cost))
             logger.info("Validation cost:\t{:.6f} ".format(validation_cost))
             logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
-            logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy))
+            logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy*100))
 
             # better model, so save parameters
             if validation_cost < self.best_cost:

@@ -14,7 +14,7 @@ def path_reader(filename):
     return path_list
 
 
-def load_dataset(file_path):  # TODO: split X_train in train and validation sets
+def unpickle(file_path):  # TODO: split X_train in train and validation sets
     with open(file_path, 'rb') as cPickle_file:
         a = cPickle.load(cPickle_file)
     return a

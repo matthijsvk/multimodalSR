@@ -65,7 +65,6 @@ def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
     validLabels_test = list(data['validLabels'][thisTrain:thisTrain + thisValid])
     validAudioFrames_test = list(data['validAudioFrames'][thisTrain:thisTrain + thisValid])
 
-
     if verbose:
         logger_prepComb.info("nbTrainLoaded: %s", len(images_train))
         logger_prepComb.info("nbValidLoaded: %s", len(images_val))
@@ -94,23 +93,23 @@ def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
     if isinstance(validLabels_test, list):          validLabels_test = set_type(validLabels_test,dtypeY);
     if isinstance(validAudioFrames_test, list):     validAudioFrames_test = set_type(validAudioFrames_test,dtypeY);
 
-    # add dimension so the audio functions still work
-    for i in range(len(audioLabels_train)):
-        audioLabels_train[i] = audioLabels_train[i][np.newaxis, ...]
-        validLabels_train [i]= validLabels_train[i][np.newaxis, ...]
-        validAudioFrames_train[i] = validAudioFrames_train[i][np.newaxis, ...]
-
-    # add dimension so the audio functions still work
-    for i in range(len(audioLabels_val)):
-        audioLabels_val[i] = audioLabels_val[i][np.newaxis, ...]
-        validLabels_val[i] = validLabels_val[i][np.newaxis, ...]
-        validAudioFrames_val[i] = validAudioFrames_val[i][np.newaxis, ...]
-
-    # add dimension so the audio functions still work
-    for i in range(len(audioLabels_test)):
-        audioLabels_test[i] = audioLabels_test[i][np.newaxis, ...]
-        validLabels_test[i] = validLabels_test[i][np.newaxis, ...]
-        validAudioFrames_test[i] = validAudioFrames_test[i][np.newaxis, ...]
+    # # add dimension so the audio functions still work
+    # for i in range(len(audioLabels_train)):
+    #     audioLabels_train[i] = audioLabels_train[i][np.newaxis, ...]
+    #     validLabels_train [i]= validLabels_train[i][np.newaxis, ...]
+    #     validAudioFrames_train[i] = validAudioFrames_train[i][np.newaxis, ...]
+    #
+    # # add dimension so the audio functions still work
+    # for i in range(len(audioLabels_val)):
+    #     audioLabels_val[i] = audioLabels_val[i][np.newaxis, ...]
+    #     validLabels_val[i] = validLabels_val[i][np.newaxis, ...]
+    #     validAudioFrames_val[i] = validAudioFrames_val[i][np.newaxis, ...]
+    #
+    # # add dimension so the audio functions still work
+    # for i in range(len(audioLabels_test)):
+    #     audioLabels_test[i] = audioLabels_test[i][np.newaxis, ...]
+    #     validLabels_test[i] = validLabels_test[i][np.newaxis, ...]
+    #     validAudioFrames_test[i] = validAudioFrames_test[i][np.newaxis, ...]
 
     ### STORE DATA ###
     dataList = [[images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train],

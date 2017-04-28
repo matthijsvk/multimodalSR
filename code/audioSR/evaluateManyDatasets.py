@@ -40,12 +40,12 @@ class modelEvaluator:
         N_HIDDEN_LIST = [64,64]
         BIDIRECTIONAL = True
         ADD_DENSE_LAYERS = False
-        batch_size = 32
+        batch_size = 256
 
         root = os.path.expanduser("~/TCDTIMIT/audioSR/")
 
         # where preprocessed data will be stored in PKL format
-        data_store_dir = root + "/dataPreparedForEvaluation/batch_size32/"
+        data_store_dir = root + "dataPreparedForEvaluation/batch_size"+str(batch_size)+"/"
 
         # get all the wavDirs we're going to evaluate
         evaluate_datasets = ['TIMIT', 'TCDTIMIT']
@@ -63,7 +63,7 @@ class modelEvaluator:
         model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) \
                      + "_nbMFCC" + str(nbMFCCs) + (
                          "_bidirectional" if BIDIRECTIONAL else "_unidirectional") + (
-        "_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + model_dataset
+        "_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + model_dataset + "____TESTSliceLayer"
 
         store_dir = store_dir + os.sep + model_name
         if not os.path.exists(store_dir): os.makedirs(store_dir)
@@ -82,7 +82,7 @@ class modelEvaluator:
         if returnVal != 0: raise IOError("Model not found, no weights loaded. Train the model first with RNN.py")
 
         # print number of parameters
-        nb_params = lasagne.layers.count_params(self.RNN_network.network_output_layer)
+        nb_params = lasagne.layers.count_params(self.RNN_network.network_lout_batch)
         logger_evaluate.info(" Number of parameters of this network: %s", nb_params )
 
         ##### COMPILING FUNCTIONS #####

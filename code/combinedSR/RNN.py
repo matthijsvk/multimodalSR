@@ -26,15 +26,16 @@ import time
 program_start_time = time.time()
 
 print("\n * Importing libraries...")
-from RNN_tools_lstm import *
+from RNN_tools_lstm_SliceLayer import *
 from general_tools import *
+import preprocessingCombined
 
 
 ##### SCRIPT META VARIABLES #####
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 256
+batch_size = 1
 num_epochs = 50
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
@@ -56,7 +57,7 @@ logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-dataset = "TCDTIMIT"
+dataset = "TIMIT"
 root = os.path.expanduser("~/TCDTIMIT/audioSR/")
 store_dir = root + dataset + "/results"
 if not os.path.exists(store_dir): os.makedirs(store_dir)
@@ -67,7 +68,7 @@ data_path = os.path.join(dataDir, dataset + '_' + str(nbMFCCs) + '_ch.pkl');
 
 model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) \
              + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + \
-("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset #+ "____TESTSliceLayer"
+("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset + "__TESTSliceLayer"
 
 
 # model parameters and network_training_info
@@ -93,41 +94,55 @@ logger_RNNtools.info("\n\n\n\n STARTING NEW TRAINING SESSION AT " + strftime("%Y
 logger_RNN.info('  data source: ' + data_path)
 logger_RNN.info('  model target: ' + model_save + '.npz')
 
+
+# Load some data
+dataset = "TCDTIMIT"
+root_dir = os.path.expanduser('~/TCDTIMIT/combinedSR/' + dataset)
+store_dir = root_dir + "/results"
+if not os.path.exists(store_dir): os.makedirs(store_dir)
+
+database_binaryDir = root_dir + '/binary'
+processedDir = database_binaryDir + "_finalProcessed"
+datasetType = "volunteers";
+
+testVolunteerNumbers = ["13F", "15F", "21M", "23M", "24M", "25M", "28M", "29M", "30F", "31F", "34M", "36F", "37F",
+                        "43F", "47M", "51F", "54M"];
+testVolunteers = [str(testNumber) + ".pkl" for testNumber in testVolunteerNumbers];
+lipspeakers = ["Lipspkr1.pkl", "Lipspkr2.pkl", "Lipspkr3.pkl"];
+allSpeakers = [f for f in os.listdir(database_binaryDir) if
+               os.path.isfile(os.path.join(database_binaryDir, f)) and os.path.splitext(f)[1] == ".pkl"]
+trainVolunteers = [f for f in allSpeakers if not (f in testVolunteers or f in lipspeakers)];
+
+if datasetType == "combined":
+    trainingSpeakerFiles = trainVolunteers + lipspeakers
+    testSpeakerFiles = testVolunteers
+elif datasetType == "volunteers":
+    trainingSpeakerFiles = trainVolunteers
+    testSpeakerFiles = testVolunteers
+else:
+    raise Exception("invalid dataset entered")
+datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
+dataset_test, _, _ = train, val, test = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0],
+                                                                            sourceDataDir=database_binaryDir,
+                                                                            storeProcessed=True,
+                                                                            processedDir=processedDir,
+                                                                            trainFraction=1.0, validFraction=0.0,
+                                                                            verbose=True)
+
 dataset = unpickle(data_path)
 X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
-# these are lists of np arrays, because the time sequences are different for each example
-# X shape: (example, time_sequence, mfcc_feature,)
-# y shape: (example, time_sequence,)
 
-
-# Print some information
-logger_RNN.info("\n* Data information")
-logger_RNN.info('X train')
-logger_RNN.info('  %s %s', type(X_train), len(X_train))
-logger_RNN.info('  %s %s', type(X_train[0]), X_train[0].shape)
-logger_RNN.info('  %s %s', type(X_train[0][0]), X_train[0][0].shape)
-logger_RNN.info('  %s', type(X_train[0][0][0]))
-
-logger_RNN.info('y train')
-logger_RNN.info('  %s %s', type(y_train), len(y_train))
-logger_RNN.info('  %s %s', type(y_train[0]), y_train[0].shape)
-logger_RNN.info('  %s %s', type(y_train[0][0]), y_train[0][0].shape)
-
-logger_RNN.info('valid_frames train')
-logger_RNN.info('  %s %s', type(valid_frames_train), len(valid_frames_train))
-logger_RNN.info('  %s %s', type(valid_frames_train[0]), valid_frames_train[0].shape)
-logger_RNN.info('  %s %s', type(valid_frames_train[0][0]), valid_frames_train[0][0].shape)
 
 ##### BUIDING MODEL #####
 logger_RNN.info('\n* Building network ...')
-RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size,
+RNN_network = NeuralNetwork('RNN', dataset_test, batch_size=batch_size,
                             num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
                             num_output_units=nbPhonemes,
                             bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS,
                             seed=0, debug=False)
 
 # print number of parameters
-nb_params = lasagne.layers.count_params(RNN_network.network_lout_batch)
+nb_params = lasagne.layers.count_params(RNN_network.RNN_lout)
 logger_RNN.info(" Number of parameters of this network: %s", nb_params)
 
 # Try to load stored model
@@ -136,10 +151,13 @@ RNN_network.load_model(model_load)
 
 ##### COMPILING FUNCTIONS #####
 logger_RNN.info("\n* Compiling functions ...")
-RNN_network.build_functions(train=True, debug=True)
+RNN_network.build_functions(train=True, debug=False)
 
 ##### TRAINING #####
 logger_RNN.info("\n* Training ...")
+
+
+
 RNN_network.train(dataset, model_save, num_epochs=num_epochs,
                   batch_size=batch_size, LR_start=LR_start, LR_decay=LR_decay,
                   compute_confusion=False, debug=False)

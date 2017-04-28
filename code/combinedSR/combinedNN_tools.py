@@ -59,7 +59,6 @@ class NeuralNetwork:
 
                 self.X = self.mfccs # for debugging audio part
                 self.Y = self.audioLabels
-                self.valid_frames = self.validAudioFrames
 
                 pdb.set_trace()
 
@@ -79,19 +78,20 @@ class NeuralNetwork:
             pdb.set_trace()
 
             # create Theano variables and generate the networks
-            self.RNN_input_var = T.tensor3('audio_inputs')
-            self.RNN_mask_var  = T.matrix('audio_masks')
-            self.RNN_valid_var = T.imatrix('valid_indices')
+            self.targets_var = T.imatrix('targets')
+            self.audio_input_var = T.tensor3('audio_inputs')
+            self.audio_mask_var  = T.matrix('audio_masks')
+            self.audio_valid_frames_var = T.imatrix('valid_indices')
 
             self.RNNdict, self.RNN_lout, self.RNN_lout_flattened = \
-                self.build_RNN(RNN_input_var, RNN_mask_var, RNN_valid_var, n_hidden_list=lstm_hidden_list, bidirectional=bidirectional,
+                self.build_RNN(n_hidden_list=lstm_hidden_list, bidirectional=bidirectional,
                            seed=seed, debug=debug, logger=logger)
 
             # RNN_lout_flattened output shape: (nbValidFrames, 39)
 
-            CNN_input_var = T.tensor4('cnn_input')
+            self.CNN_input_var = T.tensor4('cnn_input')
             # batch size is number of valid frames in each video
-            self.CNNdict, self.CNN_lout = self.build_CNN(CNN_input_var)
+            self.CNNdict, self.CNN_lout = self.build_CNN()
 
             # CNN_lout output shape = (nbValidFrames, 512x7x7)
 
@@ -262,7 +262,8 @@ class NeuralNetwork:
         return net, net['l7_out_valid'], net['l7_out_valid_flattened']
 
     # network from Oxford & Google BBC paper
-    def build_CNN(self, input, activation=T.nnet.relu, alpha=0.1, epsilon=1e-4):
+    def build_CNN(self, input=None, activation=T.nnet.relu, alpha=0.1, epsilon=1e-4):
+        input = self.CNN_input_var
         nbClasses = self.num_output_units
 
         # input

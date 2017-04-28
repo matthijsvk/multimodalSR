@@ -46,7 +46,7 @@ def dirToArrays(dir, nbMFCCs=39, verbose=False):
     bad = []
 
     thisImages = []
-    thisMFCCs = []
+    # just one mfcc file, don't store in list
     thisValidAudioFrames = []  # these are the audio valid frames of this video
 
     labels_fromAudio = []
@@ -66,7 +66,7 @@ def dirToArrays(dir, nbMFCCs=39, verbose=False):
                 wav_path = ''.join([root, os.sep, file])
                 X_val, total_frames = create_mfcc('DUMMY', wav_path, nbMFCCs)
                 total_frames = int(total_frames)
-                thisMFCCs.append(X_val)
+                thisMFCCs = X_val
 
                 # find the corresponding phoneme file, get the phoneme classes
                 phn_path = ''.join([root, os.sep, name, ".phn"])
@@ -136,7 +136,6 @@ def dirToArrays(dir, nbMFCCs=39, verbose=False):
         imageValidFrames_fromImages.append(int(frame))
 
     # do the sanity check on image frames and labels
-    import pdb
     try:
         assert imageValidFrames_fromImages == imageValidFrames_fromAudio
     except:

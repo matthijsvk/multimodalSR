@@ -66,6 +66,7 @@ database_binaryDir = root_dir + '/binary'
 processedDir = database_binaryDir + "_finalProcessed"
 datasetType = "volunteers";
 
+
 # audio network + cnnNetwork + classifierNetwork
 model_name = str(len(LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in LSTM_HIDDEN_LIST]) \
              + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") +  "_" \
