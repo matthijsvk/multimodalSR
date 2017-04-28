@@ -34,7 +34,7 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 1
+batch_size = 256
 num_epochs = 50
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
@@ -120,10 +120,14 @@ logger_RNN.info('  %s %s', type(valid_frames_train[0][0]), valid_frames_train[0]
 
 ##### BUIDING MODEL #####
 logger_RNN.info('\n* Building network ...')
-RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size, num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
-                            num_output_units=nbPhonemes, bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS, seed=0, debug=False)
+RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size,
+                            num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
+                            num_output_units=nbPhonemes,
+                            bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS,
+                            seed=0, debug=True)
+
 # print number of parameters
-nb_params = lasagne.layers.count_params(RNN_network.network_output_layer)
+nb_params = lasagne.layers.count_params(RNN_network.network_lout_batch)
 logger_RNN.info(" Number of parameters of this network: %s", nb_params)
 
 # Try to load stored model
