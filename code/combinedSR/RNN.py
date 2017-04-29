@@ -52,12 +52,12 @@ logger_RNN.info("LR_start = %s", str(LR_start))
 LR_fin = 0.0000001
 logger_RNN.info("LR_fin = %s", str(LR_fin))
 # LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)  # each epoch, LR := LR * LR_decay
-LR_decay= 0.5
+LR_decay= 0.7
 logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-dataset = "TIMIT"
+dataset = "TCDTIMIT"
 root = os.path.expanduser("~/TCDTIMIT/audioSR/")
 store_dir = root + dataset + "/results"
 if not os.path.exists(store_dir): os.makedirs(store_dir)
@@ -121,17 +121,34 @@ elif datasetType == "volunteers":
     testSpeakerFiles = testVolunteers
 else:
     raise Exception("invalid dataset entered")
-datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
-dataset_test, _, _ = train, val, test = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0],
+datasetFiles = [sorted(trainingSpeakerFiles), sorted(testSpeakerFiles)]
+
+
+# # Now actually preprocess and split
+# logger_RNN.info("Generating Training data... ")
+# # generate the data files first
+# for speakerFile in trainingSpeakerFiles:
+#     logger_RNN.info("%s", os.path.basename(speakerFile))
+#     preprocessingCombined.getOneSpeaker(
+#             speakerFile=speakerFile, sourceDataDir=database_binaryDir,
+#             trainFraction=0.8, validFraction=0.2,
+#             storeProcessed=True, loadData=False, processedDir=processedDir, logger=logger_RNN)
+#
+# for speakerFile in testSpeakerFiles:
+#     logger_RNN.info("%s", os.path.basename(speakerFile))
+#     preprocessingCombined.getOneSpeaker(
+#             speakerFile=speakerFile, sourceDataDir=database_binaryDir,
+#             trainFraction=0.0, validFraction=0.0,
+#             storeProcessed=True, loadData=False, processedDir=processedDir, logger=logger_RNN)
+
+
+#used for debugging
+dataset_test, _, _ = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0],
                                                                             sourceDataDir=database_binaryDir,
                                                                             storeProcessed=True,
                                                                             processedDir=processedDir,
                                                                             trainFraction=1.0, validFraction=0.0,
                                                                             verbose=True)
-
-dataset = unpickle(data_path)
-X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
-
 
 ##### BUIDING MODEL #####
 logger_RNN.info('\n* Building network ...')
@@ -155,12 +172,11 @@ RNN_network.build_functions(train=True, debug=False)
 
 ##### TRAINING #####
 logger_RNN.info("\n* Training ...")
-
-
-
-RNN_network.train(dataset, model_save, num_epochs=num_epochs,
+RNN_network.train(datasetFiles, database_binaryDir=database_binaryDir,
+                  storeProcessed=True, processedDir=processedDir,
+                  num_epochs=num_epochs,
                   batch_size=batch_size, LR_start=LR_start, LR_decay=LR_decay,
-                  compute_confusion=False, debug=False)
+                  compute_confusion=False, debug=True, save_name=model_save)
 
 logger_RNN.info("\n* Done")
 logger_RNN.info('Total time: {:.3f}'.format(time.time() - program_start_time))

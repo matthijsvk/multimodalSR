@@ -202,7 +202,6 @@ def train(train_fn, val_fn, out_fn, topk_error_fn, k,
 
 
 
-
     # try to load stored model
     if os.path.exists(save_name + ".npz") and os.path.exists(save_name+ "_trainInfo.pkl"):
         old_train_info = general_tools.unpickle(save_name + '_trainInfo.pkl')

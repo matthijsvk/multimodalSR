@@ -51,7 +51,7 @@ logger_RNN.info("LR_start = %s", str(LR_start))
 LR_fin = 0.0000001
 logger_RNN.info("LR_fin = %s", str(LR_fin))
 # LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)  # each epoch, LR := LR * LR_decay
-LR_decay= 0.5
+LR_decay= 0.707
 logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
@@ -67,7 +67,7 @@ data_path = os.path.join(dataDir, dataset + '_' + str(nbMFCCs) + '_ch.pkl');
 
 model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) \
              + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + \
-("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset #+ "____TESTSliceLayer"
+("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset + "__TESTSliceLayer"
 
 
 # model parameters and network_training_info
@@ -136,7 +136,7 @@ RNN_network.load_model(model_load)
 
 ##### COMPILING FUNCTIONS #####
 logger_RNN.info("\n* Compiling functions ...")
-RNN_network.build_functions(train=True, debug=True)
+RNN_network.build_functions(train=True, debug=False)
 
 ##### TRAINING #####
 logger_RNN.info("\n* Training ...")

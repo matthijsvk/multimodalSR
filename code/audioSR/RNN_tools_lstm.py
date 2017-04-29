@@ -38,7 +38,12 @@ class NeuralNetwork:
         self.max_seq_length = max_seq_length #currently unused
         self.epochsNotImproved = 0  #keep track, to know when to stop training
         self.updates = {}
-        self.network_train_info = [[], [], [], [], []]  # train cost, val cost, val acc, test cost, test acc
+        # self.network_train_info = [[], [], [], [], []]  # train cost, val cost, val acc, test cost, test acc
+        self.network_train_info = {
+            'train_cost': [],
+            'val_cost':   [], 'val_acc': [], 'val_topk_acc': [],
+            'test_cost':  [], 'test_acc': [], 'test_topk_acc': []
+        }
 
         if architecture == 'RNN':
             if dataset != None:
@@ -219,9 +224,9 @@ class NeuralNetwork:
         net['l7_out_flattened'] = L.ReshapeLayer(net['l6_dense'], (-1, num_output_units))
         net['l7_out'] = L.ReshapeLayer(net['l6_dense'], (batch_size, -1, num_output_units))
         
-        net['l7_out_valid'] = L.SliceLayer(net['l7_out'], indices=valid_indices, axis=1)
-        net['l7_out_valid'] = L.ReshapeLayer(net['l7_out_valid'],(batch_size, -1, num_output_units))
-
+        net['l7_out_valid_basic'] = L.SliceLayer(net['l7_out'], indices=valid_indices, axis=1)
+        net['l7_out_valid'] = L.ReshapeLayer(net['l7_out_valid_basic'],(batch_size, -1, num_output_units))
+        net['l7_out_valid_flattened'] = L.ReshapeLayer(net['l7_out_valid_basic'], (-1, num_output_units))
 
         if debug:
             get_l_out = theano.function([net['l1_in'].input_var, net['l1_mask'].input_var], L.get_output(net['l7_out']))
@@ -240,6 +245,8 @@ class NeuralNetwork:
         self.network_lout = net['l7_out_flattened']
         self.network_lout_batch = net['l7_out']
         self.network_lout_valid = net['l7_out_valid']
+        self.network_lout_valid_flattened = net['l7_out_valid_flattened']
+
         self.network = net
 
     def print_network_structure(self, net=None, logger=logger_RNNtools):
@@ -333,7 +340,7 @@ class NeuralNetwork:
         # and also         http://colinraffel.com/talks/hammer2015recurrent.pdf
         target_var = self.audio_targets_var #T.imatrix('audio_targets')
 
-        if debug:  import pdb; self.print_network_structure()
+        # if debug:  import pdb; self.print_network_structure()
 
         batch = True
         if batch:
@@ -349,13 +356,13 @@ class NeuralNetwork:
             if debug:
                 predicted = self.predictions_fn(self.X, self.masks)
                 logger.debug('predictions_fn(X).shape: %s', predicted.shape)
-                logger.debug('predictions_fn(X)[0], value: %s', predicted[0])
+                # logger.debug('predictions_fn(X)[0], value: %s', predicted[0])
 
             if debug:
                 self.output_fn = theano.function([self.audio_inputs_var, self.audio_masks_var], network_output, name='output_fn')
                 n_out = self.output_fn(self.X, self.masks)
-                logger.debug('network_output[0]:     \n%s', n_out[0]);
                 logger.debug('network_output.shape: \t%s', n_out.shape);
+                # logger.debug('network_output[0]:     \n%s', n_out[0]);
 
             # # Function to determine the number of correct classifications
             valid_indices_example, valid_indices_seqNr = self.audio_masks_var.nonzero()
@@ -371,6 +378,9 @@ class NeuralNetwork:
 
             # using the lasagne SliceLayer
             valid_network_output2 = L.get_output(self.network['l7_out_valid'])
+            self.valid_network_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
+                                                     self.audio_valid_indices_var], valid_network_output2)
+            valid_network_output_flattened = L.get_output(self.network_lout_valid_flattened)
 
             valid_predictions2 = T.argmax(valid_network_output2,axis=2)
             self.valid_predictions2_fn = theano.function(
@@ -379,23 +389,49 @@ class NeuralNetwork:
 
             if debug:
                 try:
-                    # valid_preds2 = self.valid_predictions2_fn(self.X, self.masks, self.valid_frames)
-                    # logger.debug("all valid predictions of this batch: ")
-                    # logger.debug('valid_preds2.shape: %s', valid_preds2.shape)
-                    # logger.debug('valid_preds2, value: \n%s', valid_preds2)
+                    valid_preds2 = self.valid_predictions2_fn(self.X, self.masks, self.valid_frames)
+                    logger.debug("all valid predictions of this batch: ")
+                    logger.debug('valid_preds2.shape: %s', valid_preds2.shape)
+                    logger.debug('valid_preds2, value: \n%s', valid_preds2)
 
                     valid_example, valid_seqNr = valid_indices_fn(self.masks)
                     logger.debug('valid_inds(masks).shape: %s', valid_example.shape)
                     valid_preds = self.valid_predictions_fn(self.X, self.masks)
                     logger.debug("all valid predictions of this batch: ")
-                    logger.debug('valid_preds(X,masks).shape: %s', valid_preds.shape)
-                    logger.debug('valid_preds(X,masks)[0], value: \n%s', valid_preds)
+                    logger.debug('valid_preds.shape: %s', valid_preds.shape)
+                    logger.debug('valid_preds, value: \n%s', valid_preds)
 
                     valid_targs = self.valid_targets_fn(self.masks, self.Y)
-                    logger.debug("all valid targets of this batch: ")
-                    logger.debug('valid_targets(X,masks).shape: %s', valid_targs.shape)
-                    logger.debug('valid_targets(X,masks)[0], value: \n%s', valid_targs)
-                    # pdb.set_trace()
+                    logger.debug('valid_targets.shape: %s', valid_targs.shape)
+                    logger.debug('valid_targets, value: \n%s', valid_targs)
+
+                    valid_out = self.valid_network_fn(self.X, self.masks, self.valid_frames)
+                    logger.debug('valid_out.shape: %s', valid_out.shape)
+                    # logger.debug('valid_out, value: \n%s', valid_out)
+
+                    try:
+                        # Functions for computing cost and training
+                        top1_acc = T.mean(lasagne.objectives.categorical_accuracy(
+                                valid_network_output_flattened, valid_targets,  top_k=1))
+                        self.top1_acc_fn = theano.function(
+                                [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
+                                 self.audio_targets_var], top1_acc)
+                        top3_acc = T.mean(lasagne.objectives.categorical_accuracy(
+                                valid_network_output_flattened, valid_targets, top_k=3))
+                        self.top3_acc_fn = theano.function(
+                                [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
+                                 self.audio_targets_var], top3_acc)
+
+                        top1 = self.top1_acc_fn(self.X, self.masks, self.valid_frames, self.Y)
+                        logger.debug("top 1 accuracy: %s", top1*100.0)
+
+                        top3 = self.top3_acc_fn(self.X, self.masks, self.valid_frames, self.Y)
+                        logger.debug("top 3 accuracy: %s", top3*100.0)
+                    except Exception as e:
+                        print('caught this error: ' + traceback.format_exc());
+                        import pdb;
+                        pdb.set_trace()
+
                 except Exception as error:
                     print('caught this error: ' + traceback.format_exc());
                     pdb.set_trace()
@@ -441,11 +477,19 @@ class NeuralNetwork:
         cost_pointwise = lasagne.objectives.categorical_crossentropy(network_output_flattened, target_var.flatten())
         cost = lasagne.objectives.aggregate(cost_pointwise, self.audio_masks_var.flatten())
 
-        # Functions for computing cost and training
+
         self.validate_fn = theano.function([self.audio_inputs_var, self.audio_masks_var, self.audio_targets_var],
                                       [cost, accuracy], name='validate_fn')
         self.cost_pointwise_fn = theano.function([self.audio_inputs_var, self.audio_masks_var, target_var],
                                             cost_pointwise, name='cost_pointwise_fn')
+
+        # # Top k accuracy
+        # k = 3
+        # topk_acc = T.mean( T.any(T.eq(T.argsort(valid_network_output2, axis=2)[:, -k:],
+        #             self.audio_targets_var.dimshuffle(0, 'x')), axis=1),  dtype=theano.config.floatX)
+        # topk_acc_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
+        #                                self.audio_valid_indices_var, self.audio_targets_var], topk_acc)
+
         if debug:
             logger.debug('cost pointwise: %s', self.cost_pointwise_fn(self.X, self.masks, self.Y))
 
@@ -577,12 +621,20 @@ class NeuralNetwork:
                     self.save_model(save_name)
 
             # store train info
-            self.network_train_info[0].append(train_cost)
-            self.network_train_info[1].append(validation_cost)
-            self.network_train_info[2].append(validation_accuracy)
-            self.network_train_info[3].append(test_cost)
-            self.network_train_info[4].append(test_accuracy)
-            saveToPkl(save_name + '_trainInfo.pkl', [self.network_train_info])
+            # self.network_train_info[0].append(train_cost)
+            # self.network_train_info[1].append(validation_cost)
+            # self.network_train_info[2].append(validation_accuracy)
+            # self.network_train_info[3].append(test_cost)
+            # self.network_train_info[4].append(test_accuracy)
+
+            # save the training info
+            self.network_train_info['train_cost'].append(train_cost)
+            self.network_train_info['val_cost'].append(validation_cost)
+            self.network_train_info['val_acc'].append(validation_accuracy)
+            self.network_train_info['test_cost'].append(test_cost)
+            self.network_train_info['test_acc'].append(test_accuracy)
+
+            saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
             logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
 
             if compute_confusion:
@@ -618,12 +670,12 @@ class NeuralNetwork:
 
 
     def updateLR(self, LR, LR_decay, logger=logger_RNNtools):
-        this_cost = self.network_train_info[1][-1]
-        try:last_cost = self.network_train_info[1][-2]
+        this_cost = self.network_train_info['val_cost'][-1]
+        try:last_cost = self.network_train_info['val_cost'][-2]
         except: last_cost = 10*this_cost #first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_cost / float(last_cost) >= 0.98:
+        if this_cost / float(last_cost) >= 0.99:
             logger.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_cost, last_cost, LR * LR_decay)
             self.epochsNotImproved += 1
             return LR * LR_decay

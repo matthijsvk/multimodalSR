@@ -189,12 +189,12 @@ def query_yes_no(question, default="yes"):
                              "(or 'y' or 'n').\n")
 
 
-def saveToPkl(target_path, dataList):
+def saveToPkl(target_path, data):  # data can be list or dictionary
     if not os.path.exists(os.path.dirname(target_path)):
         os.makedirs(os.path.dirname(target_path))
     with open(target_path, 'wb') as cPickle_file:
         cPickle.dump(
-                dataList,
+                data,
                 cPickle_file,
                 protocol=cPickle.HIGHEST_PROTOCOL)
     return 0

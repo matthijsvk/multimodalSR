@@ -18,16 +18,15 @@ logger_RNNtools = logging.getLogger('audioSR.tools')
 logger_RNNtools.setLevel(logging.DEBUG)
 
 from general_tools import *
+import preprocessingCombined
 
 
 class NeuralNetwork:
     RNNdict = None
     training_fn = None
     best_param = None
-    best_error = 100
+    best_acc = 0
     curr_epoch, best_epoch = 0, 0
-    mfccs = None
-    validLabels = None
 
     def __init__(self, architecture, dataset=None, batch_size=1, max_seq_length=1000, num_features=26,
                  n_hidden_list=(100,), num_output_units=61,
@@ -312,240 +311,391 @@ class NeuralNetwork:
         self.valid_network_output_flattened_fn = theano.function(
                 [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var], valid_network_output_flattened)
 
+        # top k accuracy
+        top1_acc = T.mean(lasagne.objectives.categorical_accuracy(
+                valid_network_output_flattened, self.targets_var.flatten(), top_k=1))
+        self.top1_acc_fn = theano.function(
+                [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var,
+                 self.targets_var], top1_acc)
+        top3_acc = T.mean(lasagne.objectives.categorical_accuracy(
+                valid_network_output_flattened, self.targets_var.flatten(), top_k=3))
+        self.top3_acc_fn = theano.function(
+                [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var,
+                 self.targets_var], top3_acc)
         if debug:
             try:
                 valid_out = self.valid_network_output_fn(self.mfccs, self.masks, self.validAudioFrames)
                 logger.debug('valid_out.shape: %s', valid_out.shape)
-                logger.debug('valid_out, value: \n%s', valid_out)
+                # logger.debug('valid_out, value: \n%s', valid_out)
 
                 valid_out_flattened = self.valid_network_output_flattened_fn(self.mfccs, self.masks, self.validAudioFrames)
                 logger.debug('valid_out_flat.shape: %s', valid_out_flattened.shape)
-                logger.debug('valid_out_flat, value: \n%s', valid_out_flattened)
+                # logger.debug('valid_out_flat, value: \n%s', valid_out_flattened)
 
                 valid_preds2 = self.valid_predictions_fn(self.mfccs, self.masks, self.validAudioFrames)
                 logger.debug('valid_preds2.shape: %s', valid_preds2.shape)
-                logger.debug('valid_preds2, value: \n%s', valid_preds2)
+                # logger.debug('valid_preds2, value: \n%s', valid_preds2)
 
                 logger.debug('validAudioFrames.shape: %s', self.validAudioFrames.shape)
-
                 logger.debug('valid_targets.shape: %s', self.validLabels.shape)
                 logger.debug('valid_targets, value: \n%s', self.validLabels)
-                # pdb.set_trace()
+
+                top1 = self.top1_acc_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels)
+                logger.debug("top 1 accuracy: %s", top1 * 100.0)
+
+                top3 = self.top3_acc_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels)
+                logger.debug("top 3 accuracy: %s", top3 * 100.0)
+                
             except Exception as error:
                 print('caught this error: ' + traceback.format_exc());
-                pdb.set_trace()
-
-        # only use the output at the middle of each phoneme interval (get better accuracy)
-        # Accuracy => # (correctly predicted & valid frames) / #valid frames
-        validAndCorrect = T.sum(T.eq(valid_predictions, self.targets_var), dtype='float32')
-        nbValidFrames = T.sum(self.audio_masks_var)
-        accuracy = validAndCorrect / nbValidFrames
-
-        ## from https://groups.google.com/forum/#!topic/lasagne-users/os0j3f_Th5Q
-        # Pad your vector of labels and then mask the cost:
-        # It's important to pad the label vectors with something valid such as zeros,
-        # since they will still have to give valid costs that can be multiplied by the mask.
-        # The shape of predictions, targets and mask should match:
-        # (predictions as (batch_size*max_seq_len, n_features), the other two as (batch_size*max_seq_len,)) -> we need to get the flattened output of the network for this
-
-        # this works, using theano masks
-        # cost_pointwise = lasagne.objectives.categorical_crossentropy(network_output_flattened, target_var.flatten())
-        # cost = lasagne.objectives.aggregate(cost_pointwise, self.audio_masks_var.flatten())
+                import pdb;pdb.set_trace()
 
         # with Lasagne SliceLayer outputs:
-        try:cost_pointwise = lasagne.objectives.categorical_crossentropy(valid_network_output_flattened,
+        cost_pointwise = lasagne.objectives.categorical_crossentropy(valid_network_output_flattened,
                                                                      self.targets_var.flatten())
-        except:
-            print('caught this error: ' + traceback.format_exc());
-            pdb.set_trace()
         cost = lasagne.objectives.aggregate(cost_pointwise)
 
         # Functions for computing cost and training
         self.validate_fn = theano.function(
                 [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var, self.targets_var],
-                [cost, accuracy], name='validate_fn')
+                [cost, top1_acc, top3_acc], name='validate_fn')
         self.cost_pointwise_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
                                                   self.audio_valid_frames_var, self.targets_var],
                                                  cost_pointwise, name='cost_pointwise_fn')
         if debug:
             logger.debug('cost pointwise: %s', self.cost_pointwise_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels))
-
-            try:
-                evaluate_cost = self.validate_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels)
-                #self.validate_fn(batch_X, batch_masks, batch_valid_frames, batch_y)
-            except:
-                print('caught this error: ' + traceback.format_exc());
-                pdb.set_trace()
+            evaluate_cost = self.validate_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels)
             logger.debug('evaluate_cost: %s %s', type(evaluate_cost), len(evaluate_cost))
             logger.debug('%s', evaluate_cost)
             logger.debug('cost:     {:.3f}'.format(float(evaluate_cost[0])))
             logger.debug('accuracy: {:.3f} %'.format(float(evaluate_cost[1])*100))
             #pdb.set_trace()
 
-        if train:
-            LR = T.scalar('LR', dtype=theano.config.floatX)
-            # Retrieve all trainable parameters from the network
-            all_params = L.get_all_params(self.RNN_lout, trainable=True)
-            self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
-            self.train_fn = theano.function([self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var,
-                                             self.targets_var, LR],
-                                            [cost, accuracy], updates=self.updates, name='train_fn')
+        LR = T.scalar('LR', dtype=theano.config.floatX)
+        # Retrieve all trainable parameters from the network
+        all_params = L.get_all_params(self.RNN_lout, trainable=True)
+        self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
+        self.train_fn = theano.function([self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var,
+                                         self.targets_var, LR],
+                                        cost, updates=self.updates, name='train_fn')
 
-    def shuffle(X, y, valid_frames):
-
-        chunk_size = len(X)
-        shuffled_range = range(chunk_size)
-
-        X_buffer = np.copy(X[0:chunk_size])
-        y_buffer = np.copy(y[0:chunk_size])
-        valid_frames_buffer = np.copy(valid_frames[0:chunk_size])
-
-        np.random.shuffle(shuffled_range)
-
-        for i in range(chunk_size):
-            X_buffer[i] = X[shuffled_range[i]]
-            y_buffer[i] = y[shuffled_range[i]]
-            valid_frames_buffer[i] = valid_frames[shuffled_range[i]]
-
-        X[0: chunk_size] = X_buffer
-        y[0: chunk_size] = y_buffer
-        valid_frames[0: chunk_size] = valid_frames_buffer
-
-        return X, y, valid_frames
+    def shuffle(self, lst):
+        import random
+        c = list(zip(*lst))
+        random.shuffle(c)
+        shuffled = zip(*c)
+        for i in range(len(shuffled)):
+            shuffled[i] = list(shuffled[i])
+        return shuffled
 
     # This function trains the model a full epoch (on the whole dataset)
-    def run_epoch(self, X, y, valid_frames, get_predictions=False, LR=None, batch_size=-1):
+    def train_epoch(self, mfccs, validLabels, valid_frames, LR, batch_size=-1):
+        if batch_size == -1: batch_size = self.batch_size
+
+        cost = 0;
+        nb_batches = len(mfccs) / batch_size
+
+        for i in tqdm(range(nb_batches), total=nb_batches):
+            batch_mfccs = mfccs[i * batch_size:(i + 1) * batch_size]
+            batch_validLabels = validLabels[i * batch_size:(i + 1) * batch_size]
+            batch_valid_frames = valid_frames[i * batch_size:(i + 1) * batch_size]
+            batch_masks = generate_masks(batch_mfccs, valid_frames=batch_valid_frames, batch_size=batch_size)
+            # now pad inputs and target to maxLen
+            batch_mfccs = pad_sequences_X(batch_mfccs)
+            batch_valid_frames = pad_sequences_y(batch_valid_frames)
+            batch_validLabels = pad_sequences_y(batch_validLabels)
+            # print("batch_mfccs.shape: ", batch_mfccs.shape)
+            # print("batch_validLabels.shape: ", batch_validLabels.shape)
+            cst  = self.train_fn(batch_mfccs, batch_masks, batch_valid_frames, batch_validLabels, LR)  # training
+            cost += cst;
+
+        return cost, nb_batches
+
+    # This function trains the model a full epoch (on the whole dataset)
+    def val_epoch(self, mfccs, validLabels, valid_frames, batch_size=-1):
         if batch_size == -1: batch_size = self.batch_size
 
         cost = 0;
         accuracy = 0
-        nb_batches = len(X) / batch_size
+        top3_accuracy = 0
+        nb_batches = len(mfccs) / batch_size
 
-        predictions = []  # only used if get_predictions = True
         for i in tqdm(range(nb_batches), total=nb_batches):
-            batch_X = X[i * batch_size:(i + 1) * batch_size]
-            batch_y = y[i * batch_size:(i + 1) * batch_size]
+            batch_mfccs = mfccs[i * batch_size:(i + 1) * batch_size]
+            batch_validLabels = validLabels[i * batch_size:(i + 1) * batch_size]
             batch_valid_frames = valid_frames[i * batch_size:(i + 1) * batch_size]
-            batch_masks = generate_masks(batch_X, valid_frames=batch_valid_frames, batch_size=batch_size)
+            batch_masks = generate_masks(batch_mfccs, valid_frames=batch_valid_frames, batch_size=batch_size)
             # now pad inputs and target to maxLen
-            batch_X = pad_sequences_X(batch_X)
-            batch_y = pad_sequences_y(batch_y)
-            # print("batch_X.shape: ", batch_X.shape)
-            # print("batch_y.shape: ", batch_y.shape)
-            if LR != None:
-                cst, acc = self.train_fn(batch_X, batch_masks, batch_valid_frames, batch_y, LR)  # training
-            else:
-                cst, acc = self.validate_fn(batch_X, batch_masks, batch_valid_frames, batch_y)  # validation
+            batch_mfccs = pad_sequences_X(batch_mfccs)
+            batch_valid_frames = pad_sequences_y(batch_valid_frames)
+            batch_validLabels = pad_sequences_y(batch_validLabels)
+            # print("batch_mfccs.shape: ", batch_mfccs.shape)
+            # print("batch_validLabels.shape: ", batch_validLabels.shape)
+            cst, acc, top3_acc = self.validate_fn(batch_mfccs, batch_masks, batch_valid_frames, batch_validLabels)  # training
             cost += cst;
             accuracy += acc
+            top3_accuracy += top3_acc
 
-        cost /= nb_batches;
-        accuracy /= nb_batches
-        if get_predictions:
-            return cost, accuracy, predictions
-        return cost, accuracy
+        return cost, accuracy, top3_accuracy, nb_batches
+    
+    
+    # evaluate many TRAINING speaker files -> train loss, val loss and val error. Load them in one by one (so they fit in memory)
+    def evalTRAINING(self, trainingSpeakerFiles, LR, shuffleEnabled=True, sourceDataDir=None,
+                     storeProcessed=False, processedDir=None, verbose=False, logger=logger_RNNtools):
+        train_cost = 0;
+        val_acc = 0;
+        val_cost = 0;
+        val_topk_acc = 0;
+        nb_train_batches = 0;
+        nb_val_batches = 0;
 
-    def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
-              compute_confusion=False, debug=False, logger=logger_RNNtools):
+        # for each speaker, pass over the train set, then val set. (test is other files). save the results.
+        for speakerFile in tqdm(trainingSpeakerFiles, total=len(trainingSpeakerFiles)):
+            logger.debug("processing %s", speakerFile)
+            train, val ,test = preprocessingCombined.getOneSpeaker(
+                speakerFile=speakerFile, sourceDataDir=sourceDataDir,
+                trainFraction=0.8, validFraction=0.2,
+                storeProcessed=storeProcessed,    processedDir=processedDir, logger=logger)
 
-        X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
-        for i in range(len(y_train)):
-            thisValidFrames = valid_frames_train[i] - 1
-            y_train[i] = y_train[i][thisValidFrames]
-        for i in range(len(y_val)):
-            thisValidFrames = valid_frames_val[i] - 1
-            y_val[i] = y_val[i][thisValidFrames]
-        for i in range(len(y_test)):
-            thisValidFrames = valid_frames_test[i] - 1
-            y_test[i] = y_test[i][thisValidFrames]
+            if shuffleEnabled: train = self.shuffle(train)
+            images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = train
+            images_val, mfccs_val, audioLabels_val, validLabels_val, validAudioFrames_val = val
+            images_test, mfccs_test, audioLabels_test, validLabels_test, validAudioFrames_test = test
 
-        # logger.info("Initial Pass over Test Set")
-        # test_cost, test_accuracy = self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
-        # logger.info("Initial Test cost:\t\t{:.6f} ".format(test_cost))
-        # logger.info("Initial Test accuracy:\t\t{:.6f} %".format(test_accuracy * 100))
+            if verbose:
+                logger.debug("the number of training examples is: %s", len(images_train))
+                logger.debug("the number of valid examples is:    %s", len(images_val))
+                logger.debug("the number of test examples is:     %s", len(images_test))
+        
+            train_cost_one, train_batches_one = self.train_epoch(mfccs=mfccs_train,
+                                                                 validLabels= validLabels_train,
+                                                                 valid_frames= validAudioFrames_train,
+                                                                 LR= LR)
+            train_cost += train_cost_one;
+            nb_train_batches += train_batches_one
 
+            # get results for validation  set
+            val_cost_one, val_acc_one, val_topk_acc_one, val_batches_one = self.val_epoch(mfccs=mfccs_val,
+                                                                                     validLabels=validLabels_val,
+                                                                                     valid_frames=validAudioFrames_val)
+            val_cost += val_cost_one;
+            val_acc += val_acc_one;
+            val_topk_acc += val_topk_acc_one
+            nb_val_batches += val_batches_one;
+
+            if verbose:
+                logger.debug("  this speaker results: ")
+                logger.debug("\ttraining cost:     %s", train_cost_one / train_batches_one)
+                logger.debug("\tvalidation cost:   %s", val_cost_one / val_batches_one)
+                logger.debug("\vvalidation acc rate:  %s %%", val_acc_one / val_batches_one * 100)
+                logger.debug("\vvalidation top 3 acc rate:  %s %%", val_topk_acc_one / val_batches_one * 100)
+
+        # get the average over all speakers
+        train_cost /= nb_train_batches
+        val_cost /= nb_val_batches
+        val_acc = val_acc / nb_val_batches * 100  # convert to %
+        val_topk_acc = val_topk_acc / nb_val_batches * 100  # convert to %
+
+        return train_cost, val_cost, val_acc, val_topk_acc
+
+    def evalTEST(self, testSpeakerFiles, sourceDataDir=None, storeProcessed=False, processedDir=None,
+                 verbose=False,logger=logger_RNNtools):
+
+        test_acc = 0;
+        test_cost = 0;
+        test_topk_acc = 0;
+        nb_test_batches = 0;
+        # for each speaker, pass over the train set, then test set. (test is other files). save the results.
+        for speakerFile in tqdm(testSpeakerFiles, total=len(testSpeakerFiles)):
+            logger.debug("processing %s", speakerFile)
+            train, val, test = preprocessingCombined.getOneSpeaker(
+                    speakerFile=speakerFile, sourceDataDir=sourceDataDir,
+                    trainFraction=0.0, validFraction=0.0,
+                    storeProcessed=storeProcessed, processedDir=processedDir, logger=logger)
+
+            images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = train
+            images_val, mfccs_val, audioLabels_val, validLabels_val, validAudioFrames_val = val
+            images_test, mfccs_test, audioLabels_test, validLabels_test, validAudioFrames_test = test
+
+            if verbose:
+                logger.debug("the number of training examples is: %s", len(images_train))
+                logger.debug("the number of valid examples is:    %s", len(images_val))
+                logger.debug("the number of test examples is:     %s", len(images_test))
+
+            # get results for testidation  set
+            test_cost_one, test_acc_one, test_topk_acc_one, test_batches_one = self.val_epoch(mfccs=mfccs_test, 
+                                                                                              validLabels=validLabels_test,
+                                                                                              valid_frames=validAudioFrames_test)
+            test_acc += test_acc_one;
+            test_cost += test_cost_one;
+            test_topk_acc += test_topk_acc_one
+            nb_test_batches += test_batches_one;
+
+            if verbose:
+                logger.debug("  this speaker results: ")
+                logger.debug("\ttest cost:   %s", test_cost_one / test_batches_one)
+                logger.debug("\vtest acc rate:  %s %%", test_acc_one / test_batches_one * 100)
+                logger.debug("\vtest  top 3 acc rate:  %s %%", test_topk_acc_one / test_batches_one * 100)
+
+        # get the average over all speakers
+        test_cost /= nb_test_batches
+        test_acc = test_acc / nb_test_batches * 100
+        test_topk_acc = test_topk_acc / nb_test_batches * 100
+        
+        return test_cost, test_acc, test_topk_acc
+    
+    
+    def train(self, dataset, database_binaryDir, storeProcessed=False, processedDir=None, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
+              shuffleEnabled=True, compute_confusion=False, debug=False, logger=logger_RNNtools):
+        
+        trainingSpeakerFiles, testSpeakerFiles = dataset
 
         logger.info("\n* Starting training...")
+
+
+        # try to load performance metrics of stored model
+        if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
+            old_train_info = unpickle(save_name + '_trainInfo.pkl')
+            # backward compatibility
+            if type(old_train_info) == list:
+                old_train_info = old_train_info[0]
+                best_val_err = min(old_train_info[2])
+                test_cost = min(old_train_info[3])
+                test_err = min(old_train_info[3])
+            elif type(old_train_info) == dict: #normal case
+                best_val_acc = min(old_train_info['val_acc'])
+                test_cost = min(old_train_info['test_cost'])
+                test_acc = min(old_train_info['test_acc'])
+                try: test_topk_acc = min(old_train_info['test_topk_acc'])
+                except: test_topk_acc = 0
+            else:
+                best_val_acc = 0
+                test_topk_acc = 0
+                test_cost = 0
+                test_acc = 0
+        else:
+            best_val_acc = 0
+            test_topk_acc = 0
+            test_cost = 0
+            test_acc = 0
+
+        logger.info("Initial best Val acc: %s", best_val_acc)
+        logger.info("Initial best test acc: %s\n", test_acc)
+
+
+        # init some performance keepers
+        best_epoch = 1
         LR = LR_start
-        self.best_cost = 100
+        # for storage of training info
+        self.network_train_info = {
+            'train_cost': [],
+            'val_cost':   [], 'val_acc': [], 'val_topk_acc': [],
+            'test_cost':  [], 'test_acc': [], 'test_topk_acc': []
+        }  # used to be list of lists
+        self.epochsNotImproved = 0
+
+        logger.info("starting training for %s epochs...", num_epochs)
+        # now run through the epochs
+
+        # # TODO: remove this
+        # test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles,
+        #                                               sourceDataDir=database_binaryDir,
+        #                                               storeProcessed=storeProcessed,
+        #                                               processedDir=processedDir)
+        # logger.info("TEST results: ")
+        # logger.info("\t  test cost:        %s", test_cost)
+        # logger.info("\t  test acc rate:  %s %%", test_acc)
+        # logger.info("\t  test top 3 acc:  %s %%", test_topk_acc)
+        # # TODO: end remove
+
+
         for epoch in range(num_epochs):
-            self.curr_epoch += 1
-            epoch_time = time.time()
-            logger.info("CURRENT EPOCH: %s", self.curr_epoch)
+            logger.info("\n\n\n Epoch %s started", epoch + 1)
+            start_time = time.time()
 
-            logger.info("Pass over Training Set")
-            train_cost, train_accuracy = self.run_epoch(X=X_train, y=y_train, valid_frames=valid_frames_train, LR=LR)
+            val_acc = 0.3; val_topk_acc = 0.5; val_cost = 1.0; train_cost = 1.0
+            train_cost, val_cost, val_acc, val_topk_acc = self.evalTRAINING(trainingSpeakerFiles, LR, shuffleEnabled,
+                                                                       sourceDataDir=database_binaryDir,
+                                                                       storeProcessed=storeProcessed,
+                                                                       processedDir=processedDir)
 
-            logger.info("Pass over Validation Set")
-            validation_cost, validation_accuracy = self.run_epoch(X=X_val, y=y_val, valid_frames=valid_frames_val)
+            # test if validation acc went up
+            printTest = False
+            if val_acc > best_val_acc:
+                printTest = True
+                best_val_acc = val_acc
+                best_epoch = epoch + 1
 
-            logger.info("Pass over Test Set")
-            test_cost, test_accuracy = self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
+                logger.info("\n\nBest ever validation score; evaluating TEST set...")
 
-            # Print epoch summary
-            logger.info("Epoch {} of {} took {:.3f}s.".format(
-                    epoch + 1, num_epochs, time.time() - epoch_time))
-            logger.info("Learning Rate:\t\t{:.6f} %".format(LR))
-            logger.info("Training cost:\t{:.6f}".format(train_cost))
-            logger.info("Validation cost:\t{:.6f} ".format(validation_cost))
-            logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
-            logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy*100))
+                test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles,
+                                                              sourceDataDir=database_binaryDir,
+                                                              storeProcessed=storeProcessed,
+                                                              processedDir=processedDir)
+                logger.info("TEST results: ")
+                logger.info("\t  test cost:        %s", test_cost)
+                logger.info("\t  test acc rate:  %s %%", test_acc)
+                logger.info("\t  test top 3 acc:  %s %%", test_topk_acc)
 
-            # better model, so save parameters
-            if validation_cost < self.best_cost:
-                self.best_cost = validation_cost
+                self.best_cost = val_cost
                 self.best_epoch = self.curr_epoch
                 self.best_param = L.get_all_param_values(self.RNN_lout)
-                self.best_updates = [p.get_value() for p in self.updates.keys()]
                 logger.info("New best model found!")
                 if save_name is not None:
                     logger.info("Model saved as " + save_name)
                     self.save_model(save_name)
 
-            # store train info
-            self.network_train_info[0].append(train_cost)
-            self.network_train_info[1].append(validation_cost)
-            self.network_train_info[2].append(validation_accuracy)
-            self.network_train_info[3].append(test_cost)
-            self.network_train_info[4].append(test_accuracy)
-            saveToPkl(save_name + '_trainInfo.pkl', [self.network_train_info])
-            logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
+            epoch_duration = time.time() - start_time
 
-            if compute_confusion:
-                confusion_matrices.append(self.create_confusion(X_val, y_val)[0])
-                logger.info('  Confusion matrix computed')
-                with open(save_name + '_conf.pkl', 'wb') as cPickle_file:
-                    cPickle.dump(
-                            [confusion_matrices],
-                            cPickle_file,
-                            protocol=cPickle.HIGHEST_PROTOCOL)
+            # Then we logger.info the results for this epoch:
+            logger.info("Epoch %s of %s took %s seconds", epoch + 1, num_epochs, epoch_duration)
+            logger.info("  LR:                            %s", LR)
+            logger.info("  training cost:                 %s", train_cost)
+            logger.info("  validation cost:               %s", val_cost)
+            logger.info("  validation acc rate:         %s %%", val_acc)
+            logger.info("  validation top 3 acc rate:         %s %%", val_topk_acc)
+            logger.info("  best epoch:                    %s", best_epoch)
+            logger.info("  best validation acc rate:    %s %%", best_val_acc)
+            if printTest:
+                logger.info("  test cost:                 %s", test_cost)
+                logger.info("  test acc rate:           %s %%", test_acc)
+                logger.info("  test top 3 acc rate:    %s %%", test_topk_acc)
 
-            # update LR, see if we can stop training
-            LR = self.updateLR(LR, LR_decay, logger=logger_RNNtools)
+            # save the training info
+            self.network_train_info['train_cost'].append(train_cost)
+            self.network_train_info['val_cost'].append(val_cost)
+            self.network_train_info['val_acc'].append(val_acc)
+            self.network_train_info['val_topk_acc'].append(val_topk_acc)
+            self.network_train_info['test_cost'].append(test_cost)
+            self.network_train_info['test_acc'].append(test_acc)
+            self.network_train_info['test_topk_acc'].append(test_topk_acc)
 
-            if self.epochsNotImproved >= 5:
-                logging.warning("\n\nNo more improvements, stopping training...")
+            store_path = save_name + '_trainInfo.pkl'
+            saveToPkl(store_path, self.network_train_info)
+            logger.info("Train info written to:\t %s", store_path)
+
+            # decay the LR
+            # LR *= LR_decay
+            LR = self.updateLR(LR, LR_decay)
+
+            if self.epochsNotImproved > 5:
+                logger.warning("\n\n NO MORE IMPROVEMENTS -> stop training")
+                test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles,
+                                                                   sourceDataDir=database_binaryDir,
+                                                                   storeProcessed=storeProcessed,
+                                                                   processedDir=processedDir)
+                logger.info("FINAL TEST results: ")
+                logger.info("\t  test cost:        %s", test_cost)
+                logger.info("\t  test acc rate:  %s %%", test_acc)
+                logger.info("\t  test top 3 acc:  %s %%", test_topk_acc)
                 break
 
-    def get_validPredictions_video(self, valid_predictions, valid_frames, videoIndexInBatch):
-        # get indices of the valid frames for each video, using the valid_frames
-        nbValidsPerVideo = [len(el) for el in valid_frames]
-
-        # each el is the sum of the els before. -> for example video 3, you need valid_predictions from indices[2] (inclusive) till indices[3] (not inclusive)
-        indices = [0] + [np.sum(nbValidsPerVideo[:i + 1]) for i in range(len(nbValidsPerVideo))]
-
-        # make a 2D list. Each el of the list is a list with the valid frames per video.
-        videoPreds = [range(indices[videoIndex], indices[videoIndex + 1]) for videoIndex in range(
-                len(valid_frames))]
-        # assert len(videoPreds) == len(inputs) == len(valid_frames)
-
-        # now you can get the frames for a specific video:
-        return valid_predictions[videoPreds[videoIndexInBatch]]
+        logger.info("Done.")
 
     def updateLR(self, LR, LR_decay, logger=logger_RNNtools):
-        this_cost = self.network_train_info[1][-1]
+        this_cost = self.network_train_info['val_cost'][-1]
         try:
-            last_cost = self.network_train_info[1][-2]
+            last_cost = self.network_train_info['val_cost'][-2]
         except:
             last_cost = 10 * this_cost  # first time it will fail because there is only 1 result stored
 
