@@ -35,7 +35,7 @@ VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
 batch_size_audio = 1
-num_epochs = 50
+num_epochs = 20
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 nbPhonemes = 39  # number output neurons
@@ -43,7 +43,7 @@ LSTM_HIDDEN_LIST = [64,64]
 BIDIRECTIONAL = True
 
 CNN_NETWORK = "google"
-DENSE_HIDDEN_LIST = [128]
+DENSE_HIDDEN_LIST = [512,256,256]
 
 # Decaying LR
 LR_start = 0.01
@@ -74,10 +74,11 @@ model_load = os.path.join(store_dir, model_name + ".npz")
 model_save = os.path.join(store_dir, model_name)
 
 # for loading stored audio models
+audio_dataset = "combined" # TCDTIMIT + TIMIT datasets
 audio_model_name = str(len(LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join(
         [str(layer) for layer in LSTM_HIDDEN_LIST])  + "_nbMFCC" + str(nbMFCCs) + \
-        ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + "_" + dataset
-audio_model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/"+dataset+"/results")
+        ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + "_" + audio_dataset
+audio_model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/"+audio_dataset+"/results")
 audio_model_path = os.path.join(audio_model_dir, audio_model_name + ".npz")
 
 # for loading stored lipreading models

@@ -325,7 +325,21 @@ class NeuralNetwork:
                 cnnDict['l5_conv5'][-1],
                 nonlinearity=activation))
 
-        
+        # # conv 6
+        # cnnDict['l6_conv6'] = []
+        # cnnDict['l6_conv6'].append(lasagne.layers.Conv2DLayer(
+        #         cnnDict['l5_conv5'][-1],
+        #         num_filters=128,
+        #         filter_size=(3, 3),
+        #         pad=1,
+        #         nonlinearity=lasagne.nonlinearities.identity))
+        # cnnDict['l6_conv6'].append(lasagne.layers.MaxPool2DLayer(
+        #         cnnDict['l6_conv6'][-1],
+        #         pool_size=(2, 2)))
+        # cnnDict['l6_conv6'].append(lasagne.layers.NonlinearityLayer(
+        #         cnnDict['l6_conv6'][-1],
+        #         nonlinearity=activation))
+
         # this will output shape (nbValidFrames, 512,7,7). Flatten it.
         batch_size = cnnDict['l0_in'].input_var.shape[0]
         cnnDict['l6_reshape'] = L.ReshapeLayer(cnnDict['l5_conv5'][-1], (batch_size, 25088))
@@ -384,7 +398,7 @@ class NeuralNetwork:
             nextDenseLayer = L.DenseLayer(input,
                                           nonlinearity=lasagne.nonlinearities.rectify,
                                           num_units=n_hidden)
-            # TODO add dropout?
+            nextDenseLayer = L.DropoutLayer(nextDenseLayer, p=0.5)# TODO does dropout work?
             combinedNet['l_dense'].append(nextDenseLayer)
 
         # final softmax layer
@@ -452,8 +466,6 @@ class NeuralNetwork:
                 try:
                     lasagne.layers.set_all_param_values(lout, *param_values)
                 except:
-                    print('caught this error: ' + traceback.format_exc());
-                    import pdb;pdb.set_trace()
                     try: lasagne.layers.set_all_param_values(lout, param_values)
                     except Exception as error:
                         print('caught this error: ' + traceback.format_exc());
