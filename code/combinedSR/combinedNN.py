@@ -35,7 +35,6 @@ VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
 batch_size_audio = 1
-batch_size_lip = 4 #this will be variable (# valid frames per video)
 num_epochs = 50
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
@@ -44,7 +43,7 @@ LSTM_HIDDEN_LIST = [64,64]
 BIDIRECTIONAL = True
 
 CNN_NETWORK = "google"
-DENSE_HIDDEN_LIST = [1024,512]
+DENSE_HIDDEN_LIST = [128]
 
 # Decaying LR
 LR_start = 0.01
@@ -68,9 +67,9 @@ datasetType = "volunteers";
 
 
 # audio network + cnnNetwork + classifierNetwork
-model_name = str(len(LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in LSTM_HIDDEN_LIST]) \
+model_name = "RNN__" + str(len(LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in LSTM_HIDDEN_LIST]) \
              + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") +  "_" \
-             + CNN_NETWORK + "_" + '_'.join([str(layer) for layer in DENSE_HIDDEN_LIST]) + dataset + "_" + datasetType
+             + "CNN__" + CNN_NETWORK + "_" + '_'.join([str(layer) for layer in DENSE_HIDDEN_LIST]) + "__" + dataset + "_" + datasetType
 model_load = os.path.join(store_dir, model_name + ".npz")
 model_save = os.path.join(store_dir, model_name)
 
@@ -132,12 +131,12 @@ datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
 
 
 # get a sample of the dataset to debug the network
-dataset_test, _, _ = train, val, test = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0],
-                                                                            sourceDataDir=database_binaryDir,
-                                                                            storeProcessed=True,
-                                                                            processedDir=processedDir,
-                                                                            trainFraction=1.0, validFraction=0.0,
-                                                                            verbose=True)
+dataset_test, _, _ = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0],
+                                                         sourceDataDir=database_binaryDir,
+                                                         storeProcessed=True,
+                                                         processedDir=processedDir,
+                                                         trainFraction=1.0, validFraction=0.0,
+                                                         verbose=True)
 # import pdb;pdb.set_trace()
 
 ##### BUIDING MODEL #####
@@ -147,11 +146,11 @@ network = NeuralNetwork('combined', dataset_test,
                             num_output_units=nbPhonemes, bidirectional=BIDIRECTIONAL,
                             cnn_network=CNN_NETWORK,
                             dense_hidden_list=DENSE_HIDDEN_LIST,
-                            debug=True)
+                            debug=False)
 
 # print number of parameters
-nb_params_CNN = lasagne.layers.count_params(network.RNN_lout)
-nb_params_RNN = lasagne.layers.count_params(network.CNN_lout)
+nb_params_CNN = lasagne.layers.count_params(network.CNN_lout_features)
+nb_params_RNN = lasagne.layers.count_params(network.RNN_lout_features)
 nb_params = lasagne.layers.count_params(network.combined_lout)
 logger_combined.info(" # params CNN: %s", nb_params_CNN)
 logger_combined.info(" # params RNN: %s", nb_params_RNN)
@@ -160,12 +159,14 @@ logger_combined.info(" # params whole network: %s", nb_params)
 
 # Try to load stored model
 logger_combined.info(' Network built. Trying to load stored model: %s', model_load)
-try: network.load_model(model_type='combined', model_path=model_load)
-except:
+success = network.load_model(model_type='combined', model_path=model_load)
+if success == -1:
+    logger_combined.warning("No complete network found, loading parts...")
+    logger_combined.info("CNN : %s", lip_model_path)
+    logger_combined.info("RNN : %s", audio_model_path)
+
     network.load_model(model_type='CNN', model_path=lip_model_path)
     network.load_model(model_type='RNN', model_path=audio_model_path)
-
-import pdb;pdb.set_trace()
 
 
 ##### COMPILING FUNCTIONS #####
@@ -174,9 +175,14 @@ network.build_functions(train=True, debug=False)
 
 ##### TRAINING #####
 logger_combined.info("\n* Training ...")
-network.train(dataset, model_save, num_epochs=num_epochs,
-                  batch_size_audio=batch_size_audio, batch_size_lip=batch_size_lip, LR_start=LR_start, LR_decay=LR_decay,
-                  compute_confusion=False, debug=False)
+
+network.train(datasetFiles, database_binaryDir=database_binaryDir, runType='combined',
+                  storeProcessed=True, processedDir=processedDir,
+                  num_epochs=num_epochs,
+                  batch_size=batch_size_audio, LR_start=LR_start, LR_decay=LR_decay,
+                  compute_confusion=False, debug=True, save_name=model_save)
 
 logger_combined.info("\n* Done")
 logger_combined.info('Total time: {:.3f}'.format(time.time() - program_start_time))
+
+
