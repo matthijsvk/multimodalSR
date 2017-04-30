@@ -16,7 +16,7 @@ logger_train.setLevel(logging.DEBUG)
 
 # Given a dataset and a model, this function trains the model on the dataset for several epochs
 # (There is no default trainer function in Lasagne yet)
-def train(train_fn, val_fn, out_fn, topk_error_fn, k,
+def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
           network_output_layer,
           batch_size,
           LR_start, LR_decay,
@@ -87,25 +87,25 @@ def train(train_fn, val_fn, out_fn, topk_error_fn, k,
     def val_epoch(X, y):
         err = 0
         cost = 0
-        topk_err = 0
+        topk_acc = 0
         nb_batches = len(X) / batch_size
 
         for i in tqdm(range(nb_batches)):
             batch_X = X[i * batch_size:(i + 1) * batch_size]
             batch_y = y[i * batch_size:(i + 1) * batch_size]
-            new_cost, new_err, new_topk_err = val_fn(batch_X, batch_y)
-            err += new_err
+            new_cost, new_acc, new_topk_acc = val_fn(batch_X, batch_y)
+            err += new_acc
             cost += new_cost
-            topk_err += new_topk_err
+            topk_acc += new_topk_acc
 
-        return cost, err, topk_err, nb_batches
+        return cost, err, topk_acc, nb_batches
 
-    # evaluate many TRAINING speaker files -> train loss, val loss and vall error. Load them in one by one (so they fit in memory)
+    # evaluate many TRAINING speaker files -> train loss, val loss and vall acc. Load them in one by one (so they fit in memory)
     def evalTRAINING(trainingSpeakerFiles, LR, shuffleEnabled, verbose=False, sourceDataDir=None, storeProcessed = False, processedDir=None):
         train_cost = 0;
-        val_err = 0;
+        val_acc = 0;
         val_cost = 0;
-        val_topk_err = 0;
+        val_topk_acc = 0;
         nb_train_batches = 0;
         nb_val_batches = 0;
         # for each speaker, pass over the train set, then val set. (test is other files). save the results.
@@ -129,31 +129,31 @@ def train(train_fn, val_fn, out_fn, topk_error_fn, k,
             nb_train_batches += train_batches_one
 
             # get results for validation  set
-            val_cost_one, val_err_one, val_topk_err_one, val_batches_one = val_epoch(X=X_val, y=y_val)
+            val_cost_one, val_acc_one, val_topk_acc_one, val_batches_one = val_epoch(X=X_val, y=y_val)
             val_cost += val_cost_one;
-            val_err += val_err_one;
-            val_topk_err += val_topk_err_one
+            val_acc += val_acc_one;
+            val_topk_acc += val_topk_acc_one
             nb_val_batches += val_batches_one;
 
             if verbose:
                 logger_train.debug("  this speaker results: ")
                 logger_train.debug("\ttraining cost:     %s", train_cost_one / train_batches_one)
                 logger_train.debug("\tvalidation cost:   %s", val_cost_one / val_batches_one)
-                logger_train.debug("\vvalidation error rate:  %s %%", val_err_one / val_batches_one * 100)
-                logger_train.debug("\vvalidation top %s error rate:  %s %%", k, val_topk_err_one / val_batches_one * 100)
+                logger_train.debug("\vvalidation acc rate:  %s %%", val_acc_one / val_batches_one * 100)
+                logger_train.debug("\vvalidation top %s acc rate:  %s %%", k, val_topk_acc_one / val_batches_one * 100)
 
         # get the average over all speakers
         train_cost /= nb_train_batches
         val_cost /= nb_val_batches
-        val_err = val_err / nb_val_batches * 100  # convert to %
-        val_topk_err = val_topk_err / nb_val_batches * 100  # convert to %
+        val_acc = val_acc / nb_val_batches * 100  # convert to %
+        val_topk_acc = val_topk_acc / nb_val_batches * 100  # convert to %
 
-        return train_cost, val_cost, val_err, val_topk_err
+        return train_cost, val_cost, val_acc, val_topk_acc
 
     # evaluate many TEST speaker files. Load them in one by one (so they fit in memory)
     def evalTEST(testSpeakerFiles, verbose=False, sourceDataDir=None, storeProcessed=False, processedDir=None):
-        test_err = 0;
-        test_cost = 0; test_topk_err = 0;
+        test_acc = 0;
+        test_cost = 0; test_topk_acc = 0;
         nb_test_batches = 0;
         # for each speaker, pass over the train set, then test set. (test is other files). save the results.
         for speakerFile in tqdm(testSpeakerFiles, total=len(testSpeakerFiles)):
@@ -167,23 +167,23 @@ def train(train_fn, val_fn, out_fn, topk_error_fn, k,
                 logger_train.debug("the number of test examples is:     %s", len(X_test))
 
             # get results for testidation  set
-            test_cost_one, test_err_one, test_topk_err_one, test_batches_one = val_epoch(X=X_test, y=y_test)
-            test_err += test_err_one;
+            test_cost_one, test_acc_one, test_topk_acc_one, test_batches_one = val_epoch(X=X_test, y=y_test)
+            test_acc += test_acc_one;
             test_cost += test_cost_one;
-            test_topk_err += test_topk_err_one
+            test_topk_acc += test_topk_acc_one
             nb_test_batches += test_batches_one;
 
             if verbose:
                 logger_train.debug("  this speaker results: ")
                 logger_train.debug("\ttest cost:   %s", test_cost_one / test_batches_one)
-                logger_train.debug("\vtest error rate:  %s %%", test_err_one / test_batches_one * 100)
-                logger_train.debug("\vtest  top %s error rate:  %s %%", k, test_topk_err_one / test_batches_one * 100)
+                logger_train.debug("\vtest acc rate:  %s %%", test_acc_one / test_batches_one * 100)
+                logger_train.debug("\vtest  top %s acc rate:  %s %%", k, test_topk_acc_one / test_batches_one * 100)
 
         # get the average over all speakers
-        test_err = test_err / nb_test_batches * 100
+        test_acc = test_acc / nb_test_batches * 100
         test_cost /= nb_test_batches
-        test_topk_err = test_topk_err / nb_test_batches * 100
-        return test_cost, test_err, test_topk_err
+        test_topk_acc = test_topk_acc / nb_test_batches * 100
+        return test_cost, test_acc, test_topk_acc
 
 
     def updateLR(LR, LR_decay, network_train_info, epochsNotImproved):
@@ -200,30 +200,41 @@ def train(train_fn, val_fn, out_fn, topk_error_fn, k,
             epochsNotImproved = max(epochsNotImproved - 1, 0)  # reduce by 1, minimum 0
             return LR, epochsNotImproved
 
-
-
-    # try to load stored model
-    if os.path.exists(save_name + ".npz") and os.path.exists(save_name+ "_trainInfo.pkl"):
-        old_train_info = general_tools.unpickle(save_name + '_trainInfo.pkl')
-        # backward compatibility
-        if type(old_train_info) == list:
-            best_val_err = min(old_train_info[2])
-            test_cost = min(old_train_info[3])
-            test_err = min(old_train_info[3])
-        else:
-            best_val_err = min(old_train_info['val_err'])
-            test_cost = min(old_train_info['test_cost'])
-            test_err = min(old_train_info['test_err'])
-            # etc...
-    else:    best_val_err = 100
+    # try to load performance metrics of stored model
+    # if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
+    #     old_train_info = preprocessLipreading.unpickle(save_name + '_trainInfo.pkl')
+    #     # backward compatibility
+    #     if type(old_train_info) == list:
+    #         old_train_info = old_train_info[0]
+    #         best_val_acc = min(old_train_info[2])
+    #         test_cost = min(old_train_info[3])
+    #         test_acc = min(old_train_info[3])
+    #     elif type(old_train_info) == dict:  # normal case
+    #         best_val_acc = min(old_train_info['val_acc'])
+    #         test_cost = min(old_train_info['test_cost'])
+    #         test_acc = min(old_train_info['test_acc'])
+    #         try:
+    #             test_topk_acc = min(old_train_info['test_topk_acc'])
+    #         except:
+    #             test_topk_acc = 0
+    #     else:
+    #         best_val_acc = 0
+    #         test_topk_acc = 0
+    #         test_cost = 0
+    #         test_acc = 0
+    # else:
+    best_val_acc = 0
+    test_topk_acc = 0
+    test_cost = 0
+    test_acc = 0
 
     best_epoch = 1
     LR = LR_start
     # for storage of training info
     network_train_info = {
         'train_cost':[],
-        'val_cost' :[], 'val_err' : [], 'val_topk_err' : [],
-        'test_cost' : [], 'test_err' : [], 'test_topk_err' : []
+        'val_cost' :[], 'val_acc' : [], 'val_topk_acc' : [],
+        'test_cost' : [], 'test_acc' : [], 'test_topk_acc' : []
     } #used to be list of lists
     epochsNotImproved = 0
 
@@ -232,21 +243,21 @@ def train(train_fn, val_fn, out_fn, topk_error_fn, k,
 
 # TODO: remove this
     if not loadPerSpeaker:  # all at once
-        test_cost, test_err, test_topk_err, nb_test_batches = val_epoch(X_test, y_test)
-        test_err = test_err / nb_test_batches * 100;
+        test_cost, test_acc, test_topk_acc, nb_test_batches = val_epoch(X_test, y_test)
+        test_acc = test_acc / nb_test_batches * 100;
         test_cost /= nb_test_batches
-        test_topk_err = test_topk_err / nb_test_batches * 100
+        test_topk_acc = test_topk_acc / nb_test_batches * 100
 
     else:  # process each speaker seperately
-        test_cost, test_err, test_topk_err = evalTEST(testSpeakerFiles,
+        test_cost, test_acc, test_topk_acc = evalTEST(testSpeakerFiles,
                                                       sourceDataDir=database_binaryDir,
                                                       storeProcessed=storeProcessed,
                                                       processedDir=processedDir)
     logger_train.info("TEST results: ")
     logger_train.info("\t  test cost:        %s", test_cost)
-    logger_train.info("\t  test error rate:  %s %%", test_err)
-    logger_train.info("\t  test top %s error:  %s %%", k, test_topk_err)
-# TODO: end remove
+    logger_train.info("\t  test acc rate:  %s %%", test_acc)
+    logger_train.info("\t  test top %s acc:  %s %%", k, test_topk_acc)
+# # TODO: end remove
 
 
     for epoch in range(num_epochs):
@@ -257,40 +268,40 @@ def train(train_fn, val_fn, out_fn, topk_error_fn, k,
             total_train_cost, nb_train_batches = train_epoch(X=X_train, y=y_train, LR=LR); train_cost = total_train_cost / nb_train_batches
             X_train, y_train = shuffle(X_train, y_train)
 
-            val_cost, val_err, val_topk_err, nb_val_batches = val_epoch(X=X_val, y=y_val)
-            val_err = val_err / nb_val_batches * 100; val_cost /=nb_val_batches
-            val_topk_err /= nb_val_batches
+            val_cost, val_acc, val_topk_acc, nb_val_batches = val_epoch(X=X_val, y=y_val)
+            val_acc = val_acc / nb_val_batches * 100; val_cost /=nb_val_batches
+            val_topk_acc /= nb_val_batches
 
         else:
-            train_cost, val_cost, val_err, val_topk_err = evalTRAINING(trainingSpeakerFiles, LR, shuffleEnabled,
+            train_cost, val_cost, val_acc, val_topk_acc = evalTRAINING(trainingSpeakerFiles, LR, shuffleEnabled,
                         sourceDataDir=database_binaryDir,
                         storeProcessed=storeProcessed,
                         processedDir=processedDir)
 
-        # test if validation error went down
+        # test if validation acc went down
         printTest = False
-        if val_err <= best_val_err:
+        if val_acc > best_val_acc:
             printTest = True
-            best_val_err = val_err
+            best_val_acc = val_acc
             best_epoch = epoch + 1
 
             logger_train.info("\n\nBest ever validation score; evaluating TEST set...")
 
             if not loadPerSpeaker:  # all at once
-                test_cost, test_err, test_topk_err, nb_test_batches = val_epoch(X_test, y_test)
-                test_err = test_err / nb_test_batches * 100;
+                test_cost, test_acc, test_topk_acc, nb_test_batches = val_epoch(X_test, y_test)
+                test_acc = test_acc / nb_test_batches * 100;
                 test_cost /= nb_test_batches
-                test_topk_err = test_topk_err / nb_test_batches * 100
+                test_topk_acc = test_topk_acc / nb_test_batches * 100
 
             else:  # process each speaker seperately
-                test_cost, test_err, test_topk_err = evalTEST(testSpeakerFiles,
+                test_cost, test_acc, test_topk_acc = evalTEST(testSpeakerFiles,
                                                               sourceDataDir=database_binaryDir,
                                                               storeProcessed=storeProcessed,
                                                               processedDir=processedDir)
             logger_train.info("TEST results: ")
             logger_train.info("\t  test cost:        %s", test_cost)
-            logger_train.info("\t  test error rate:  %s %%", test_err)
-            logger_train.info("\t  test top %s error:  %s %%", k, test_topk_err)
+            logger_train.info("\t  test acc rate:  %s %%", test_acc)
+            logger_train.info("\t  test top %s acc:  %s %%", k, test_topk_acc)
 
             if save_name is None:
                 save_name = "./bestModel"
@@ -306,23 +317,23 @@ def train(train_fn, val_fn, out_fn, topk_error_fn, k,
         logger_train.info("  LR:                            %s",    LR)
         logger_train.info("  training cost:                 %s",    train_cost)
         logger_train.info("  validation cost:               %s",    val_cost)
-        logger_train.info("  validation error rate:         %s %%", val_err)
-        logger_train.info("  validation top %s error rate:         %s %%", k, val_topk_err)
+        logger_train.info("  validation acc rate:         %s %%", val_acc)
+        logger_train.info("  validation top %s acc rate:         %s %%", k, val_topk_acc)
         logger_train.info("  best epoch:                    %s",    best_epoch)
-        logger_train.info("  best validation error rate:    %s %%", best_val_err)
+        logger_train.info("  best validation acc rate:    %s %%", best_val_acc)
         if printTest:
             logger_train.info("  test cost:                 %s",    test_cost)
-            logger_train.info("  test error rate:           %s %%", test_err)
-            logger_train.info("  test top %s error rate:    %s %%", k, test_topk_err)
+            logger_train.info("  test acc rate:           %s %%", test_acc)
+            logger_train.info("  test top %s acc rate:    %s %%", k, test_topk_acc)
 
         # save the training info
         network_train_info['train_cost'].append(train_cost)
         network_train_info['val_cost'].append(val_cost)
-        network_train_info['val_err'].append(val_err)
-        network_train_info['val_topk_err'].append(val_topk_err)
+        network_train_info['val_acc'].append(val_acc)
+        network_train_info['val_topk_acc'].append(val_topk_acc)
         network_train_info['test_cost'].append(test_cost)
-        network_train_info['test_err'].append(test_err)
-        network_train_info['test_topk_err'].append(test_topk_err)
+        network_train_info['test_acc'].append(test_acc)
+        network_train_info['test_topk_acc'].append(test_topk_acc)
 
         store_path = save_name + '_trainInfo.pkl'
         general_tools.saveToPkl(store_path, network_train_info)
@@ -332,16 +343,17 @@ def train(train_fn, val_fn, out_fn, topk_error_fn, k,
         #LR *= LR_decay
         LR, epochsNotImproved = updateLR(LR, LR_decay, network_train_info, epochsNotImproved)
 
-        if epochsNotImproved > 5:
+        if epochsNotImproved > 8:
             logger_train.warning("\n\n NO MORE IMPROVEMENTS -> stop training")
-            test_cost, test_err, test_topk_err, nb_test_batches = val_epoch(X_test, y_test)
-            test_err = test_err / nb_test_batches;        test_cost /= nb_test_batches
-            test_topk_err /= nb_test_batches
+            test_cost, test_acc, test_topk_acc = evalTEST(testSpeakerFiles,
+                                                          sourceDataDir=database_binaryDir,
+                                                          storeProcessed=storeProcessed,
+                                                          processedDir=processedDir)
 
             logger_train.info("FINAL TEST results: ")
             logger_train.info("\t  test cost:        %s", test_cost)
-            logger_train.info("\t  test error rate:  %s %%", test_err)
-            logger_train.info("\t  test top %s error:  %s %%", k, test_topk_err)
+            logger_train.info("\t  test acc rate:  %s %%", test_acc)
+            logger_train.info("\t  test top %s acc:  %s %%", k, test_topk_acc)
             break
 
     logger_train.info("Done.")

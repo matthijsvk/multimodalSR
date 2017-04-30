@@ -99,7 +99,7 @@ def main():
     if not os.path.exists(results_dir): os.makedirs(results_dir)
     if viseme: database_binaryDir = root_dir + '/binaryViseme'
     else:      database_binaryDir = root_dir + '/binary'
-    datasetType = "lipspeakers" #""lipspeakers";
+    datasetType = "volunteers" #"volunteers" #    lipspeakers or volunteers"
     ##############################################
 
     if datasetType == "lipspeakers":
@@ -140,7 +140,7 @@ def main():
             raise Exception("invalid dataset entered")
         datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
 
-    model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")+str(nbClasses)
+    model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")+str(nbClasses)+"+test"
     model_save_name = os.path.join(results_dir,model_name)
 
     # log file
@@ -180,22 +180,28 @@ def main():
     logger_lip.info("loading %s", model_save_name + '.npz')
     load_model(model_save_name +'.npz', l_out)
 
+    # a = '/home/matthijs/TCDTIMIT/lipreading/TCDTIMIT/results/thirty.npz'
+    # logger_lip.info("loading %s", a)
+    # load_model(a, l_out)
+
 
     logger_lip.info("* COMPILING FUNCTIONS...")
     # for validation: disable dropout etc layers -> deterministic
     test_network_output = L.get_output(l_out, deterministic=True)
-    test_err = T.mean(T.neq(T.argmax(test_network_output, axis=1), targets),
+    test_acc = T.mean(T.eq(T.argmax(test_network_output, axis=1), targets),
                       dtype=theano.config.floatX)  # T.zeros((1,))
     test_loss = LO.categorical_crossentropy(test_network_output, targets);
     test_loss = test_loss.mean()
 
     # Top k accuracy
-    k = 3
-    topk_error = T.mean( 1. - T.any(T.eq(T.argsort(test_network_output, axis=1)[:, -k:], targets.dimshuffle(0, 'x')), axis=1),
-        dtype=theano.config.floatX)
-    topk_error_fn = theano.function([inputs, targets], topk_error)
+    k = 5
+    # topk_acc = T.mean( T.any(T.eq(T.argsort(test_network_output, axis=1)[:, -k:], targets.dimshuffle(0, 'x')), axis=1),
+    #     dtype=theano.config.floatX)
+    topk_acc = T.mean(lasagne.objectives.categorical_accuracy(test_network_output, targets.flatten(), top_k=k))
 
-    val_fn = theano.function([inputs, targets], [test_loss, test_err, topk_error])
+    topk_acc_fn = theano.function([inputs, targets], topk_acc)
+
+    val_fn = theano.function([inputs, targets], [test_loss, test_acc, topk_acc])
 
 
 
@@ -206,12 +212,12 @@ def main():
     loss = LO.categorical_crossentropy(network_output, targets);
     loss = loss.mean()
     # # Also add weight decay to the cost function
-    # weight_decay = 1e-5
-    # weightsl2 = lasagne.regularization.regularize_network_params(l_out lasagne.regularization.l2)
-    # loss += weight_decay * weightsl2
+    weight_decay = 1e-5
+    weightsl2 = lasagne.regularization.regularize_network_params(l_out, lasagne.regularization.l2)
+    loss += weight_decay * weightsl2
 
-    # error
-    err = T.mean(T.neq(T.argmax(network_output, axis=1), targets), dtype=theano.config.floatX)
+    # acc
+    err = T.mean(T.eq(T.argmax(network_output, axis=1), targets), dtype=theano.config.floatX)
 
     # set all params to trainable
     params = L.get_all_params(l_out, trainable=True)
@@ -223,7 +229,7 @@ def main():
     logger_lip.info('Training...')
 
     train_lipreading.train(
-        train_fn=train_fn, val_fn=val_fn, out_fn=out_fn, topk_error_fn = topk_error_fn, k=k,
+        train_fn=train_fn, val_fn=val_fn, out_fn=out_fn, topk_acc_fn = topk_acc_fn, k=k,
         network_output_layer=l_out,
         batch_size=batch_size,
         LR_start=LR_start, LR_decay=LR_decay,

@@ -14,7 +14,7 @@ import theano.tensor as T
 from tqdm import tqdm
 import traceback
 
-logger_RNNtools = logging.getLogger('audioSR.tools')
+logger_RNNtools = logging.getLogger('combined_audioSR.tools')
 logger_RNNtools.setLevel(logging.DEBUG)
 
 from general_tools import *
@@ -29,7 +29,7 @@ class NeuralNetwork:
     curr_epoch, best_epoch = 0, 0
 
     def __init__(self, architecture, dataset=None, batch_size=1, max_seq_length=1000, num_features=26,
-                 n_hidden_list=(100,), num_output_units=61,
+                 n_hidden_list=(100,), num_output_units=39,
                  bidirectional=False, addDenseLayers=False, seed=int(time.time()), debug=False, logger=logger_RNNtools):
         self.num_output_units = num_output_units
         self.num_features = num_features
@@ -48,7 +48,7 @@ class NeuralNetwork:
                 self.validLabels = validLabels_train[:batch_size]
                 self.validAudioFrames = validAudioFrames_train[:batch_size]
 
-                self.masks = generate_masks(self.mfccs, valid_frames=self.validAudioFrames, batch_size=len(self.mfccs), logger=logger_RNNtools)
+                self.masks = generate_masks(inputs=self.mfccs, valid_frames=self.validAudioFrames, batch_size=len(self.mfccs), logger=logger_RNNtools)
 
                 self.mfccs = pad_sequences_X(self.mfccs)  #shouldn't change shape because batch_size == 1
                 self.validLabels = pad_sequences_y(self.validLabels)
@@ -64,12 +64,14 @@ class NeuralNetwork:
                 logger.debug('masks[0].shape:   %s', self.masks[0].shape)
                 logger.debug('masks[0][0].type: %s', type(self.masks[0][0]))
 
+
             logger.info("NUM FEATURES: %s", num_features)
 
             self.audio_inputs_var = T.tensor3('audio_inputs')
             self.audio_masks_var = T.matrix('audio_masks')  # set MATRIX, not iMatrix!! Otherwise all mask calculations are done by CPU, and everything will be ~2x slowed down!! Also in general_tools.generate_masks()
             self.audio_valid_frames_var = T.imatrix('audio_valid_frames')
             self.targets_var = T.imatrix('targets') #only the valid ones are in here
+            self.LR_var = T.scalar('LR', dtype=theano.config.floatX)
 
             self.RNNdict, self.RNN_lout, self.RNN_lout_flattened =  self.build_RNN(
                     n_hidden_list=n_hidden_list, bidirectional=bidirectional,
@@ -371,12 +373,11 @@ class NeuralNetwork:
             logger.debug('accuracy: {:.3f} %'.format(float(evaluate_cost[1])*100))
             #pdb.set_trace()
 
-        LR = T.scalar('LR', dtype=theano.config.floatX)
         # Retrieve all trainable parameters from the network
         all_params = L.get_all_params(self.RNN_lout, trainable=True)
-        self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
+        self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=self.LR_var)
         self.train_fn = theano.function([self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var,
-                                         self.targets_var, LR],
+                                         self.targets_var, self.LR_var],
                                         cost, updates=self.updates, name='train_fn')
 
     def shuffle(self, lst):
@@ -559,9 +560,9 @@ class NeuralNetwork:
             # backward compatibility
             if type(old_train_info) == list:
                 old_train_info = old_train_info[0]
-                best_val_err = min(old_train_info[2])
+                best_val_acc = min(old_train_info[2])
                 test_cost = min(old_train_info[3])
-                test_err = min(old_train_info[3])
+                test_acc = min(old_train_info[3])
             elif type(old_train_info) == dict: #normal case
                 best_val_acc = min(old_train_info['val_acc'])
                 test_cost = min(old_train_info['test_cost'])

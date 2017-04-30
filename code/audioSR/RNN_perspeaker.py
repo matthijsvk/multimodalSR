@@ -8,7 +8,7 @@ warnings.simplefilter("ignore", UserWarning)  # cuDNN warning
 import logging
 import formatting
 
-logger_RNN = logging.getLogger('combined_audioSR')
+logger_RNN = logging.getLogger('audioSR')
 logger_RNN.setLevel(logging.DEBUG)
 FORMAT = '[$BOLD%(filename)s$RESET:%(lineno)d][%(levelname)-5s]: %(message)s '
 formatter = logging.Formatter(formatting.formatter_message(FORMAT, False))
@@ -26,7 +26,7 @@ import time
 program_start_time = time.time()
 
 print("\n * Importing libraries...")
-from RNN_tools_lstm_SliceLayer import *
+from RNN_tools_lstm_perspeaker import *
 from general_tools import *
 import preprocessingCombined
 
@@ -35,7 +35,7 @@ import preprocessingCombined
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 1
+batch_size = 16
 num_epochs = 50
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
@@ -52,7 +52,7 @@ logger_RNN.info("LR_start = %s", str(LR_start))
 LR_fin = 0.0000001
 logger_RNN.info("LR_fin = %s", str(LR_fin))
 # LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)  # each epoch, LR := LR * LR_decay
-LR_decay= 0.7
+LR_decay= 0.707
 logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
@@ -68,7 +68,7 @@ data_path = os.path.join(dataDir, dataset + '_' + str(nbMFCCs) + '_ch.pkl');
 
 model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) \
              + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + \
-("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset + "__TESTSliceLayer"
+("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset + "__TESTperspeaker"
 
 
 # model parameters and network_training_info
@@ -90,10 +90,6 @@ logger_RNN.addHandler(fh)
 logger_RNNtools.info("\n\n\n\n STARTING NEW TRAINING SESSION AT " + strftime("%Y-%m-%d %H:%M:%S", gmtime()))
 
 ##### IMPORTING DATA #####
-
-logger_RNN.info('  data source: ' + data_path)
-logger_RNN.info('  model target: ' + model_save + '.npz')
-
 
 # Load some data
 dataset = "TCDTIMIT"
@@ -123,7 +119,6 @@ else:
     raise Exception("invalid dataset entered")
 datasetFiles = [sorted(trainingSpeakerFiles), sorted(testSpeakerFiles)]
 
-
 # # Now actually preprocess and split
 # logger_RNN.info("Generating Training data... ")
 # # generate the data files first
@@ -142,13 +137,13 @@ datasetFiles = [sorted(trainingSpeakerFiles), sorted(testSpeakerFiles)]
 #             storeProcessed=True, loadData=False, processedDir=processedDir, logger=logger_RNN)
 
 
-#used for debugging
+# used for debugging
 dataset_test, _, _ = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0],
-                                                                            sourceDataDir=database_binaryDir,
-                                                                            storeProcessed=True,
-                                                                            processedDir=processedDir,
-                                                                            trainFraction=1.0, validFraction=0.0,
-                                                                            verbose=True)
+                                                         sourceDataDir=database_binaryDir,
+                                                         storeProcessed=True,
+                                                         processedDir=processedDir,
+                                                         trainFraction=1.0, validFraction=0.0,
+                                                         verbose=True)
 
 ##### BUIDING MODEL #####
 logger_RNN.info('\n* Building network ...')
@@ -159,7 +154,7 @@ RNN_network = NeuralNetwork('RNN', dataset_test, batch_size=batch_size,
                             seed=0, debug=False)
 
 # print number of parameters
-nb_params = lasagne.layers.count_params(RNN_network.RNN_lout)
+nb_params = lasagne.layers.count_params(RNN_network.network_lout_batch)
 logger_RNN.info(" Number of parameters of this network: %s", nb_params)
 
 # Try to load stored model
@@ -176,7 +171,7 @@ RNN_network.train(datasetFiles, database_binaryDir=database_binaryDir,
                   storeProcessed=True, processedDir=processedDir,
                   num_epochs=num_epochs,
                   batch_size=batch_size, LR_start=LR_start, LR_decay=LR_decay,
-                  compute_confusion=False, debug=True, save_name=model_save)
+                  compute_confusion=False, debug=False, save_name=model_save)
 
 logger_RNN.info("\n* Done")
 logger_RNN.info('Total time: {:.3f}'.format(time.time() - program_start_time))
