@@ -282,7 +282,6 @@ def build_network_google(activation, alpha, epsilon, input, nbClasses):
             cnnDict['l5_conv5'][-1],
             nonlinearity=activation))
 
-
     # disable this layer for normal phoneme recognition
     # FC layer
     # cnnDict['l6_fc'] = []

@@ -83,28 +83,29 @@ class NeuralNetwork:
             self.audio_masks_var = T.matrix('audio_masks')
             self.audio_valid_frames_var = T.imatrix('valid_indices')
 
-            self.RNN_dict, self.RNN_lout, self.RNN_lout_flattened, self.RNN_lout_features = \
-                self.build_RNN(n_hidden_list=lstm_hidden_list, bidirectional=bidirectional,
-                               seed=seed, debug=debug, logger=logger)
-
-            # RNN_lout_flattened output shape: (nbValidFrames, 39)
+            self.audioNet_dict, self.audioNet_lout, self.audioNet_lout_flattened, self.audioNet_lout_features = \
+                self.build_audioRNN(n_hidden_list=lstm_hidden_list, bidirectional=bidirectional,
+                                    seed=seed, debug=debug, logger=logger)
+            # audioNet_lout_flattened output shape: (nbValidFrames, 39)
 
             self.CNN_input_var = T.tensor4('cnn_input')
             # batch size is number of valid frames in each video
             self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_CNN()
-
             # CNN_lout output shape = (nbValidFrames, 512x7x7)
 
+            self.lipreadingRNN_dict, self.lipreading_lout_features = self.build_lipreadingRNN(self.CNN_lout_features,[64,64], bidirectional=True)
+
             # batch size is number of valid frames in each video
-            self.combined_dict, self.combined_lout = self.build_combined(CNN_lout=self.CNN_lout_features,
-                                                                         RNN_lout=self.RNN_lout_features,
-                                                                         dense_hidden_list=dense_hidden_list)
+            self.combined_dict, self.combined_lout = self.build_combined(#lipreading_lout=self.CNN_lout_features,
+                                                                        lipreading_lout=self.lipreading_lout_features,
+                                                                        audio_lout=self.audioNet_lout_features,
+                                                                        dense_hidden_list=dense_hidden_list)
 
         else:
             print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
 
-    def build_RNN(self, n_hidden_list=(100,), bidirectional=False,
-                  seed=int(time.time()), debug=False, logger=logger_combinedtools):
+    def build_audioRNN(self, n_hidden_list=(100,), bidirectional=False,
+                       seed=int(time.time()), debug=False, logger=logger_combinedtools):
         # some inspiration from http://colinraffel.com/talks/hammer2015recurrent.pdf
 
         if debug:
@@ -324,6 +325,9 @@ class NeuralNetwork:
         cnnDict['l5_conv5'].append(lasagne.layers.NonlinearityLayer(
                 cnnDict['l5_conv5'][-1],
                 nonlinearity=activation))
+        # this will output shape (nbValidFrames, 512,7,7). Flatten it.
+        batch_size = cnnDict['l0_in'].input_var.shape[0]
+        cnnDict['l6_reshape'] = L.ReshapeLayer(cnnDict['l5_conv5'][-1], (batch_size, 25088))
 
         # # conv 6
         # cnnDict['l6_conv6'] = []
@@ -371,7 +375,74 @@ class NeuralNetwork:
 
         return cnnDict, cnnDict['l7_out'], cnnDict['l6_reshape']
 
-    def build_combined(self, CNN_lout, RNN_lout, dense_hidden_list):
+
+    def build_lipreadingRNN(self, inputLayer, n_hidden_list=(100,), bidirectional=True, debug=False):
+
+        #CNN output: (time_seq, features)
+        # LSTM need (batch_size, time_seq, features). Batch_size = # videos processed in parallel = 1
+
+        inputLayer = L.ReshapeLayer(inputLayer, (1, -1, 25088))
+        batch_size = 1
+
+        net = {}
+
+        ## LSTM parameters
+        # All gates have initializers for the input-to-gate and hidden state-to-gate
+        # weight matrices, the cell-to-gate weight vector, the bias vector, and the nonlinearity.
+        # The convention is that gates use the standard sigmoid nonlinearity,
+        # which is the default for the Gate class.
+        gate_parameters = L.recurrent.Gate(
+                W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
+                b=lasagne.init.Constant(0.))
+        cell_parameters = L.recurrent.Gate(
+                W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
+                # Setting W_cell to None denotes that no cell connection will be used.
+                W_cell=None, b=lasagne.init.Constant(0.),
+                # By convention, the cell nonlinearity is tanh in an LSTM.
+                nonlinearity=lasagne.nonlinearities.tanh)
+
+        # generate layers of stacked LSTMs, possibly bidirectional
+        net['l2_lstm'] = []
+
+        for i in range(len(n_hidden_list)):
+            n_hidden = n_hidden_list[i]
+
+            if i == 0:
+                input = inputLayer
+            else:
+                input = net['l2_lstm'][i - 1]
+
+            nextForwardLSTMLayer = L.recurrent.LSTMLayer(
+                    input, n_hidden,
+                    # Here, we supply the gate parameters for each gate
+                    ingate=gate_parameters, forgetgate=gate_parameters,
+                    cell=cell_parameters, outgate=gate_parameters,
+                    # We'll learn the initialization and use gradient clipping
+                    learn_init=True, grad_clipping=100.)
+            net['l2_lstm'].append(nextForwardLSTMLayer)
+
+            if bidirectional:
+                input = net['l2_lstm'][-1]
+                # Use backward LSTM
+                # The "backwards" layer is the same as the first,
+                # except that the backwards argument is set to True.
+                nextBackwardLSTMLayer = L.recurrent.LSTMLayer(
+                        input, n_hidden, ingate=gate_parameters,
+                        forgetgate=gate_parameters,
+                        cell=cell_parameters, outgate=gate_parameters,
+                        learn_init=True, grad_clipping=100., backwards=True)
+                net['l2_lstm'].append(nextBackwardLSTMLayer)
+
+                # The output of l_sum will be of shape (n_batch, max_n_time_steps, n_features)
+                net['l2_lstm'].append(L.ElemwiseSumLayer([net['l2_lstm'][-2], net['l2_lstm'][-1]]))
+
+        # we need to convert (batch_size, seq_length, num_features) to (batch_size * seq_length, num_features) because Dense networks can't deal with 2 unknown sizes
+        net['l3_reshape'] = L.ReshapeLayer(net['l2_lstm'][-1], (-1, n_hidden_list[-1]))
+
+        return net, net['l3_reshape']  #output shape: (nbFrames, nbHiddenLSTMunits)
+
+
+    def build_combined(self, lipreading_lout, audio_lout, dense_hidden_list):
 
         # (we process one video at a time)
         # CNN_lout and RNN_lout should be shaped (batch_size, nbFeatures) with batch_size = nb_valid_frames in this video
@@ -379,10 +450,10 @@ class NeuralNetwork:
         # for RNN_lout: nbFeatures = nbUnits(last LSTM layer)
         combinedNet = {}
         try:
-            combinedNet['l_concat'] = L.ConcatLayer([CNN_lout, RNN_lout], axis=1)
+            combinedNet['l_concat'] = L.ConcatLayer([lipreading_lout, audio_lout], axis=1)
         except:
-            logger_combinedtools.debug("CNN output shape: %s", CNN_lout.output_shape)
-            logger_combinedtools.debug("RNN output shape: %s", RNN_lout.output_shape)
+            logger_combinedtools.debug("CNN output shape: %s", lipreading_lout.output_shape)
+            logger_combinedtools.debug("RNN output shape: %s", audio_lout.output_shape)
             import pdb;
             pdb.set_trace()
 
@@ -407,7 +478,7 @@ class NeuralNetwork:
         return combinedNet, combinedNet['l_out']
 
     def print_RNN_network_structure(self, net=None, logger=logger_combinedtools):
-        if net == None: net = self.RNN_dict
+        if net == None: net = self.audioNet_dict
 
         logger.debug("\n PRINTING Audio RNN network: \n %s ", sorted(net.keys()))
         for key in sorted(net.keys()):
@@ -455,7 +526,7 @@ class NeuralNetwork:
             with np.load(model_path) as f:
                 param_values = [f['arr_%d' % i] for i in range(len(f.files))]
                 if model_type == 'RNN':
-                    lout = self.RNN_lout
+                    lout = self.audioNet_lout
                 elif model_type == 'CNN':
                     lout = self.CNN_lout
                 elif model_type == 'combined':
@@ -466,10 +537,7 @@ class NeuralNetwork:
                 try:
                     lasagne.layers.set_all_param_values(lout, *param_values)
                 except:
-                    try: lasagne.layers.set_all_param_values(lout, param_values)
-                    except Exception as error:
-                        print('caught this error: ' + traceback.format_exc());
-                        import pdb;pdb.set_trace()
+                    lasagne.layers.set_all_param_values(lout, param_values)
 
             logger.info("Loading parameters successful.")
             return 0
@@ -540,7 +608,7 @@ class NeuralNetwork:
         if debug:  import pdb; self.print_RNN_network_structure()
 
         # using the lasagne SliceLayer
-        valid_network_output = L.get_output(self.RNN_dict['l7_out_valid'])
+        valid_network_output = L.get_output(self.audioNet_dict['l7_out_valid'])
         self.audio_valid_network_output_fn = theano.function(
                 [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var], valid_network_output)
 
@@ -549,7 +617,7 @@ class NeuralNetwork:
                 [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var],
                 valid_predictions, name='valid_predictions_fn')
 
-        valid_network_output_flattened = L.get_output(self.RNN_lout_flattened)
+        valid_network_output_flattened = L.get_output(self.audioNet_lout_flattened)
         self.audio_network_output_flattened_fn = theano.function(
                 [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var],
                 valid_network_output_flattened)
@@ -616,7 +684,7 @@ class NeuralNetwork:
         #     # pdb.set_trace()
 
         # Retrieve all trainable parameters from the network
-        all_params = L.get_all_params(self.RNN_lout, trainable=True)
+        all_params = L.get_all_params(self.audioNet_lout, trainable=True)
         self.audio_updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=self.LR_var)
         self.audio_train_fn = theano.function([self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var,
                                                self.targets_var, self.LR_var],
@@ -627,7 +695,7 @@ class NeuralNetwork:
         ########################
 
         # TESTING #
-        RNN_features = L.get_output(self.RNN_lout_features)
+        RNN_features = L.get_output(self.audioNet_lout_features)
         CNN_features = L.get_output(self.CNN_lout_features)
         get_features = theano.function([self.CNN_input_var, self.audio_inputs_var, self.audio_masks_var,
                                         self.audio_valid_frames_var], [RNN_features, CNN_features])
@@ -692,7 +760,6 @@ class NeuralNetwork:
         self.combined_val_fn = theano.function([self.CNN_input_var, self.audio_inputs_var, self.audio_masks_var,
                                                 self.audio_valid_frames_var,
                                                 targets], [test_loss, test_acc, top3_acc])
-
         if debug:
             try:
                 combined_test_loss, combined_test_acc, combined_top3_acc = self.combined_val_fn(self.images,
@@ -904,7 +971,6 @@ class NeuralNetwork:
               shuffleEnabled=True, compute_confusion=False, debug=False, logger=logger_combinedtools):
 
         trainingSpeakerFiles, testSpeakerFiles = dataset
-
         logger.info("\n* Starting training...")
 
         # try to load performance metrics of stored model

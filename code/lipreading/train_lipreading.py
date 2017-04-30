@@ -200,33 +200,33 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
             epochsNotImproved = max(epochsNotImproved - 1, 0)  # reduce by 1, minimum 0
             return LR, epochsNotImproved
 
-    # try to load performance metrics of stored model
-    # if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
-    #     old_train_info = preprocessLipreading.unpickle(save_name + '_trainInfo.pkl')
-    #     # backward compatibility
-    #     if type(old_train_info) == list:
-    #         old_train_info = old_train_info[0]
-    #         best_val_acc = min(old_train_info[2])
-    #         test_cost = min(old_train_info[3])
-    #         test_acc = min(old_train_info[3])
-    #     elif type(old_train_info) == dict:  # normal case
-    #         best_val_acc = min(old_train_info['val_acc'])
-    #         test_cost = min(old_train_info['test_cost'])
-    #         test_acc = min(old_train_info['test_acc'])
-    #         try:
-    #             test_topk_acc = min(old_train_info['test_topk_acc'])
-    #         except:
-    #             test_topk_acc = 0
-    #     else:
-    #         best_val_acc = 0
-    #         test_topk_acc = 0
-    #         test_cost = 0
-    #         test_acc = 0
-    # else:
     best_val_acc = 0
     test_topk_acc = 0
     test_cost = 0
     test_acc = 0
+    #try to load performance metrics of stored model
+    if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
+        old_train_info = preprocessLipreading.unpickle(save_name + '_trainInfo.pkl')
+        # backward compatibility
+        if type(old_train_info) == list:
+            old_train_info = old_train_info[0]
+            best_val_acc = min(old_train_info[2])
+            test_cost = min(old_train_info[3])
+            test_acc = min(old_train_info[3])
+        elif type(old_train_info) == dict:  # normal case
+            best_val_acc = min(old_train_info['val_acc'])
+            test_cost = min(old_train_info['test_cost'])
+            test_acc = min(old_train_info['test_acc'])
+            try:
+                test_topk_acc = min(old_train_info['test_topk_acc'])
+            except:
+                test_topk_acc = 0
+        else:
+            best_val_acc = 0
+            test_topk_acc = 0
+            test_cost = 0
+            test_acc = 0
+
 
     best_epoch = 1
     LR = LR_start

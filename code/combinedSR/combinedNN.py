@@ -151,7 +151,7 @@ network = NeuralNetwork('combined', dataset_test,
 
 # print number of parameters
 nb_params_CNN = lasagne.layers.count_params(network.CNN_lout_features)
-nb_params_RNN = lasagne.layers.count_params(network.RNN_lout_features)
+nb_params_RNN = lasagne.layers.count_params(network.audioNet_lout_features)
 nb_params = lasagne.layers.count_params(network.combined_lout)
 logger_combined.info(" # params CNN: %s", nb_params_CNN)
 logger_combined.info(" # params RNN: %s", nb_params_RNN)
