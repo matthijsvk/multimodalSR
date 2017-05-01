@@ -228,6 +228,13 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
             test_acc = 0
 
 
+    logger_train.info("previous training session results: ")
+    logger_train.info("\t  test cost:        %s", test_cost)
+    logger_train.info("\t  test acc rate:  %s %%", test_acc)
+    logger_train.info("\t  val acc:  %s %%", best_val_acc)
+
+
+
     best_epoch = 1
     LR = LR_start
     # for storage of training info
@@ -270,7 +277,7 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
 
             val_cost, val_acc, val_topk_acc, nb_val_batches = val_epoch(X=X_val, y=y_val)
             val_acc = val_acc / nb_val_batches * 100; val_cost /=nb_val_batches
-            val_topk_acc /= nb_val_batches
+            val_topk_acc = val_topk_acc / nb_val_batches * 100
 
         else:
             train_cost, val_cost, val_acc, val_topk_acc = evalTRAINING(trainingSpeakerFiles, LR, shuffleEnabled,

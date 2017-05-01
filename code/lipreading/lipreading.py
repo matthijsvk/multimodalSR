@@ -52,7 +52,7 @@ import lasagne.objectives as LO
 def main():
 
     # BN parameters
-    batch_size = 80
+    batch_size = 128
     logger_lip.info("batch_size = %s",batch_size)
     # alpha is the exponential moving average factor
     alpha = .1
@@ -69,12 +69,12 @@ def main():
     logger_lip.info("num_epochs = %s", num_epochs)
 
     # Decaying LR
-    LR_start = 0.001
+    LR_start = 0.0001
     logger_lip.info("LR_start = %s", LR_start)
     LR_fin = 0.0000003
     logger_lip.info("LR_fin = %s",LR_fin)
     #LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)
-    LR_decay = 0.707  # sqrt(0.5)
+    LR_decay = 0.5  # sqrt(0.5)
     logger_lip.info("LR_decay = %s",LR_decay)
     # BTW, LR decay might good for the BN moving average...
 
@@ -99,7 +99,7 @@ def main():
     if not os.path.exists(results_dir): os.makedirs(results_dir)
     if viseme: database_binaryDir = root_dir + '/binaryViseme'
     else:      database_binaryDir = root_dir + '/binary'
-    datasetType = "volunteers" #"volunteers" #    lipspeakers or volunteers"
+    datasetType = "lipspeakers" #"volunteers" #"volunteers" #    lipspeakers or volunteers"
     ##############################################
 
     if datasetType == "lipspeakers":
@@ -142,7 +142,7 @@ def main():
             raise Exception("invalid dataset entered")
         datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
 
-    model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")+str(nbClasses)+"+test"
+    model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")+str(nbClasses)
     model_save_name = os.path.join(results_dir,model_name)
 
     # log file
@@ -258,7 +258,9 @@ def load_model(model_path, network_output_layer, logger=logger_lip):
         # restore network weights
         with np.load(model_path) as f:
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-            lasagne.layers.set_all_param_values(network_output_layer, param_values)
+            try:lasagne.layers.set_all_param_values(network_output_layer, param_values)
+            except:
+                lasagne.layers.set_all_param_values(network_output_layer, *param_values)
 
         logger.info("Loading parameters successful.")
         return 0

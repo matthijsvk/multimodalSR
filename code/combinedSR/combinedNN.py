@@ -48,13 +48,13 @@ BIDIRECTIONAL = True
 CNN_NETWORK = "google"
 # using CNN-LSTM combo: what to input to LSTM? direct conv outputs or first through dense layers?
 cnn_features = 'dense'  # 39 outputs as input to LSTM
-LIP_RNN_HIDDEN_LIST = [256,256]  # set to None to disable CNN-LSTM architecture
+LIP_RNN_HIDDEN_LIST = None#[256,256]  # set to None to disable CNN-LSTM architecture
 
 # after concatenation of audio and lipreading, which dense layers before softmax?
 DENSE_HIDDEN_LIST = [128]#[2048,2048,512] #[128,128,128,128]
 
 # Decaying LR
-LR_start = 0.01
+LR_start = 0.001
 logger_combined.info("LR_start = %s", str(LR_start))
 LR_fin = 0.0000001
 logger_combined.info("LR_fin = %s", str(LR_fin))
@@ -70,12 +70,12 @@ if not os.path.exists(store_dir): os.makedirs(store_dir)
 
 database_binaryDir = root_dir + '/binary'
 processedDir = database_binaryDir + "_finalProcessed"
-datasetType = "volunteers";
+datasetType = "lipspeakers" #""volunteers";
 
 # which part of the network to train/save/...
 # runType = 'audio'
-runType = 'lipreading'
-# runType = 'combined'
+# runType = 'lipreading'
+runType = 'combined'
 ###########################
 
 
@@ -142,11 +142,11 @@ trainVolunteers = [f for f in allSpeakers if not (f in testVolunteers or f in li
 if datasetType == "combined":
     trainingSpeakerFiles = trainVolunteers + lipspeakers
     testSpeakerFiles = testVolunteers
-elif datasetType == "volunteers":
+else:# datasetType == "volunteers":
     trainingSpeakerFiles = trainVolunteers
     testSpeakerFiles = testVolunteers
-else:
-    raise Exception("invalid dataset entered")
+# else:
+#     raise Exception("invalid dataset entered")
 datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
 
 
@@ -214,7 +214,7 @@ if success == -1:
 
 ##### COMPILING FUNCTIONS #####
 logger_combined.info("\n\n* Compiling functions ...")
-network.build_functions(train=True, debug=False)
+network.build_functions(train=True, debug=True)
 
 ##### TRAINING #####
 logger_combined.info("\n\n* Training ...")
@@ -228,7 +228,7 @@ else: raise IOError("can't save network params; network output not found")
 model_save = model_save.replace(".npz","")
 
 # ### test ###
-# model_save = model_save + "__test"
+model_save = model_save + "__test"
 ###
 
 network.train(datasetFiles, database_binaryDir=database_binaryDir, runType=runType,

@@ -609,8 +609,42 @@ class NeuralNetwork:
 
         confusion_matrices = []
 
+
+
+        # try to load performance metrics of stored model
+        best_val_acc = 0
+        test_topk_acc = 0
+        test_cost = 0
+        test_acc = 0
+        try:
+            if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
+                old_train_info = unpickle(save_name + '_trainInfo.pkl')
+                # backward compatibility
+                if type(old_train_info) == list:
+                    old_train_info = old_train_info[0]
+                    best_val_acc = min(old_train_info[2])
+                    test_cost = min(old_train_info[3])
+                    test_acc = min(old_train_info[3])
+                elif type(old_train_info) == dict:  # normal case
+                    best_val_acc = min(old_train_info['val_acc'])
+                    test_cost = min(old_train_info['test_cost'])
+                    test_acc = min(old_train_info['test_acc'])
+                    try:
+                        test_topk_acc = min(old_train_info['test_topk_acc'])
+                    except:
+                        pass
+                else:
+                    logger.warning("old trainInfo found, but wrong format: %s", save_name + "_trainInfo.pkl")
+                    # do nothing
+        except:
+            pass
+
+        logger.info("Initial best Val acc: %s", best_val_acc)
+        logger.info("Initial best test acc: %s\n", test_acc)
+
         logger.info("Pass over Test Set")
-        test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
+        test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test,
+                                                                      valid_frames=valid_frames_test)
         logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
         logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy * 100))
         logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy * 100))
