@@ -34,7 +34,7 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 50
+batch_size = 128 #50
 num_epochs = 20
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase

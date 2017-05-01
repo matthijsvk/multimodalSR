@@ -82,7 +82,7 @@ for lipspeaker in lipspeakers:
     allValidLabels_test += validLabels_test
     allValidAudioFrames_test += validAudioFrames_test
 
-
+import pdb;pdb.set_trace()
 from general_tools import *
 
 storePath = os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTrain.pkl")

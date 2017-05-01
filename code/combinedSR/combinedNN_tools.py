@@ -80,8 +80,6 @@ class NeuralNetwork:
             self.LR_var = T.scalar('LR', dtype=theano.config.floatX)
             self.targets_var = T.imatrix('targets')  # 2D for the RNN (1 many frames (and targets) per example)
             self.CNN_targets_var = T.ivector('targets')  # 1D for the CNN (1 target per example)
-            # TODO to evaluate the CNN, we need to flatten the self.validLabels.
-            # CNN_test_loss, CNN_test_acc, CNN_top3_acc = self.CNNval_fn(self.images, self.validLabels.flatten())
 
 
             ## AUDIO PART ##
@@ -99,7 +97,7 @@ class NeuralNetwork:
             self.CNN_input_var = T.tensor4('cnn_input')
             # batch size is number of valid frames in each video
             self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_CNN()
-            # CNN_lout output shape = (nbValidFrames, 512x7x7)
+            # CNN_lout_features output shape = (nbValidFrames, 512x7x7)
 
             # for CNN-LSTM combination networks
             if lipRNN_hidden_list != None:  #add LSTM layers on top of the CNN
@@ -120,7 +118,7 @@ class NeuralNetwork:
                     self.lipreading_lout_features = self.CNN_lout
                 else:
                     self.lipreading_lout_features = self.CNN_lout_features
-                self. lipreading_lout = self.CNN_lout
+                self.lipreading_lout = self.CNN_lout
 
 
             ## COMBINED PART ##
@@ -354,7 +352,8 @@ class NeuralNetwork:
         cnnDict['l5_conv5'].append(lasagne.layers.NonlinearityLayer(
                 cnnDict['l5_conv5'][-1],
                 nonlinearity=activation))
-        # this will output shape (nbValidFrames, 512,7,7). Flatten it.
+
+        # now we have output shape (nbValidFrames, 512,7,7) -> Flatten it.
         batch_size = cnnDict['l0_in'].input_var.shape[0]
         cnnDict['l6_reshape'] = L.ReshapeLayer(cnnDict['l5_conv5'][-1], (batch_size, 25088))
 
@@ -478,20 +477,19 @@ class NeuralNetwork:
 
 
 
-    def build_combined(self, lipreading_lout, audio_lout, dense_hidden_list):
+    def build_combined(self, lipreading_lout, audio_lout, dense_hidden_list, debug=False):
 
         # (we process one video at a time)
         # CNN_lout and RNN_lout should be shaped (batch_size, nbFeatures) with batch_size = nb_valid_frames in this video
         # for CNN_lout: nbFeatures = 512x7x7 = 25.088
         # for RNN_lout: nbFeatures = nbUnits(last LSTM layer)
         combinedNet = {}
-        try:
-            combinedNet['l_concat'] = L.ConcatLayer([lipreading_lout, audio_lout], axis=1)
-        except:
+        combinedNet['l_concat'] = L.ConcatLayer([lipreading_lout, audio_lout], axis=1)
+
+        if debug:
             logger_combinedtools.debug("CNN output shape: %s", lipreading_lout.output_shape)
             logger_combinedtools.debug("RNN output shape: %s", audio_lout.output_shape)
-            import pdb;
-            pdb.set_trace()
+            import pdb;pdb.set_trace()
 
         combinedNet['l_dense'] = []
         for i in range(len(dense_hidden_list)):
@@ -511,6 +509,7 @@ class NeuralNetwork:
         # final softmax layer
         combinedNet['l_out'] = L.DenseLayer(combinedNet['l_dense'][-1], num_units=self.num_output_units,
                                             nonlinearity=lasagne.nonlinearities.softmax)
+
         return combinedNet, combinedNet['l_out']
 
     def print_RNN_network_structure(self, net=None, logger=logger_combinedtools):
@@ -589,50 +588,65 @@ class NeuralNetwork:
 
     def build_functions(self, train=False, debug=False, logger=logger_combinedtools):
 
+        k = 3;  # top k accuracy
         ##########################
         ## For Lipreading part  ##
         ##########################
 
-        inputs = self.CNN_input_var
-        targets = self.targets_var  # 2D for the LSTM, but needs only 1D for the CNN -> need to flatten everywhere
-        l_out = self.lipreading_lout
-
-        # for validation: disable dropout etc layers -> deterministic
-        test_network_output = L.get_output(l_out, deterministic=True)
-        test_acc = T.mean(T.eq(T.argmax(test_network_output, axis=1), targets.flatten()),
+        # Targets are 2D for the LSTM, but needs only 1D for the CNN -> need to flatten everywhere
+        
+        # For information: only CNN classification, with softmax to 39 phonemes
+        CNN_test_network_output = L.get_output(self.CNN_lout, deterministic=True)
+        CNN_test_loss = LO.categorical_crossentropy(CNN_test_network_output, self.targets_var.flatten());
+        CNN_test_loss = CNN_test_loss.mean()
+        CNN_test_acc = T.mean(T.eq(T.argmax(CNN_test_network_output, axis=1), self.targets_var.flatten()),
                           dtype=theano.config.floatX)
-        test_loss = LO.categorical_crossentropy(test_network_output, targets.flatten());
-        test_loss = test_loss.mean()
+        CNN_top3_acc = T.mean(lasagne.objectives.categorical_accuracy(CNN_test_network_output, self.targets_var.flatten(), top_k=k))
+        self.CNN_val_fn = theano.function([self.CNN_input_var, self.targets_var], [CNN_test_loss,
+                                                                     CNN_test_acc,
+                                                                     CNN_top3_acc])
+        
+
+        # The whole lipreading network (different if CNN-LSTM architecture, otherwise same as CNN-softmax)
+        # for validation: disable dropout etc layers -> deterministic
+        lipreading_test_network_output = L.get_output(self.lipreading_lout, deterministic=True)
+        lipreading_test_acc = T.mean(T.eq(T.argmax(lipreading_test_network_output, axis=1), self.targets_var.flatten()),
+                          dtype=theano.config.floatX)
+        lipreading_test_loss = LO.categorical_crossentropy(lipreading_test_network_output, self.targets_var.flatten());
+        lipreading_test_loss = lipreading_test_loss.mean()
 
         # Top k accuracy
-        top3_acc = T.mean(lasagne.objectives.categorical_accuracy(test_network_output, targets.flatten(), top_k=3))
-        self.lipreading_top3acc_fn = theano.function([inputs, targets], top3_acc)
+        lipreading_top3_acc = T.mean(lasagne.objectives.categorical_accuracy(lipreading_test_network_output,
+                                                                             self.targets_var.flatten(), top_k=k))
+        self.lipreading_top3acc_fn = theano.function([self.CNN_input_var, self.targets_var], lipreading_top3_acc)
 
-        self.lipreading_val_fn = theano.function([inputs, targets], [test_loss, test_acc, top3_acc])
+        self.lipreading_val_fn = theano.function([self.CNN_input_var, self.targets_var], [lipreading_test_loss,
+                                                                     lipreading_test_acc,
+                                                                     lipreading_top3_acc])
 
-        # if debug:
-        #     try:
-        #         CNN_test_loss, CNN_test_acc, CNN_top3_acc = self.lipreading_val_fn(self.images, self.validLabels)
-        #         logger.debug("CNN network: \ntest loss: %s \n test acc: %s \n top3_acc: %s",
-        #                                 CNN_test_loss, CNN_test_acc*100.0, CNN_top3_acc*100.0)
-        #     except Exception as error:
-        #         print('caught this error: ' + traceback.format_exc());
-        #         import pdb;
-        #         pdb.set_trace()
+        if debug:
+            CNN_test_loss, CNN_test_acc, CNN_top3_acc = self.lipreading_val_fn(self.images, self.validLabels)
+            logger.debug("\n\nCNN network only: \ntest loss: %s \n test acc: %s \n top3_acc: %s",
+                                    CNN_test_loss, CNN_test_acc*100.0, CNN_top3_acc*100.0)
+
+            lipreading_test_loss, lipreading_test_acc, lipreading_top3_acc = self.lipreading_val_fn(self.images, self.validLabels)
+            logger.debug("\n\n Lipreading network: \ntest loss: %s \n test acc: %s \n top3_acc: %s",
+                         lipreading_test_loss, lipreading_test_acc * 100.0, lipreading_top3_acc * 100.0)
+
 
         # For training, use nondeterministic output
-        network_output = L.get_output(l_out, deterministic=False)
-        self.lipreading_out_fn = theano.function([inputs], network_output)
+        lipreading_network_output = L.get_output(self.lipreading_lout, deterministic=False)
+        self.lipreading_out_fn = theano.function([self.CNN_input_var], lipreading_network_output)
         # cross-entropy loss
-        loss = LO.categorical_crossentropy(network_output, targets.flatten());
-        loss = loss.mean()
+        lipreading_loss = LO.categorical_crossentropy(lipreading_network_output, self.targets_var.flatten());
+        lipreading_loss = lipreading_loss.mean()
 
         # set all params to trainable
-        params = L.get_all_params(l_out, trainable=True)
-        updates = lasagne.updates.adam(loss_or_grads=loss, params=params, learning_rate=self.LR_var)
+        lipreading_params = L.get_all_params(self.lipreading_lout, trainable=True)
+        lipreading_updates = lasagne.updates.adam(loss_or_grads=lipreading_loss, params=lipreading_params, learning_rate=self.LR_var)
         # Compile a function performing a training step on a mini-batch (by giving the updates dictionary)
         # and returning the corresponding training loss:
-        self.lipreading_train_fn = theano.function([inputs, targets, self.LR_var], loss, updates=updates)
+        self.lipreading_train_fn = theano.function([self.CNN_input_var, self.targets_var, self.LR_var], lipreading_loss, updates=lipreading_updates)
 
         ####################
         ## For Audio Part ##
@@ -641,34 +655,36 @@ class NeuralNetwork:
         # LSTM in lasagne: see https://github.com/craffel/Lasagne-tutorial/blob/master/examples/recurrent.py
         # and also         http://colinraffel.com/talks/hammer2015recurrent.pdf
 
-        if debug:  import pdb; self.print_RNN_network_structure()
+        if debug:
+            logger.debug("\n\n Audio Network")
+            self.print_RNN_network_structure()
 
         # using the lasagne SliceLayer
-        valid_network_output = L.get_output(self.audioNet_dict['l7_out_valid'])
+        audio_valid_network_output = L.get_output(self.audioNet_dict['l7_out_valid'])
         self.audio_valid_network_output_fn = theano.function(
-                [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var], valid_network_output)
+                [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var], audio_valid_network_output)
 
-        valid_predictions = T.argmax(valid_network_output, axis=2)
+        audio_valid_predictions = T.argmax(audio_valid_network_output, axis=2)
         self.audio_predictions_fn = theano.function(
                 [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var],
-                valid_predictions, name='valid_predictions_fn')
+                audio_valid_predictions, name='valid_predictions_fn')
 
-        valid_network_output_flattened = L.get_output(self.audioNet_lout_flattened)
+        audio_valid_network_output_flattened = L.get_output(self.audioNet_lout_flattened)
         self.audio_network_output_flattened_fn = theano.function(
                 [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var],
-                valid_network_output_flattened)
+                audio_valid_network_output_flattened)
 
         # top k accuracy
-        top1_acc = T.mean(lasagne.objectives.categorical_accuracy(
-                valid_network_output_flattened, self.targets_var.flatten(), top_k=1))
+        audio_top1_acc = T.mean(lasagne.objectives.categorical_accuracy(
+                audio_valid_network_output_flattened, self.targets_var.flatten(), top_k=1))
         self.audio_top1_acc_fn = theano.function(
                 [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var,
-                 self.targets_var], top1_acc)
-        top3_acc = T.mean(lasagne.objectives.categorical_accuracy(
-                valid_network_output_flattened, self.targets_var.flatten(), top_k=3))
+                 self.targets_var], audio_top1_acc)
+        audio_top3_acc = T.mean(lasagne.objectives.categorical_accuracy(
+                audio_valid_network_output_flattened, self.targets_var.flatten(), top_k=k))
         self.audio_top3_acc_fn = theano.function(
                 [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var,
-                 self.targets_var], top3_acc)
+                 self.targets_var], audio_top3_acc)
         # if debug:
         #     try:
         #         valid_out = self.audio_valid_network_output_fn(self.mfccs, self.masks, self.validAudioFrames)
@@ -700,37 +716,40 @@ class NeuralNetwork:
         #         pdb.set_trace()
 
         # with Lasagne SliceLayer outputs:
-        cost_pointwise = lasagne.objectives.categorical_crossentropy(valid_network_output_flattened,
+        audio_cost_pointwise = lasagne.objectives.categorical_crossentropy(audio_valid_network_output_flattened,
                                                                      self.targets_var.flatten())
-        cost = lasagne.objectives.aggregate(cost_pointwise)
+        audio_cost = lasagne.objectives.aggregate(audio_cost_pointwise)
 
         # Functions for computing cost and training
         self.audio_val_fn = theano.function(
                 [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var, self.targets_var],
-                [cost, top1_acc, top3_acc], name='validate_fn')
+                [audio_cost, audio_top1_acc, audio_top3_acc], name='validate_fn')
         self.audio_cost_pointwise_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
                                                         self.audio_valid_frames_var, self.targets_var],
-                                                       cost_pointwise, name='cost_pointwise_fn')
-        # if debug:
-        #     logger.debug('cost pointwise: %s',
-        #                  self.audio_cost_pointwise_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels))
-        #     evaluate_cost = self.audio_val_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels)
-        #     logger.debug('cost:     {:.3f}'.format(float(evaluate_cost[0])))
-        #     logger.debug('accuracy: {:.3f} %'.format(float(evaluate_cost[1]) * 100))
-        #     # pdb.set_trace()
+                                                       audio_cost_pointwise, name='cost_pointwise_fn')
+        if debug:
+            # logger.debug('cost pointwise: %s',
+            #              self.audio_cost_pointwise_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels))
+            evaluate_cost = self.audio_val_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels)
+            logger.debug('cost:     {:.3f}'.format(float(evaluate_cost[0])))
+            logger.debug('accuracy: {:.3f} %'.format(float(evaluate_cost[1]) * 100))
+            logger.debug('Top 3 accuracy: {:.3f} %'.format(float(evaluate_cost[2]) * 100))
+
+            # pdb.set_trace()
 
         # Retrieve all trainable parameters from the network
-        all_params = L.get_all_params(self.audioNet_lout, trainable=True)
-        self.audio_updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=self.LR_var)
+        audio_params = L.get_all_params(self.audioNet_lout, trainable=True)
+        self.audio_updates = lasagne.updates.adam(loss_or_grads=audio_cost, params=audio_params, learning_rate=self.LR_var)
         self.audio_train_fn = theano.function([self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var,
                                                self.targets_var, self.LR_var],
-                                              cost, updates=self.audio_updates, name='train_fn')
+                                              audio_cost, updates=self.audio_updates, name='train_fn')
 
         #######################
         ### For Combined part ##
         ########################
 
         if debug:
+            logger.debug("\n\n Combined Network")
             RNN_features = L.get_output(self.audioNet_lout_features)
             CNN_features = L.get_output(self.CNN_lout_features)
             get_features = theano.function([self.CNN_input_var, self.audio_inputs_var, self.audio_masks_var,
@@ -748,61 +767,55 @@ class NeuralNetwork:
                 import pdb;
                 pdb.set_trace()
 
-        l_out = self.combined_lout
-        targets = self.targets_var  # also have to be 1D, like for the CNN -> flattening necessary
 
         # For training, use nondeterministic output
-        try:
-            network_output = L.get_output(l_out, deterministic=False)
-        except Exception as error:
-            print('caught this error: ' + traceback.format_exc());
-            import pdb;
-            pdb.set_trace()
+        combined_network_output = L.get_output(self.combined_lout, deterministic=False)
 
         # cross-entropy loss
-        loss = LO.categorical_crossentropy(network_output, targets.flatten())
-        loss = loss.mean()
+        combined_loss = LO.categorical_crossentropy(combined_network_output, self.targets_var.flatten())
+        combined_loss = combined_loss.mean()
         # weight regularization
         weight_decay = 1e-5
-        weightsl2 = lasagne.regularization.regularize_network_params(l_out, lasagne.regularization.l2)
-        loss += weight_decay * weightsl2
+        combined_weightsl2 = lasagne.regularization.regularize_network_params(self.combined_lout, lasagne.regularization.l2)
+        combined_loss += weight_decay * combined_weightsl2
 
         # set all params to trainable
-        params = L.get_all_params(l_out, trainable=True)
-        updates = lasagne.updates.adam(loss_or_grads=loss, params=params, learning_rate=self.LR_var)
+        combined_params = L.get_all_params(self.combined_lout, trainable=True)
+        combined_updates = lasagne.updates.adam(loss_or_grads=combined_loss, params=combined_params, learning_rate=self.LR_var)
 
         self.combined_train_fn = theano.function([self.CNN_input_var,self.audio_inputs_var, self.audio_masks_var,
                                                   self.audio_valid_frames_var,
-                                                  targets, self.LR_var], loss, updates=updates)
+                                                  self.targets_var, self.LR_var], combined_loss, updates=combined_updates)
 
         # for validation: disable dropout etc layers -> deterministic
-        test_network_output = L.get_output(l_out, deterministic=True)
-        test_acc = T.mean(T.eq(T.argmax(test_network_output, axis=1), targets.flatten()),
+        combined_test_network_output = L.get_output(self.combined_lout, deterministic=True)
+        combined_test_acc = T.mean(T.eq(T.argmax(combined_test_network_output, axis=1), self.targets_var.flatten()),
                           dtype=theano.config.floatX)
-        test_loss = LO.categorical_crossentropy(test_network_output, targets.flatten());
-        test_loss = test_loss.mean()
+        combined_test_loss = LO.categorical_crossentropy(combined_test_network_output, self.targets_var.flatten());
+        combined_test_loss = combined_test_loss.mean()
 
         self.combined_output_fn = theano.function(
                 [self.CNN_input_var, self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var],
-                test_network_output)
+                combined_test_network_output)
 
-        top3_acc = T.mean(lasagne.objectives.categorical_accuracy(test_network_output, targets.flatten(), top_k=3))
+        combined_top3_acc = T.mean(lasagne.objectives.categorical_accuracy(combined_test_network_output,
+                                                                           self.targets_var.flatten(), top_k=k))
         self.combined_top3acc_fn = theano.function([self.CNN_input_var, self.audio_inputs_var, self.audio_masks_var,
                                                     self.audio_valid_frames_var,
-                                                    targets], top3_acc)
+                                                    self.targets_var], combined_top3_acc)
 
         self.combined_val_fn = theano.function([self.CNN_input_var, self.audio_inputs_var, self.audio_masks_var,
                                                 self.audio_valid_frames_var,
-                                                targets], [test_loss, test_acc, top3_acc])
+                                                self.targets_var], [combined_test_loss, combined_test_acc, combined_top3_acc])
         if debug:
             try:
-                combined_test_loss, combined_test_acc, combined_top3_acc = self.combined_val_fn(self.images,
-                                                                                                self.mfccs,
-                                                                                                self.masks,
-                                                                                                self.validAudioFrames,
-                                                                                                self.validLabels)
+                comb_test_loss, comb_test_acc, comb_top3_acc = self.combined_val_fn(self.images,
+                                                                                    self.mfccs,
+                                                                                    self.masks,
+                                                                                    self.validAudioFrames,
+                                                                                    self.validLabels)
                 logger.debug("Combined network: \ntest loss: %s \n test acc: %s \n top3_acc: %s",
-                             combined_test_loss, combined_test_acc * 100.0, combined_top3_acc * 100.0)
+                             comb_test_loss, comb_test_acc * 100.0, comb_top3_acc * 100.0)
             except Exception as error:
                 print('caught this error: ' + traceback.format_exc());
                 import pdb;
@@ -1018,15 +1031,15 @@ class NeuralNetwork:
                 # backward compatibility
                 if type(old_train_info) == list:
                     old_train_info = old_train_info[0]
-                    best_val_acc = min(old_train_info[2])
+                    best_val_acc = max(old_train_info[2])
                     test_cost = min(old_train_info[3])
-                    test_acc = min(old_train_info[3])
+                    test_acc = max(old_train_info[3])
                 elif type(old_train_info) == dict:  # normal case
-                    best_val_acc = min(old_train_info['val_acc'])
+                    best_val_acc = max(old_train_info['val_acc'])
                     test_cost = min(old_train_info['test_cost'])
-                    test_acc = min(old_train_info['test_acc'])
+                    test_acc = max(old_train_info['test_acc'])
                     try:
-                        test_topk_acc = min(old_train_info['test_topk_acc'])
+                        test_topk_acc = max(old_train_info['test_topk_acc'])
                     except: pass
                 else:
                     logger.warning("old trainInfo found, but wrong format: %s", save_name + "_trainInfo.pkl")
@@ -1047,13 +1060,8 @@ class NeuralNetwork:
         }  # used to be list of lists
         self.epochsNotImproved = 0
 
-        logger.info("starting training for %s epochs...", num_epochs)
-        # now run through the epochs
 
-        # # TODO: remove this
-        #
-
-
+        # # TODO: remove this. should not be needed
         if not self.loadPerSpeaker:  #load all the lipspeakers in memory, then don't touch the files -> no reloading needed = faster training
             allImages_train, allMfccs_train, allAudioLabels_train, allValidLabels_train, allValidAudioFrames_train = unpickle(
                 os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTrain.pkl"))
@@ -1062,7 +1070,7 @@ class NeuralNetwork:
             allImages_test, allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
                     os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTest.pkl"))
 
-            test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType='lipreading',
+            test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
                                                                 images=allImages_test,
                                                                 mfccs=allMfccs_test,
                                                                 validLabels=allValidLabels_test,
@@ -1085,6 +1093,8 @@ class NeuralNetwork:
         logger.info("\t  test top 3 acc:  %s %%", test_topk_acc)
 
 
+        logger.info("starting training for %s epochs...", num_epochs)
+        # now run through the epochs
         for epoch in range(num_epochs):
             logger.info("\n\n\n Epoch %s started", epoch + 1)
             start_time = time.time()
@@ -1097,20 +1107,20 @@ class NeuralNetwork:
                                                                             storeProcessed=storeProcessed,
                                                                             processedDir=processedDir)
             else:
-                train_cost, nb_train_batches = self.train_epoch(runType='lipreading',
-                                                                                     images=allImages_train,
-                                                                                     mfccs=allMfccs_train,
-                                                                                     validLabels=allValidLabels_train,
-                                                                                     valid_frames=allValidAudioFrames_train,
-                                                                                     LR=LR)
+                train_cost, nb_train_batches = self.train_epoch(runType=runType,
+                                                                 images=allImages_train,
+                                                                 mfccs=allMfccs_train,
+                                                                 validLabels=allValidLabels_train,
+                                                                 valid_frames=allValidAudioFrames_train,
+                                                                 LR=LR)
                 train_cost /= nb_train_batches
 
-                val_cost, val_acc, val_topk_acc, nb_val_batches = self.val_epoch(runType='lipreading',
-                                                                                     images=allImages_val,
-                                                                                     mfccs=allMfccs_val,
-                                                                                     validLabels=allValidLabels_val,
-                                                                                     valid_frames=allValidAudioFrames_val,
-                                                                                     batch_size=1)
+                val_cost, val_acc, val_topk_acc, nb_val_batches = self.val_epoch(runType=runType,
+                                                                                 images=allImages_val,
+                                                                                 mfccs=allMfccs_val,
+                                                                                 validLabels=allValidLabels_val,
+                                                                                 valid_frames=allValidAudioFrames_val,
+                                                                                 batch_size=1)
                 val_cost /= nb_val_batches
                 val_acc = val_acc / nb_val_batches * 100
                 val_topk_acc = val_topk_acc / nb_val_batches * 100
@@ -1122,6 +1132,7 @@ class NeuralNetwork:
                 printTest = True
                 best_val_acc = val_acc
                 best_epoch = epoch + 1
+                self.epochsNotImproved = 0
 
                 logger.info("\n\nBest ever validation score; evaluating TEST set...")
 
@@ -1131,7 +1142,7 @@ class NeuralNetwork:
                                                                    storeProcessed=storeProcessed,
                                                                    processedDir=processedDir)
                 else:
-                    test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType='lipreading',
+                    test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
                                                                                          images=allImages_test,
                                                                                          mfccs=allMfccs_test,
                                                                                          validLabels=allValidLabels_test,
@@ -1202,7 +1213,7 @@ class NeuralNetwork:
                                                                    storeProcessed=storeProcessed,
                                                                    processedDir=processedDir)
                 else:
-                    test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType='lipreading',
+                    test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
                                                                                          images=allImages_test,
                                                                                          mfccs=allMfccs_test,
                                                                                          validLabels=allValidLabels_test,

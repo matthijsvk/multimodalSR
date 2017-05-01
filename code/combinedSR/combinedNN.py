@@ -47,19 +47,19 @@ BIDIRECTIONAL = True
 # lipreading
 CNN_NETWORK = "google"
 # using CNN-LSTM combo: what to input to LSTM? direct conv outputs or first through dense layers?
-cnn_features = 'dense'  # 39 outputs as input to LSTM
-LIP_RNN_HIDDEN_LIST = [256,256]  # set to None to disable CNN-LSTM architecture
+cnn_features = 'conv' #'dense' # 39 outputs as input to LSTM
+LIP_RNN_HIDDEN_LIST = None#[256,256]  # set to None to disable CNN-LSTM architecture
 
 # after concatenation of audio and lipreading, which dense layers before softmax?
-DENSE_HIDDEN_LIST = [128]#[2048,2048,512] #[128,128,128,128]
+DENSE_HIDDEN_LIST = [2048,2048,512] #[128,128,128,128]
 
 # Decaying LR
-LR_start = 0.01
+LR_start = 0.001
 logger_combined.info("LR_start = %s", str(LR_start))
 LR_fin = 0.0000001
 logger_combined.info("LR_fin = %s", str(LR_fin))
 #LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)  # each epoch, LR := LR * LR_decay
-LR_decay= 0.5
+LR_decay= 0.7071
 logger_combined.info("LR_decay = %s", str(LR_decay))
 
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
@@ -70,20 +70,20 @@ if not os.path.exists(store_dir): os.makedirs(store_dir)
 
 database_binaryDir = root_dir + '/binary'
 processedDir = database_binaryDir + "_finalProcessed"
-datasetType = "volunteers";
+datasetType = "lipspeakers" #""volunteers";
 
 # which part of the network to train/save/...
 # runType = 'audio'
-runType = 'lipreading'
-# runType = 'combined'
+# runType = 'lipreading'
+runType = 'combined'
 ###########################
 
 
 # audio network + cnnNetwork + classifierNetwork
 model_name = "RNN__" + str(len(LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in LSTM_HIDDEN_LIST]) \
                      + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") +  "__" \
-             + "CNN_" + CNN_NETWORK \
-             + "_" "lipRNN_" + ('_'.join([str(layer) for layer in LIP_RNN_HIDDEN_LIST]) if LIP_RNN_HIDDEN_LIST != None else "")  + "__" \
+             + "CNN_" + CNN_NETWORK + "_" + cnn_features \
+             + ("_lipRNN_" if LIP_RNN_HIDDEN_LIST != None else "") + ('_'.join([str(layer) for layer in LIP_RNN_HIDDEN_LIST]) if LIP_RNN_HIDDEN_LIST != None else "")  + "__" \
              + "FC_" + '_'.join([str(layer) for layer in DENSE_HIDDEN_LIST]) + "__" \
              + dataset + "_" + datasetType
 model_load = os.path.join(store_dir, model_name + ".npz")
@@ -142,11 +142,11 @@ trainVolunteers = [f for f in allSpeakers if not (f in testVolunteers or f in li
 if datasetType == "combined":
     trainingSpeakerFiles = trainVolunteers + lipspeakers
     testSpeakerFiles = testVolunteers
-elif datasetType == "volunteers":
+else:# datasetType == "volunteers":
     trainingSpeakerFiles = trainVolunteers
     testSpeakerFiles = testVolunteers
-else:
-    raise Exception("invalid dataset entered")
+# else:
+#     raise Exception("invalid dataset entered")
 datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
 
 
@@ -228,14 +228,14 @@ else: raise IOError("can't save network params; network output not found")
 model_save = model_save.replace(".npz","")
 
 # ### test ###
-# model_save = model_save + "__test"
+model_save = model_save + "__test"
 ###
 
 network.train(datasetFiles, database_binaryDir=database_binaryDir, runType=runType,
                   storeProcessed=True, processedDir=processedDir,
                   num_epochs=num_epochs,
                   batch_size=batch_size_audio, LR_start=LR_start, LR_decay=LR_decay,
-                  compute_confusion=False, debug=True, save_name=model_save)
+                  compute_confusion=False, debug=False, save_name=model_save)
 
 logger_combined.info("\n\n* Done")
 logger_combined.info('Total time: {:.3f}'.format(time.time() - program_start_time))
