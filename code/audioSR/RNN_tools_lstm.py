@@ -56,6 +56,7 @@ class NeuralNetwork:
 
                 self.X = pad_sequences_X(X)
                 self.Y = pad_sequences_y(y)
+                #self.valid_frames = pad_sequences_y(self.valid_frames)
 
                 logger.debug('X.shape:          %s', self.X.shape)
                 logger.debug('X[0].shape:       %s', self.X[0].shape)
@@ -378,7 +379,15 @@ class NeuralNetwork:
             self.valid_targets_fn = theano.function([self.audio_masks_var, target_var], valid_targets, name='valid_targets_fn')
             self.valid_predictions_fn = theano.function([self.audio_inputs_var, self.audio_masks_var], valid_predictions, name='valid_predictions_fn')
 
-            # using the lasagne SliceLayer
+
+            # get valid network output
+            valid_network_output = network_output[valid_indices_example, valid_indices_seqNr]
+            self.valid_network_output_fn = theano.function([self.audio_inputs_var, self.audio_masks_var],
+                                                           valid_network_output)
+
+            # using the lasagne SliceLayer:
+            # !!!! only works with batch_size == 1  !!!!
+
             valid_network_output2 = L.get_output(self.network['l7_out_valid'])
             self.valid_network_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
                                                      self.audio_valid_indices_var], valid_network_output2)
@@ -389,27 +398,47 @@ class NeuralNetwork:
                     [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var],
                     valid_predictions2, name='valid_predictions_fn')
 
+
+
             # Functions for computing cost and training
             top1_acc = T.mean(lasagne.objectives.categorical_accuracy(
-                    valid_network_output_flattened, valid_targets, top_k=1))
+                    valid_network_output_flattened, valid_targets.flatten(), top_k=1))
             self.top1_acc_fn = theano.function(
                     [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
                      self.audio_targets_var], top1_acc)
             top3_acc = T.mean(lasagne.objectives.categorical_accuracy(
-                    valid_network_output_flattened, valid_targets, top_k=3))
+                    valid_network_output_flattened, valid_targets.flatten(), top_k=3))
             self.top3_acc_fn = theano.function(
                     [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
                      self.audio_targets_var], top3_acc)
 
+            # Functions for computing cost and training
+            top1_acc = T.mean(lasagne.objectives.categorical_accuracy(valid_network_output, valid_targets, top_k=1))
+            self.top1_acc_fn = theano.function(
+                    [self.audio_inputs_var, self.audio_masks_var, self.audio_targets_var], top1_acc)
+            top3_acc = T.mean(lasagne.objectives.categorical_accuracy(valid_network_output, valid_targets, top_k=3))
+            self.top3_acc_fn = theano.function(
+                    [self.audio_inputs_var, self.audio_masks_var, self.audio_targets_var], top3_acc)
+
             if debug:
                 try:
-                    valid_preds2 = self.valid_predictions2_fn(self.X, self.masks, self.valid_frames)
-                    logger.debug("all valid predictions of this batch: ")
-                    logger.debug('valid_preds2.shape: %s', valid_preds2.shape)
-                    logger.debug('valid_preds2, value: \n%s', valid_preds2)
+                    # only works with batch_size == 1
+                    # valid_preds2 = self.valid_predictions2_fn(self.X, self.masks, self.valid_frames)
+                    # logger.debug("all valid predictions of this batch: ")
+                    # logger.debug('valid_preds2.shape: %s', valid_preds2.shape)
+                    # logger.debug('valid_preds2, value: \n%s', valid_preds2)
+
+                    # valid_out = self.valid_network_fn(self.X, self.masks, self.valid_frames)
+                    # logger.debug('valid_out.shape: %s', valid_out.shape)
+                    # # logger.debug('valid_out, value: \n%s', valid_out)
 
                     valid_example, valid_seqNr = valid_indices_fn(self.masks)
                     logger.debug('valid_inds(masks).shape: %s', valid_example.shape)
+
+                    valid_output = self.valid_network_output_fn(self.X, self.masks)
+                    logger.debug("all valid outputs of this batch: ")
+                    logger.debug('valid_output.shape: %s', valid_output.shape)
+
                     valid_preds = self.valid_predictions_fn(self.X, self.masks)
                     logger.debug("all valid predictions of this batch: ")
                     logger.debug('valid_preds.shape: %s', valid_preds.shape)
@@ -419,27 +448,23 @@ class NeuralNetwork:
                     logger.debug('valid_targets.shape: %s', valid_targs.shape)
                     logger.debug('valid_targets, value: \n%s', valid_targs)
 
-                    valid_out = self.valid_network_fn(self.X, self.masks, self.valid_frames)
-                    logger.debug('valid_out.shape: %s', valid_out.shape)
-                    # logger.debug('valid_out, value: \n%s', valid_out)
-
-                    top1 = self.top1_acc_fn(self.X, self.masks, self.valid_frames, self.Y)
+                    top1 = self.top1_acc_fn(self.X, self.masks, self.Y)
                     logger.debug("top 1 accuracy: %s", top1*100.0)
 
-                    top3 = self.top3_acc_fn(self.X, self.masks, self.valid_frames, self.Y)
+                    top3 = self.top3_acc_fn(self.X, self.masks, self.Y)
                     logger.debug("top 3 accuracy: %s", top3*100.0)
-
 
                 except Exception as error:
                     print('caught this error: ' + traceback.format_exc());
                     import pdb; pdb.set_trace()
                 #pdb.set_trace()
 
-            # only use the output at the middle of each phoneme interval (get better accuracy)
-            # Accuracy => # (correctly predicted & valid frames) / #valid frames
-            validAndCorrect = T.sum(T.eq(valid_predictions, valid_targets),dtype='float32')
-            nbValidFrames = T.sum(self.audio_masks_var)
-            accuracy =  validAndCorrect / nbValidFrames
+            #####  OLD  ####
+            # # only use the output at the middle of each phoneme interval (get better accuracy)
+            # # Accuracy => # (correctly predicted & valid frames) / #valid frames
+            # validAndCorrect = T.sum(T.eq(valid_predictions, valid_targets),dtype='float32')
+            # nbValidFrames = T.sum(self.audio_masks_var)
+            # accuracy =  validAndCorrect / nbValidFrames
 
         else:
             # Function to get the output of the network
@@ -477,8 +502,9 @@ class NeuralNetwork:
         cost = lasagne.objectives.aggregate(cost_pointwise, self.audio_masks_var.flatten())
 
 
-        self.validate_fn = theano.function([self.audio_inputs_var, self.audio_masks_var, self.audio_targets_var],
-                                      [cost, accuracy], name='validate_fn')
+        self.validate_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
+                                            self.audio_targets_var],
+                                      [cost, top1_acc, top3_acc], name='validate_fn')
         self.cost_pointwise_fn = theano.function([self.audio_inputs_var, self.audio_masks_var, target_var],
                                             cost_pointwise, name='cost_pointwise_fn')
 
@@ -495,10 +521,10 @@ class NeuralNetwork:
             try:evaluate_cost = self.validate_fn(self.X, self.masks, self.Y)
             except:
                 print('caught this error: ' + traceback.format_exc()); pdb.set_trace()
-            logger.debug('evaluate_cost: %s %s', type(evaluate_cost), len(evaluate_cost))
-            logger.debug('%s', evaluate_cost)
             logger.debug('cost:     {:.3f}'.format(float(evaluate_cost[0])))
-            logger.debug('accuracy: {:.3f}'.format(float(evaluate_cost[1])))
+            logger.debug('accuracy: {:.3f}'.format(float(evaluate_cost[1]*100.0)))
+            logger.debug('top 3 accuracy: {:.3f}'.format(float(evaluate_cost[2]*100.0)))
+
             #pdb.set_trace()
 
         if train:
@@ -506,8 +532,9 @@ class NeuralNetwork:
             # Retrieve all trainable parameters from the network
             all_params = L.get_all_params(self.network_lout, trainable=True)
             self.updates = lasagne.updates.adam(loss_or_grads=cost, params=all_params, learning_rate=LR)
-            self.train_fn = theano.function([self.audio_inputs_var, self.audio_masks_var, target_var, LR],
-                                       [cost, accuracy], updates=self.updates, name='train_fn')
+            self.train_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
+                                             target_var, LR],
+                                       [cost, top1_acc, top3_acc], updates=self.updates, name='train_fn')
 
     def shuffle(X, y, valid_frames):
 
@@ -535,7 +562,7 @@ class NeuralNetwork:
     def run_epoch(self, X, y, valid_frames, get_predictions= False, LR=None, batch_size = -1):
         if batch_size == -1: batch_size= self.batch_size
 
-        cost = 0; accuracy = 0
+        cost = 0; accuracy = 0; top3_accuracy= 0
         nb_batches = len(X) / batch_size
 
         predictions = [] #only used if get_predictions = True
@@ -547,11 +574,13 @@ class NeuralNetwork:
             # now pad inputs and target to maxLen
             batch_X = pad_sequences_X(batch_X)
             batch_y = pad_sequences_y(batch_y)
+            #batch_valid_frames = pad_sequences_y(batch_valid_frames)
             # print("batch_X.shape: ", batch_X.shape)
             # print("batch_y.shape: ", batch_y.shape)
-            if LR != None: cst, acc = self.train_fn(batch_X, batch_masks, batch_y, LR)  # training
-            else:          cst, acc = self.validate_fn(batch_X, batch_masks, batch_y)   # validation
-            cost += cst; accuracy += acc
+            #import pdb;pdb.set_trace()
+            if LR != None: cst, acc, top3_acc = self.train_fn(batch_X, batch_masks, batch_y,  LR)  # training
+            else:          cst, acc, top3_acc = self.validate_fn(batch_X, batch_masks, batch_y)   # validation
+            cost += cst; accuracy += acc; top3_accuracy += top3_acc
 
             if get_predictions:
                 prediction = self.predictions_fn(batch_X, batch_masks)
@@ -567,10 +596,10 @@ class NeuralNetwork:
                 # # and the targets for video 0
                 # targets[0][valid_frames[0]]
                 #
-        cost /= nb_batches; accuracy /= nb_batches
+        cost /= nb_batches; accuracy /= nb_batches; top3_accuracy /= nb_batches
         if get_predictions:
-            return cost, accuracy, predictions
-        return cost, accuracy
+            return cost, accuracy, top3_accuracy, predictions
+        return cost, accuracy, top3_accuracy
 
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
@@ -581,9 +610,11 @@ class NeuralNetwork:
         confusion_matrices = []
 
         logger.info("Pass over Test Set")
-        test_cost, test_accuracy = self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
+        test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
         logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
         logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy * 100))
+        logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy * 100))
+
 
         logger.info("\n* Starting training...")
         LR = LR_start
@@ -595,13 +626,13 @@ class NeuralNetwork:
 
 
             logger.info("Pass over Training Set")
-            train_cost, train_accuracy =     self.run_epoch(X=X_train, y=y_train, valid_frames=valid_frames_train, LR=LR)
+            train_cost, train_accuracy, train_top3_accuracy =     self.run_epoch(X=X_train, y=y_train, valid_frames=valid_frames_train, LR=LR)
 
             logger.info("Pass over Validation Set")
-            validation_cost, validation_accuracy =    self.run_epoch(X=X_val, y = y_val, valid_frames=valid_frames_val)
+            validation_cost, validation_accuracy, validation_top3_accuracy =    self.run_epoch(X=X_val, y = y_val, valid_frames=valid_frames_val)
 
             logger.info("Pass over Test Set")
-            test_cost, test_accuracy =       self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
+            test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
 
 
             # Print epoch summary
@@ -609,10 +640,15 @@ class NeuralNetwork:
                     epoch + 1, num_epochs, time.time() - epoch_time))
             logger.info("Learning Rate:\t\t{:.6f} %".format(LR))
             logger.info("Training cost:\t{:.6f}".format(train_cost))
+            logger.info("Validation Top 3 accuracy:\t{:.6f} %".format(validation_top3_accuracy * 100))
+
             logger.info("Validation cost:\t{:.6f} ".format(validation_cost))
             logger.info("Validation accuracy:\t\t{:.6f} %".format(validation_accuracy * 100))
+            logger.info("Validation Top 3 accuracy:\t{:.6f} %".format(validation_top3_accuracy * 100))
+
             logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
             logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy*100))
+            logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy * 100))
 
             # better model, so save parameters
             if validation_cost < self.best_cost:
@@ -625,7 +661,7 @@ class NeuralNetwork:
                     logger.info("Model saved as " + save_name)
                     self.save_model(save_name)
 
-            # store train info
+            # store train info (old)
             # self.network_train_info[0].append(train_cost)
             # self.network_train_info[1].append(validation_cost)
             # self.network_train_info[2].append(validation_accuracy)
@@ -636,8 +672,10 @@ class NeuralNetwork:
             self.network_train_info['train_cost'].append(train_cost)
             self.network_train_info['val_cost'].append(validation_cost)
             self.network_train_info['val_acc'].append(validation_accuracy)
+            self.network_train_info['val_topk_acc'].append(validation_top3_accuracy)
             self.network_train_info['test_cost'].append(test_cost)
             self.network_train_info['test_acc'].append(test_accuracy)
+            self.network_train_info['test_topk_acc'].append(test_top3_accuracy)
 
             saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
             logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')

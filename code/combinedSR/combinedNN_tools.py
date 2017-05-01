@@ -31,13 +31,15 @@ class NeuralNetwork:
 
     network_train_info = [[], [], []]
 
-    def __init__(self, architecture, dataset=None,
+    def __init__(self, architecture, dataset=None, loadPerSpeaker = True,
                  batch_size=1, num_features=39, num_output_units=39,
                  lstm_hidden_list=(100,), bidirectional=True,
                  cnn_network="google", cnn_features='dense', lipRNN_hidden_list=None,
                  dense_hidden_list=(512,),
                  seed=int(time.time()), debug=False, verbose=False, logger=logger_combinedtools):
 
+        self.loadPerSpeaker = loadPerSpeaker
+        
         self.num_output_units = num_output_units
         self.num_features = num_features
         self.batch_size = batch_size
@@ -1049,28 +1051,70 @@ class NeuralNetwork:
         # now run through the epochs
 
         # # TODO: remove this
-        test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles,
-                                                           runType=runType,
-                                                           sourceDataDir=database_binaryDir,
-                                                           storeProcessed=storeProcessed,
-                                                           processedDir=processedDir)
+        #
+
+
+        if not self.loadPerSpeaker:  #load all the lipspeakers in memory, then don't touch the files -> no reloading needed = faster training
+            allImages_train, allMfccs_train, allAudioLabels_train, allValidLabels_train, allValidAudioFrames_train = unpickle(
+                os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTrain.pkl"))
+            allImages_val, allMfccs_val, allAudioLabels_val, allValidLabels_val, allValidAudioFrames_val = unpickle(
+                    os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersVal.pkl"))
+            allImages_test, allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
+                    os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTest.pkl"))
+
+            test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType='lipreading',
+                                                                images=allImages_test,
+                                                                mfccs=allMfccs_test,
+                                                                validLabels=allValidLabels_test,
+                                                                valid_frames=allValidAudioFrames_test,
+                                                                batch_size=1)
+            test_cost /= nb_test_batches
+            test_acc = test_acc / nb_test_batches * 100
+            test_topk_acc = test_topk_acc / nb_test_batches * 100
+        else:
+            test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles,
+                                                              runType=runType,
+                                                              sourceDataDir=database_binaryDir,
+                                                              storeProcessed=storeProcessed,
+                                                              processedDir=processedDir)
+        # # TODO: end remove
+
         logger.info("TEST results: ")
         logger.info("\t  test cost:        %s", test_cost)
         logger.info("\t  test acc rate:  %s %%", test_acc)
         logger.info("\t  test top 3 acc:  %s %%", test_topk_acc)
-        # # TODO: end remove
 
 
         for epoch in range(num_epochs):
             logger.info("\n\n\n Epoch %s started", epoch + 1)
             start_time = time.time()
 
-            train_cost, val_cost, val_acc, val_topk_acc = self.evalTRAINING(trainingSpeakerFiles, LR=LR,
+            if self.loadPerSpeaker:
+                train_cost, val_cost, val_acc, val_topk_acc = self.evalTRAINING(trainingSpeakerFiles, LR=LR,
                                                                             runType=runType,
                                                                             shuffleEnabled=shuffleEnabled,
                                                                             sourceDataDir=database_binaryDir,
                                                                             storeProcessed=storeProcessed,
                                                                             processedDir=processedDir)
+            else:
+                train_cost, nb_train_batches = self.train_epoch(runType='lipreading',
+                                                                                     images=allImages_train,
+                                                                                     mfccs=allMfccs_train,
+                                                                                     validLabels=allValidLabels_train,
+                                                                                     valid_frames=allValidAudioFrames_train,
+                                                                                     LR=LR)
+                train_cost /= nb_train_batches
+
+                val_cost, val_acc, val_topk_acc, nb_val_batches = self.val_epoch(runType='lipreading',
+                                                                                     images=allImages_val,
+                                                                                     mfccs=allMfccs_val,
+                                                                                     validLabels=allValidLabels_val,
+                                                                                     valid_frames=allValidAudioFrames_val,
+                                                                                     batch_size=1)
+                val_cost /= nb_val_batches
+                val_acc = val_acc / nb_val_batches * 100
+                val_topk_acc = val_topk_acc / nb_val_batches * 100
+                
 
             # test if validation acc went up
             printTest = False
@@ -1081,10 +1125,22 @@ class NeuralNetwork:
 
                 logger.info("\n\nBest ever validation score; evaluating TEST set...")
 
-                test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles, runType=runType,
+                if self.loadPerSpeaker:
+                    test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles, runType=runType,
                                                                    sourceDataDir=database_binaryDir,
                                                                    storeProcessed=storeProcessed,
                                                                    processedDir=processedDir)
+                else:
+                    test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType='lipreading',
+                                                                                         images=allImages_test,
+                                                                                         mfccs=allMfccs_test,
+                                                                                         validLabels=allValidLabels_test,
+                                                                                         valid_frames=allValidAudioFrames_test,
+                                                                                         batch_size=1)
+                    test_cost /= nb_test_batches
+                    test_acc = test_acc / nb_test_batches * 100
+                    test_topk_acc = test_topk_acc / nb_test_batches * 100
+
                 logger.info("TEST results: ")
                 logger.info("\t  test cost:        %s", test_cost)
                 logger.info("\t  test acc rate:  %s %%", test_acc)
@@ -1140,10 +1196,22 @@ class NeuralNetwork:
 
             if self.epochsNotImproved > 5:
                 logger.warning("\n\n NO MORE IMPROVEMENTS -> stop training")
-                test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles, runType=runType,
+                if self.loadPerSpeaker:
+                    test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles, runType=runType,
                                                                    sourceDataDir=database_binaryDir,
                                                                    storeProcessed=storeProcessed,
                                                                    processedDir=processedDir)
+                else:
+                    test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType='lipreading',
+                                                                                         images=allImages_test,
+                                                                                         mfccs=allMfccs_test,
+                                                                                         validLabels=allValidLabels_test,
+                                                                                         valid_frames=allValidAudioFrames_test,
+                                                                                         batch_size=1)
+                    test_cost /= nb_test_batches
+                    test_acc = test_acc / nb_test_batches * 100
+                    test_topk_acc = test_topk_acc / nb_test_batches * 100
+
                 logger.info("FINAL TEST results: ")
                 logger.info("\t  test cost:        %s", test_cost)
                 logger.info("\t  test acc rate:  %s %%", test_acc)
