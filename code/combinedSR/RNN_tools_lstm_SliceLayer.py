@@ -599,14 +599,14 @@ class NeuralNetwork:
         # now run through the epochs
 
         # # TODO: remove this
-        # test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles,
-        #                                               sourceDataDir=database_binaryDir,
-        #                                               storeProcessed=storeProcessed,
-        #                                               processedDir=processedDir)
-        # logger.info("TEST results: ")
-        # logger.info("\t  test cost:        %s", test_cost)
-        # logger.info("\t  test acc rate:  %s %%", test_acc)
-        # logger.info("\t  test top 3 acc:  %s %%", test_topk_acc)
+        test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles,
+                                                      sourceDataDir=database_binaryDir,
+                                                      storeProcessed=storeProcessed,
+                                                      processedDir=processedDir)
+        logger.info("TEST results: ")
+        logger.info("\t  test cost:        %s", test_cost)
+        logger.info("\t  test acc rate:  %s %%", test_acc)
+        logger.info("\t  test top 3 acc:  %s %%", test_topk_acc)
         # # TODO: end remove
 
 

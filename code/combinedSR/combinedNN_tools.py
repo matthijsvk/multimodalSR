@@ -34,8 +34,9 @@ class NeuralNetwork:
     def __init__(self, architecture, dataset=None,
                  batch_size=1, num_features=39, num_output_units=39,
                  lstm_hidden_list=(100,), bidirectional=True,
-                 cnn_network="google", dense_hidden_list=(512,),
-                 seed=int(time.time()), debug=False, logger=logger_combinedtools):
+                 cnn_network="google", cnn_features='dense', lipRNN_hidden_list=None,
+                 dense_hidden_list=(512,),
+                 seed=int(time.time()), debug=False, verbose=False, logger=logger_combinedtools):
 
         self.num_output_units = num_output_units
         self.num_features = num_features
@@ -60,15 +61,16 @@ class NeuralNetwork:
                 self.validLabels = pad_sequences_y(self.validLabels)
                 self.validAudioFrames = pad_sequences_y(self.validAudioFrames)
 
-                logger.debug('images.shape:          %s', len(self.images))
-                logger.debug('images[0].shape:       %s', self.images[0].shape)
-                logger.debug('images[0][0][0].type:  %s', type(self.images[0][0][0]))
-                logger.debug('y.shape:          %s', self.audioLabels.shape)
-                logger.debug('y[0].shape:       %s', self.audioLabels[0].shape)
-                logger.debug('y[0][0].type:     %s', type(self.audioLabels[0][0]))
-                logger.debug('masks.shape:      %s', self.masks.shape)
-                logger.debug('masks[0].shape:   %s', self.masks[0].shape)
-                logger.debug('masks[0][0].type: %s', type(self.masks[0][0]))
+                if verbose:
+                    logger.debug('images.shape:          %s', len(self.images))
+                    logger.debug('images[0].shape:       %s', self.images[0].shape)
+                    logger.debug('images[0][0][0].type:  %s', type(self.images[0][0][0]))
+                    logger.debug('y.shape:          %s', self.audioLabels.shape)
+                    logger.debug('y[0].shape:       %s', self.audioLabels[0].shape)
+                    logger.debug('y[0][0].type:     %s', type(self.audioLabels[0][0]))
+                    logger.debug('masks.shape:      %s', self.masks.shape)
+                    logger.debug('masks[0].shape:   %s', self.masks[0].shape)
+                    logger.debug('masks[0][0].type: %s', type(self.masks[0][0]))
 
             logger.info("NUM FEATURES: %s", num_features)
 
@@ -79,6 +81,8 @@ class NeuralNetwork:
             # TODO to evaluate the CNN, we need to flatten the self.validLabels.
             # CNN_test_loss, CNN_test_acc, CNN_top3_acc = self.CNNval_fn(self.images, self.validLabels.flatten())
 
+
+            ## AUDIO PART ##
             self.audio_inputs_var = T.tensor3('audio_inputs')
             self.audio_masks_var = T.matrix('audio_masks')
             self.audio_valid_frames_var = T.imatrix('valid_indices')
@@ -88,18 +92,41 @@ class NeuralNetwork:
                                     seed=seed, debug=debug, logger=logger)
             # audioNet_lout_flattened output shape: (nbValidFrames, 39)
 
+
+            ## LIPREADING PART ##
             self.CNN_input_var = T.tensor4('cnn_input')
             # batch size is number of valid frames in each video
             self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_CNN()
             # CNN_lout output shape = (nbValidFrames, 512x7x7)
 
-            self.lipreadingRNN_dict, self.lipreading_lout_features = self.build_lipreadingRNN(self.CNN_lout_features,[64,64], bidirectional=True)
+            # for CNN-LSTM combination networks
+            if lipRNN_hidden_list != None:  #add LSTM layers on top of the CNN
 
+                # input to LSTM network: conv features, or with dense softmax layer in between?
+                # direct conv outputs is 512x7x7 = 25.088 features -> huge networks. Might need to reduce size
+                if cnn_features == 'dense':
+                    self.lipreadingRNN_dict, self.lipreading_lout_features = self.build_lipreadingRNN(self.CNN_lout,
+                                                                                                      lipRNN_hidden_list)
+                else:
+                    self.lipreadingRNN_dict, self.lipreading_lout_features = self.build_lipreadingRNN(self.CNN_lout_features,
+                                                                                                      lipRNN_hidden_list)
+                # For lipreading only: input to softmax FC layer now not from conv layer, but from LSTM features that are put on top of the CNNs
+                self.lipreading_lout = self.build_CNN_FC(self.lipreading_lout_features)
+
+            else:  #only use the CNN
+                if cnn_features == 'dense':
+                    self.lipreading_lout_features = self.CNN_lout
+                else:
+                    self.lipreading_lout_features = self.CNN_lout_features
+                self. lipreading_lout = self.CNN_lout
+
+
+            ## COMBINED PART ##
             # batch size is number of valid frames in each video
-            self.combined_dict, self.combined_lout = self.build_combined(#lipreading_lout=self.CNN_lout_features,
-                                                                        lipreading_lout=self.lipreading_lout_features,
+            self.combined_dict, self.combined_lout = self.build_combined(lipreading_lout=self.lipreading_lout_features,
                                                                         audio_lout=self.audioNet_lout_features,
                                                                         dense_hidden_list=dense_hidden_list)
+            #import pdb;pdb.set_trace()
 
         else:
             print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
@@ -246,9 +273,9 @@ class NeuralNetwork:
         input = self.CNN_input_var
         nbClasses = self.num_output_units
 
+        cnnDict = {}
         # input
         # store each layer of the network in a dict, for quickly retrieving any layer
-        cnnDict = {}
         cnnDict['l0_in'] = lasagne.layers.InputLayer(
                 shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
                 input_var=input)
@@ -344,9 +371,9 @@ class NeuralNetwork:
         #         cnnDict['l6_conv6'][-1],
         #         nonlinearity=activation))
 
-        # this will output shape (nbValidFrames, 512,7,7). Flatten it.
-        batch_size = cnnDict['l0_in'].input_var.shape[0]
-        cnnDict['l6_reshape'] = L.ReshapeLayer(cnnDict['l5_conv5'][-1], (batch_size, 25088))
+        # # this will output shape (nbValidFrames, 512,7,7). Flatten it.
+        # batch_size = cnnDict['l0_in'].input_var.shape[0]
+        # cnnDict['l6_reshape'] = L.ReshapeLayer(cnnDict['l6_conv6'][-1], (batch_size, 25088))
 
         # disable this layer for normal phoneme recognition
         # FC layer
@@ -361,9 +388,7 @@ class NeuralNetwork:
         #         nonlinearity=activation))
 
 
-        # output layer
         cnnDict['l7_out'] = lasagne.layers.DenseLayer(
-                # cnnDict['l6_fc'][-1],
                 cnnDict['l5_conv5'][-1],
                 nonlinearity=lasagne.nonlinearities.softmax,
                 num_units=nbClasses)
@@ -375,14 +400,21 @@ class NeuralNetwork:
 
         return cnnDict, cnnDict['l7_out'], cnnDict['l6_reshape']
 
+    def build_CNN_FC(self, inputLayer, nbClasses=39):
+
+        softmaxLayer = lasagne.layers.DenseLayer(
+                inputLayer,
+                nonlinearity=lasagne.nonlinearities.softmax,
+                num_units=nbClasses)
+
+        return softmaxLayer
 
     def build_lipreadingRNN(self, inputLayer, n_hidden_list=(100,), bidirectional=True, debug=False):
 
         #CNN output: (time_seq, features)
         # LSTM need (batch_size, time_seq, features). Batch_size = # videos processed in parallel = 1
-
-        inputLayer = L.ReshapeLayer(inputLayer, (1, -1, 25088))
-        batch_size = 1
+        nbFeatures = inputLayer.output_shape[1]
+        inputLayer = L.ReshapeLayer(inputLayer, (1, -1, nbFeatures))# 39 or 25088  (with dense softmax or direct conv outputs)
 
         net = {}
 
@@ -442,6 +474,8 @@ class NeuralNetwork:
         return net, net['l3_reshape']  #output shape: (nbFrames, nbHiddenLSTMunits)
 
 
+
+
     def build_combined(self, lipreading_lout, audio_lout, dense_hidden_list):
 
         # (we process one video at a time)
@@ -469,7 +503,7 @@ class NeuralNetwork:
             nextDenseLayer = L.DenseLayer(input,
                                           nonlinearity=lasagne.nonlinearities.rectify,
                                           num_units=n_hidden)
-            nextDenseLayer = L.DropoutLayer(nextDenseLayer, p=0.5)# TODO does dropout work?
+            #nextDenseLayer = L.DropoutLayer(nextDenseLayer, p=0.3)# TODO does dropout work?
             combinedNet['l_dense'].append(nextDenseLayer)
 
         # final softmax layer
@@ -520,8 +554,6 @@ class NeuralNetwork:
 
     def load_model(self, model_type, model_path, logger=logger_combinedtools):
         try:
-            logger.info("Loading stored %s model...", model_type)
-
             # restore network weights
             with np.load(model_path) as f:
                 param_values = [f['arr_%d' % i] for i in range(len(f.files))]
@@ -529,10 +561,12 @@ class NeuralNetwork:
                     lout = self.audioNet_lout
                 elif model_type == 'CNN':
                     lout = self.CNN_lout
+                elif model_type == 'CNN_LSTM':
+                    lout = self.lipreading_lout
                 elif model_type == 'combined':
                     lout = self.combined_lout
                 else:
-                    logger.error('Wrong network type. No weights loaded'.format(model_type))
+                    logger.error('Wrong network type. No weights loaded')#.format(model_type))
                     return -1
                 try:
                     lasagne.layers.set_all_param_values(lout, *param_values)
@@ -543,7 +577,7 @@ class NeuralNetwork:
             return 0
 
         except IOError as e:
-            logger.warning('Error: %s \n Model: %s not found. No weights loaded', os.strerror(e.errno), model_path)
+            logger.warning('Warning: %s', os.strerror(e.errno))#, model_path)
             return -1
 
     def save_model(self, model_name, logger=logger_combinedtools):
@@ -559,7 +593,7 @@ class NeuralNetwork:
 
         inputs = self.CNN_input_var
         targets = self.targets_var  # 2D for the LSTM, but needs only 1D for the CNN -> need to flatten everywhere
-        l_out = self.CNN_lout
+        l_out = self.lipreading_lout
 
         # for validation: disable dropout etc layers -> deterministic
         test_network_output = L.get_output(l_out, deterministic=True)
@@ -694,13 +728,11 @@ class NeuralNetwork:
         ### For Combined part ##
         ########################
 
-        # TESTING #
-        RNN_features = L.get_output(self.audioNet_lout_features)
-        CNN_features = L.get_output(self.CNN_lout_features)
-        get_features = theano.function([self.CNN_input_var, self.audio_inputs_var, self.audio_masks_var,
-                                        self.audio_valid_frames_var], [RNN_features, CNN_features])
-
         if debug:
+            RNN_features = L.get_output(self.audioNet_lout_features)
+            CNN_features = L.get_output(self.CNN_lout_features)
+            get_features = theano.function([self.CNN_input_var, self.audio_inputs_var, self.audio_masks_var,
+                                            self.audio_valid_frames_var], [RNN_features, CNN_features])
             try:
                 RNN_feat, CNN_feat = get_features(self.images,
                                                   self.mfccs,
@@ -1060,7 +1092,14 @@ class NeuralNetwork:
 
                 self.best_cost = val_cost
                 self.best_epoch = self.curr_epoch
-                self.best_param = L.get_all_param_values(self.combined_lout)
+
+                # get the parameters of the model we're training
+                if runType == 'audio':       lout = self.audioNet_lout
+                elif runType == 'lipreading':  lout = self.lipreading_lout
+                elif runType == 'combined':    lout = self.combined_lout
+                else: raise IOError("can't save network params; network output not found")
+
+                self.best_param = L.get_all_param_values(lout)
                 logger.info("New best model found!")
                 if save_name is not None:
                     logger.info("Model saved as " + save_name)
@@ -1121,7 +1160,7 @@ class NeuralNetwork:
             last_cost = 10 * this_cost  # first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_cost / float(last_cost) >= 0.98:
+        if this_cost / float(last_cost) >= 0.99:
             logger.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_cost, last_cost, LR * LR_decay)
             self.epochsNotImproved += 1
             return LR * LR_decay

@@ -366,6 +366,7 @@ class NeuralNetwork:
                 # logger.debug('network_output[0]:     \n%s', n_out[0]);
 
             # # Function to determine the number of correct classifications
+            # which video, and which frames in the video
             valid_indices_example, valid_indices_seqNr = self.audio_masks_var.nonzero()
             valid_indices_fn = theano.function([self.audio_masks_var], [valid_indices_example, valid_indices_seqNr], name='valid_indices_fn')
 
@@ -387,6 +388,18 @@ class NeuralNetwork:
             self.valid_predictions2_fn = theano.function(
                     [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var],
                     valid_predictions2, name='valid_predictions_fn')
+
+            # Functions for computing cost and training
+            top1_acc = T.mean(lasagne.objectives.categorical_accuracy(
+                    valid_network_output_flattened, valid_targets, top_k=1))
+            self.top1_acc_fn = theano.function(
+                    [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
+                     self.audio_targets_var], top1_acc)
+            top3_acc = T.mean(lasagne.objectives.categorical_accuracy(
+                    valid_network_output_flattened, valid_targets, top_k=3))
+            self.top3_acc_fn = theano.function(
+                    [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
+                     self.audio_targets_var], top3_acc)
 
             if debug:
                 try:
@@ -410,32 +423,16 @@ class NeuralNetwork:
                     logger.debug('valid_out.shape: %s', valid_out.shape)
                     # logger.debug('valid_out, value: \n%s', valid_out)
 
-                    try:
-                        # Functions for computing cost and training
-                        top1_acc = T.mean(lasagne.objectives.categorical_accuracy(
-                                valid_network_output_flattened, valid_targets,  top_k=1))
-                        self.top1_acc_fn = theano.function(
-                                [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
-                                 self.audio_targets_var], top1_acc)
-                        top3_acc = T.mean(lasagne.objectives.categorical_accuracy(
-                                valid_network_output_flattened, valid_targets, top_k=3))
-                        self.top3_acc_fn = theano.function(
-                                [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
-                                 self.audio_targets_var], top3_acc)
+                    top1 = self.top1_acc_fn(self.X, self.masks, self.valid_frames, self.Y)
+                    logger.debug("top 1 accuracy: %s", top1*100.0)
 
-                        top1 = self.top1_acc_fn(self.X, self.masks, self.valid_frames, self.Y)
-                        logger.debug("top 1 accuracy: %s", top1*100.0)
+                    top3 = self.top3_acc_fn(self.X, self.masks, self.valid_frames, self.Y)
+                    logger.debug("top 3 accuracy: %s", top3*100.0)
 
-                        top3 = self.top3_acc_fn(self.X, self.masks, self.valid_frames, self.Y)
-                        logger.debug("top 3 accuracy: %s", top3*100.0)
-                    except Exception as e:
-                        print('caught this error: ' + traceback.format_exc());
-                        import pdb;
-                        pdb.set_trace()
 
                 except Exception as error:
                     print('caught this error: ' + traceback.format_exc());
-                    pdb.set_trace()
+                    import pdb; pdb.set_trace()
                 #pdb.set_trace()
 
             # only use the output at the middle of each phoneme interval (get better accuracy)
@@ -473,6 +470,7 @@ class NeuralNetwork:
         # since they will still have to give valid costs that can be multiplied by the mask.
         # The shape of predictions, targets and mask should match:
         # (predictions as (batch_size*max_seq_len, n_features), the other two as (batch_size*max_seq_len,)) -> we need to get the flattened output of the network for this
+
 
         # this works, using theano masks
         cost_pointwise = lasagne.objectives.categorical_crossentropy(network_output_flattened, target_var.flatten())
@@ -582,6 +580,11 @@ class NeuralNetwork:
 
         confusion_matrices = []
 
+        logger.info("Pass over Test Set")
+        test_cost, test_accuracy = self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
+        logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
+        logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy * 100))
+
         logger.info("\n* Starting training...")
         LR = LR_start
         self.best_cost = 100
@@ -607,6 +610,7 @@ class NeuralNetwork:
             logger.info("Learning Rate:\t\t{:.6f} %".format(LR))
             logger.info("Training cost:\t{:.6f}".format(train_cost))
             logger.info("Validation cost:\t{:.6f} ".format(validation_cost))
+            logger.info("Validation accuracy:\t\t{:.6f} %".format(validation_accuracy * 100))
             logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
             logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy*100))
 

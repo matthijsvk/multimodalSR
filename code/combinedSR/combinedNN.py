@@ -30,6 +30,8 @@ from combinedNN_tools import *
 from general_tools import *
 import preprocessingCombined
 
+#############################################################
+
 ##### SCRIPT META VARIABLES #####
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
@@ -39,22 +41,27 @@ num_epochs = 20
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 nbPhonemes = 39  # number output neurons
-LSTM_HIDDEN_LIST = [64,64]
+LSTM_HIDDEN_LIST = [256,256]
 BIDIRECTIONAL = True
 
+# lipreading
 CNN_NETWORK = "google"
-DENSE_HIDDEN_LIST = [512,256,256]
+# using CNN-LSTM combo: what to input to LSTM? direct conv outputs or first through dense layers?
+cnn_features = 'dense'  # 39 outputs as input to LSTM
+LIP_RNN_HIDDEN_LIST = [256,256]  # set to None to disable CNN-LSTM architecture
+
+# after concatenation of audio and lipreading, which dense layers before softmax?
+DENSE_HIDDEN_LIST = [2048,2048,512] #[128,128,128,128]
 
 # Decaying LR
-LR_start = 0.01
+LR_start = 0.1
 logger_combined.info("LR_start = %s", str(LR_start))
 LR_fin = 0.0000001
 logger_combined.info("LR_fin = %s", str(LR_fin))
 #LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)  # each epoch, LR := LR * LR_decay
-LR_decay= 0.5
+LR_decay= 0.707
 logger_combined.info("LR_decay = %s", str(LR_decay))
 
-#############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
 dataset = "TCDTIMIT"
 root_dir = os.path.expanduser('~/TCDTIMIT/combinedSR/' + dataset)
@@ -65,11 +72,20 @@ database_binaryDir = root_dir + '/binary'
 processedDir = database_binaryDir + "_finalProcessed"
 datasetType = "volunteers";
 
+# which part of the network to train/save/...
+# runType = 'audio'
+runType = 'lipreading'
+# runType = 'combined'
+###########################
+
 
 # audio network + cnnNetwork + classifierNetwork
 model_name = "RNN__" + str(len(LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in LSTM_HIDDEN_LIST]) \
-             + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") +  "_" \
-             + "CNN__" + CNN_NETWORK + "_" + '_'.join([str(layer) for layer in DENSE_HIDDEN_LIST]) + "__" + dataset + "_" + datasetType
+                     + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") +  "__" \
+             + "CNN_" + CNN_NETWORK \
+             + "_" "lipRNN_" + ('_'.join([str(layer) for layer in LIP_RNN_HIDDEN_LIST]) if LIP_RNN_HIDDEN_LIST != None else "")  + "__" \
+             + "FC_" + '_'.join([str(layer) for layer in DENSE_HIDDEN_LIST]) + "__" \
+             + dataset + "_" + datasetType
 model_load = os.path.join(store_dir, model_name + ".npz")
 model_save = os.path.join(store_dir, model_name)
 
@@ -82,12 +98,15 @@ audio_model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/"+audio_dataset+"/resul
 audio_model_path = os.path.join(audio_model_dir, audio_model_name + ".npz")
 
 # for loading stored lipreading models
-viseme = False; network_type = "google"
-lip_model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme") + str(nbPhonemes)
 lip_model_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/' + dataset + "/results"))
-lip_model_path = os.path.join(lip_model_dir, lip_model_name+".npz")
+viseme = False; network_type = "google"
+lip_CNN_model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme") + str(nbPhonemes)
+CNN_model_path = os.path.join(lip_model_dir, lip_CNN_model_name + ".npz")
 
-
+# for CNN-LSTM networks
+if LIP_RNN_HIDDEN_LIST != None:
+    lip_CNN_LSTM_model_name = lip_CNN_model_name + "_LSTM" + '_'.join([str(layer) for layer in LIP_RNN_HIDDEN_LIST])
+    lip_CNN_LSTM_model_path = os.path.join(lip_model_dir, lip_CNN_LSTM_model_name + ".npz")
 
 # log file
 logFile = store_dir + os.sep + model_name + '.log'
@@ -137,53 +156,84 @@ dataset_test, _, _ = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0]
                                                          storeProcessed=True,
                                                          processedDir=processedDir,
                                                          trainFraction=1.0, validFraction=0.0,
-                                                         verbose=True)
+                                                         verbose=False)
 # import pdb;pdb.set_trace()
 
 ##### BUIDING MODEL #####
-logger_combined.info('\n* Building network ...')
+logger_combined.info('\n\n* Building network ...')
 network = NeuralNetwork('combined', dataset_test,
                             num_features=nbMFCCs, lstm_hidden_list=LSTM_HIDDEN_LIST,
                             num_output_units=nbPhonemes, bidirectional=BIDIRECTIONAL,
-                            cnn_network=CNN_NETWORK,
+                            cnn_network=CNN_NETWORK, cnn_features = cnn_features,
+                            lipRNN_hidden_list=LIP_RNN_HIDDEN_LIST,
                             dense_hidden_list=DENSE_HIDDEN_LIST,
                             debug=False)
 
 # print number of parameters
-nb_params_CNN = lasagne.layers.count_params(network.CNN_lout_features)
-nb_params_RNN = lasagne.layers.count_params(network.audioNet_lout_features)
-nb_params = lasagne.layers.count_params(network.combined_lout)
-logger_combined.info(" # params CNN: %s", nb_params_CNN)
-logger_combined.info(" # params RNN: %s", nb_params_RNN)
-logger_combined.info(" # params combining: %s", nb_params - nb_params_CNN - nb_params_RNN)
-logger_combined.info(" # params whole network: %s", nb_params)
+nb_params_CNN_noDense   = lasagne.layers.count_params(network.CNN_lout_features)
+nb_params_CNN           = lasagne.layers.count_params(network.CNN_lout)
+nb_params_lipreading    = lasagne.layers.count_params(network.lipreading_lout_features)
+nb_params_RNN           = lasagne.layers.count_params(network.audioNet_lout_features)
+nb_params               = lasagne.layers.count_params(network.combined_lout)
+logger_combined.info(" # params lipreading Total: %s", nb_params_lipreading)
+
+if LIP_RNN_HIDDEN_LIST != None:
+    logger_combined.info(" # params lipRNN:           %s", nb_params_lipreading - nb_params_CNN)
+
+if cnn_features == 'dense':
+    logger_combined.info(" # params CNN:              %s", nb_params_CNN)
+else:
+    logger_combined.info(" # params CNN:              %s", nb_params_CNN_noDense)
+
+logger_combined.info(" # params audio LSTM:       %s", nb_params_RNN)
+logger_combined.info(" # params combining FC:     %s", nb_params - nb_params_lipreading - nb_params_RNN)
+logger_combined.info(" # params whole network:    %s", nb_params)
+
+
 
 # Try to load stored model
-logger_combined.info(' Network built. Trying to load stored model: %s', model_load)
+logger_combined.info(' Network built. \n\nTrying to load stored model: %s', model_load)
 success = network.load_model(model_type='combined', model_path=model_load)
 if success == -1:
     logger_combined.warning("No complete network found, loading parts...")
-    logger_combined.info("CNN : %s", lip_model_path)
-    logger_combined.info("RNN : %s", audio_model_path)
 
-    network.load_model(model_type='CNN', model_path=lip_model_path)
+    logger_combined.info("CNN : %s", CNN_model_path)
+    network.load_model(model_type='CNN', model_path=CNN_model_path)
+
+    if LIP_RNN_HIDDEN_LIST != None:
+        logger_combined.info("CNN_LSTM : %s", CNN_model_path)
+        network.load_model(model_type='CNN_LSTM', model_path=lip_CNN_LSTM_model_path)
+
+    logger_combined.info("RNN : %s", audio_model_path)
     network.load_model(model_type='RNN', model_path=audio_model_path)
 
 
 ##### COMPILING FUNCTIONS #####
-logger_combined.info("\n* Compiling functions ...")
+logger_combined.info("\n\n* Compiling functions ...")
 network.build_functions(train=True, debug=False)
 
 ##### TRAINING #####
-logger_combined.info("\n* Training ...")
+logger_combined.info("\n\n* Training ...")
 
-network.train(datasetFiles, database_binaryDir=database_binaryDir, runType='combined',
+if runType == 'audio':                model_save = audio_model_path
+elif runType == 'lipreading':
+    if LIP_RNN_HIDDEN_LIST != None:     model_save = lip_CNN_LSTM_model_path
+    else:                               model_save = CNN_model_path
+elif runType == 'combined':             model_save = model_load
+else: raise IOError("can't save network params; network output not found")
+
+### test ###
+model_save = model_save.replace(".npz","")
+model_save = model_save + "__test.npz"
+###
+
+network.train(datasetFiles, database_binaryDir=database_binaryDir, runType=runType,
                   storeProcessed=True, processedDir=processedDir,
                   num_epochs=num_epochs,
                   batch_size=batch_size_audio, LR_start=LR_start, LR_decay=LR_decay,
                   compute_confusion=False, debug=True, save_name=model_save)
 
-logger_combined.info("\n* Done")
+logger_combined.info("\n\n* Done")
 logger_combined.info('Total time: {:.3f}'.format(time.time() - program_start_time))
 
 

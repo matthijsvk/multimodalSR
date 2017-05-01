@@ -34,12 +34,12 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 256
+batch_size = 80
 num_epochs = 50
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 nbPhonemes = 39  # number output neurons
-N_HIDDEN_LIST = [64,64]
+N_HIDDEN_LIST = [256,256]
 MAX_SEQ_LENGTH = 1000
 
 BIDIRECTIONAL = True
@@ -56,7 +56,7 @@ logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-dataset = "TCDTIMIT"
+dataset = "combined"
 root = os.path.expanduser("~/TCDTIMIT/audioSR/")
 store_dir = root + dataset + "/results"
 if not os.path.exists(store_dir): os.makedirs(store_dir)
@@ -67,7 +67,7 @@ data_path = os.path.join(dataDir, dataset + '_' + str(nbMFCCs) + '_ch.pkl');
 
 model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) \
              + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if BIDIRECTIONAL else "_unidirectional") + \
-("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset + "__TESTSliceLayer"
+("_withDenseLayers" if ADD_DENSE_LAYERS else "") + "_" + dataset
 
 
 # model parameters and network_training_info
