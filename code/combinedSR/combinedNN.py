@@ -32,11 +32,13 @@ import preprocessingCombined
 
 #############################################################
 
+
+
 ##### SCRIPT META VARIABLES #####
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size_audio = 1
+batch_size_audio = 1  #only works processing 1 video at a time. The lipreading CNN then processes as a batch all the images in this video
 num_epochs = 20
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
@@ -48,10 +50,10 @@ BIDIRECTIONAL = True
 CNN_NETWORK = "google"
 # using CNN-LSTM combo: what to input to LSTM? direct conv outputs or first through dense layers?
 cnn_features = 'conv' #'dense' # 39 outputs as input to LSTM
-LIP_RNN_HIDDEN_LIST = None#[256,256]  # set to None to disable CNN-LSTM architecture
+LIP_RNN_HIDDEN_LIST = None #[256,256]  # set to None to disable CNN-LSTM architecture
 
 # after concatenation of audio and lipreading, which dense layers before softmax?
-DENSE_HIDDEN_LIST = [2048,2048,512] #[128,128,128,128]
+DENSE_HIDDEN_LIST = [128,64,64] #[128,128,128,128]
 
 # Decaying LR
 LR_start = 0.001
@@ -65,12 +67,13 @@ logger_combined.info("LR_decay = %s", str(LR_decay))
 # Set locations for DATA, LOG, PARAMETERS, TRAIN info
 dataset = "TCDTIMIT"
 root_dir = os.path.expanduser('~/TCDTIMIT/combinedSR/' + dataset)
-store_dir = root_dir + "/results"
-if not os.path.exists(store_dir): os.makedirs(store_dir)
-
 database_binaryDir = root_dir + '/binary'
 processedDir = database_binaryDir + "_finalProcessed"
-datasetType = "lipspeakers" #""volunteers";
+
+datasetType = "lipspeakers"  # ""volunteers";
+
+store_dir = root_dir + os.sep + "results" + os.sep + ("CNN_LSTM" if LIP_RNN_HIDDEN_LIST != None else "CNN") + os.sep + datasetType
+if not os.path.exists(store_dir): os.makedirs(store_dir)
 
 # which part of the network to train/save/...
 # runType = 'audio'

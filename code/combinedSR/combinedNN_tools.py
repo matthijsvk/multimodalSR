@@ -594,7 +594,7 @@ class NeuralNetwork:
         ##########################
 
         # Targets are 2D for the LSTM, but needs only 1D for the CNN -> need to flatten everywhere
-        
+        import pdb;pdb.set_trace()
         # For information: only CNN classification, with softmax to 39 phonemes
         CNN_test_network_output = L.get_output(self.CNN_lout, deterministic=True)
         CNN_test_loss = LO.categorical_crossentropy(CNN_test_network_output, self.targets_var.flatten());
