@@ -214,7 +214,7 @@ if success == -1:
 
 ##### COMPILING FUNCTIONS #####
 logger_combined.info("\n\n* Compiling functions ...")
-network.build_functions(train=True, debug=False)
+network.build_functions(train=True, debug=True)
 
 ##### TRAINING #####
 logger_combined.info("\n\n* Training ...")
