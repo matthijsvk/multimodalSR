@@ -507,7 +507,11 @@ class NeuralNetwork:
             combinedNet['l_dense'].append(nextDenseLayer)
 
         # final softmax layer
-        combinedNet['l_out'] = L.DenseLayer(combinedNet['l_dense'][-1], num_units=self.num_output_units,
+        if len(combinedNet['l_dense']) == 0:  #if no hidden layers
+            combinedNet['l_out'] = L.DenseLayer(combinedNet['l_concat'], num_units=self.num_output_units,
+                                            nonlinearity=lasagne.nonlinearities.softmax)
+        else:
+            combinedNet['l_out'] = L.DenseLayer(combinedNet['l_dense'][-1], num_units=self.num_output_units,
                                             nonlinearity=lasagne.nonlinearities.softmax)
 
         return combinedNet, combinedNet['l_out']
@@ -553,6 +557,7 @@ class NeuralNetwork:
                     print('  %12s \nout: %s' % (cnnDict[key], cnnDict[key].output_shape))
         return 0
 
+    # return True if successful load, false otherwise
     def load_model(self, model_type, model_path, logger=logger_combinedtools):
         try:
             # restore network weights
@@ -568,18 +573,18 @@ class NeuralNetwork:
                     lout = self.combined_lout
                 else:
                     logger.error('Wrong network type. No weights loaded')#.format(model_type))
-                    return -1
+                    return False
                 try:
                     lasagne.layers.set_all_param_values(lout, *param_values)
                 except:
                     lasagne.layers.set_all_param_values(lout, param_values)
 
             logger.info("Loading parameters successful.")
-            return 0
+            return True
 
         except IOError as e:
             logger.warning('Warning: %s', os.strerror(e.errno))#, model_path)
-            return -1
+            return False
 
     def save_model(self, model_name, logger=logger_combinedtools):
         if not os.path.exists(os.path.dirname(model_name)):
@@ -594,7 +599,7 @@ class NeuralNetwork:
         ##########################
 
         # Targets are 2D for the LSTM, but needs only 1D for the CNN -> need to flatten everywhere
-        import pdb;pdb.set_trace()
+        #import pdb;pdb.set_trace()
         # For information: only CNN classification, with softmax to 39 phonemes
         CNN_test_network_output = L.get_output(self.CNN_lout, deterministic=True)
         CNN_test_loss = LO.categorical_crossentropy(CNN_test_network_output, self.targets_var.flatten());
@@ -1020,31 +1025,7 @@ class NeuralNetwork:
         trainingSpeakerFiles, testSpeakerFiles = dataset
         logger.info("\n* Starting training...")
 
-        # try to load performance metrics of stored model
-        best_val_acc = 0
-        test_topk_acc = 0
-        test_cost = 0
-        test_acc = 0
-        try:
-            if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
-                old_train_info = unpickle(save_name + '_trainInfo.pkl')
-                # backward compatibility
-                if type(old_train_info) == list:
-                    old_train_info = old_train_info[0]
-                    best_val_acc = max(old_train_info[2])
-                    test_cost = min(old_train_info[3])
-                    test_acc = max(old_train_info[3])
-                elif type(old_train_info) == dict:  # normal case
-                    best_val_acc = max(old_train_info['val_acc'])
-                    test_cost = min(old_train_info['test_cost'])
-                    test_acc = max(old_train_info['test_acc'])
-                    try:
-                        test_topk_acc = max(old_train_info['test_topk_acc'])
-                    except: pass
-                else:
-                    logger.warning("old trainInfo found, but wrong format: %s", save_name + "_trainInfo.pkl")
-                    # do nothing
-        except: pass
+        best_val_acc, test_acc = self.loadPreviousResults(save_name)
 
         logger.info("Initial best Val acc: %s", best_val_acc)
         logger.info("Initial best test acc: %s\n", test_acc)
@@ -1207,29 +1188,84 @@ class NeuralNetwork:
 
             if self.epochsNotImproved > 5:
                 logger.warning("\n\n NO MORE IMPROVEMENTS -> stop training")
-                if self.loadPerSpeaker:
-                    test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles, runType=runType,
-                                                                   sourceDataDir=database_binaryDir,
-                                                                   storeProcessed=storeProcessed,
-                                                                   processedDir=processedDir)
-                else:
-                    test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
-                                                                                         images=allImages_test,
-                                                                                         mfccs=allMfccs_test,
-                                                                                         validLabels=allValidLabels_test,
-                                                                                         valid_frames=allValidAudioFrames_test,
-                                                                                         batch_size=1)
-                    test_cost /= nb_test_batches
-                    test_acc = test_acc / nb_test_batches * 100
-                    test_topk_acc = test_topk_acc / nb_test_batches * 100
 
-                logger.info("FINAL TEST results: ")
-                logger.info("\t  test cost:        %s", test_cost)
-                logger.info("\t  test acc rate:  %s %%", test_acc)
-                logger.info("\t  test top 3 acc:  %s %%", test_topk_acc)
+                self.finalNetworkEvaluation(database_binaryDir, processedDir, runType,
+                                            storeProcessed, testSpeakerFiles)
+
                 break
 
         logger.info("Done.")
+
+    def loadPreviousResults(self, save_name, logger=logger_combinedtools):
+        # try to load performance metrics of stored model
+        best_val_acc = 0
+        test_topk_acc = 0
+        test_cost = 0
+        test_acc = 0
+        try:
+            if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
+                old_train_info = unpickle(save_name + '_trainInfo.pkl')
+                # backward compatibility
+                if type(old_train_info) == list:
+                    old_train_info = old_train_info[0]
+                    best_val_acc = max(old_train_info[2])
+                    test_cost = min(old_train_info[3])
+                    test_acc = max(old_train_info[3])
+                elif type(old_train_info) == dict:  # normal case
+                    best_val_acc = max(old_train_info['val_acc'])
+                    test_cost = min(old_train_info['test_cost'])
+                    test_acc = max(old_train_info['test_acc'])
+                    try:
+                        test_topk_acc = max(old_train_info['test_topk_acc'])
+                    except:
+                        pass
+                else:
+                    logger.warning("old trainInfo found, but wrong format: %s", save_name + "_trainInfo.pkl")
+                    # do nothing
+        except:
+            pass
+        return best_val_acc, test_acc
+
+    # evaluate network on test set.
+    # Combined network  -> evaluate audio, lipreading and then combined network
+    # Audio network     -> evaluate audio
+    # Lipreading        -> evaluate lipreading
+    def finalNetworkEvaluation(self, save_name, database_binaryDir, processedDir, runType, testSpeakerFiles, storeProcessed=False,  logger=logger_combinedtools):
+        logger.info(" \n\n Running FINAL evaluation on Test set... (%s network type)", runType)
+
+        store_path = save_name + '_trainInfo.pkl'  #dictionary with lists that contain training info for each epoch (train/val/test accuracy, cost etc)
+        self.network_train_info = unpickle(store_path)
+        # for the lipspeaker files that are all loaded in memory at once, we still need to get the data
+        if not self.loadPerSpeaker:  # load all the lipspeakers in memory, then don't touch the files -> no reloading needed = faster
+            allImages_test, allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
+                    os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTest.pkl"))
+
+        if self.loadPerSpeaker:
+            test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles, runType=runType,
+                                                               sourceDataDir=database_binaryDir,
+                                                               storeProcessed=storeProcessed,
+                                                               processedDir=processedDir)
+        else:
+            test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
+                                                                                 images=allImages_test,
+                                                                                 mfccs=allMfccs_test,
+                                                                                 validLabels=allValidLabels_test,
+                                                                                 valid_frames=allValidAudioFrames_test,
+                                                                                 batch_size=1)
+            test_cost /= nb_test_batches
+            test_acc = test_acc / nb_test_batches * 100
+            test_topk_acc = test_topk_acc / nb_test_batches * 100
+
+        logger.info("FINAL TEST results on %s: ", runType)
+        logger.info("\t  %s test cost:        %s", runType, test_cost)
+        logger.info("\t  %s test acc rate:  %s %%", runType, test_acc)
+        logger.info("\t  %s test top 3 acc:  %s %%", runType, test_topk_acc)
+
+        self.network_train_info['final_test_cost'] = test_cost
+        self.network_train_info['final_test_acc'] = test_acc
+        self.network_train_info['final_test_top3_acc'] = test_topk_acc
+
+        saveToPkl(store_path, self.network_train_info)
 
     def updateLR(self, LR, LR_decay, logger=logger_combinedtools):
         this_cost = self.network_train_info['val_cost'][-1]
@@ -1239,7 +1275,7 @@ class NeuralNetwork:
             last_cost = 10 * this_cost  # first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_cost / float(last_cost) >= 0.99:
+        if this_cost / float(last_cost) >= 0.98:
             logger.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_cost, last_cost, LR * LR_decay)
             self.epochsNotImproved += 1
             return LR * LR_decay
