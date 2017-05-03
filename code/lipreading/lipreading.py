@@ -95,7 +95,7 @@ def main():
     # otherwise we need to load and generate each speaker seperately in the training loop
     dataset = "TCDTIMIT"
     root_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/'+dataset))
-    results_dir = root_dir + "/results";
+    results_dir = root_dir + "/results/CNN";
     if not os.path.exists(results_dir): os.makedirs(results_dir)
     if viseme: database_binaryDir = root_dir + '/binaryViseme'
     else:      database_binaryDir = root_dir + '/binary'
