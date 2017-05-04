@@ -1,0 +1,70 @@
+\vspace*{-1cm}\hspace*{-1cm}
+\begin{minipage}{0.5\textwidth}
+\textsc{Faculteit}\\ \textsc{Ingenieurswetenschappen}\\
+\\
+\textsc{Departement}\\
+\textsc{Elektrotechniek -- ESAT}
+\end{minipage}\hfill%
+\ifthenelse{\boolean{energie}}{%extra  stuk  uit  versie  0.5a,  om te  compenseren  voor  de  gekke
+                               %plaatsing van de sedes (met dank aan Joost Busschaert). Tijdelijke fix
+\begin{minipage}{0.2\textwidth}
+ \begin{flushright}
+ \includegraphics[width=2cm]{sedes}
+ \setlength{\unitlength}{1mm}
+ \begin{picture}(28.5,2)
+  \put(0,0){\line(1,0){28.5}}
+ \end{picture}
+ KATHOLIEKE\\UNIVERSITEIT\\LEUVEN
+ \end{flushright}
+ \end{minipage}
+}{\begin{minipage}{0.3\textwidth}
+ \begin{flushright}
+ \includegraphics[width=2cm]{sedes}
+ \setlength{\unitlength}{1mm}
+ \begin{picture}(28.5,2)
+  \put(0,0){\line(1,0){28.5}}
+ \end{picture}
+ KATHOLIEKE\\UNIVERSITEIT\\LEUVEN
+ \end{flushright}
+ \end{minipage}
+}
+
+\vfill
+\pagestyle{empty}
+
+\begin{center}
+\begin{Huge}
+\textsf{\TITEL}\\[4mm]
+\end{Huge}
+\begin{LARGE}
+  \textsf{\SUBTITEL}
+\end{LARGE}
+\end{center}
+\vfill
+\begin{tabular}{p{0.49\textwidth}p{0.5\textwidth}}
+   & Eindwerk voorgedragen tot het behalen van het diploma van
+   \RICHTING\\
+   & \\
+   & \begin{Large}\textbf{\NAAM}\end{Large}\\
+%  & \begin{Large}\textbf{\NAAMb}\end{Large}\\
+   & \\
+   & Promotor:\\
+   & \hspace{4mm}\begin{large}\PROMOTOR\end{large}\\
+%  & \hspace{4mm}\begin{large}\PROMOTORb\end{large}\\
+   & Dagelijkse begeleiding:\\
+   & \hspace{4mm}\begin{large}\BEGELEIDER\end{large}\\
+%  & \hspace{4mm}\begin{large}\BEGELEIDERb\end{large}\\
+\end{tabular}
+\\
+\\
+\\
+\begin{center}
+\JAAR
+\end{center}
+
+\cleardoublepage
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "eindwerk_template"
+%%% End: 

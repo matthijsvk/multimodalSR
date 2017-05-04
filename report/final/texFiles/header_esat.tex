@@ -1,0 +1,149 @@
+% filename: header_esat.tex
+% auteur: Dirk Van Hertem (dirk.vanhertem@ieee.org)
+% deze  file zorgt dat de juiste  opties gezet zijn. Een  aantal opties staan niet  default, maar ik
+% raad je aan ze eens te bekijken, en indien gewenst te gebruiken.
+
+
+\tightlists % weinig extra witruimte bij opsommingen (memoir optie)
+
+\usepackage[english,dutch]{babel} % nederlandse tekstopmaak % english
+                                % toegevoegd in versie 0.4
+
+\usepackage{graphicx} % Gebruik figuren
+\graphicspath{{figuren/}}
+\usepackage{tabularx} % maak een tabel met een bepaalde breedte (gebruikt in symbolenlijst.tex)
+\usepackage{microtype} % toegevoegd in versie 0.4
+\usepackage{ifthen}% toegevoegd in versie 0.5
+\usepackage{calc}% nieuw in 0.6b om te kunnen rekenen in deze header
+% \newboolean{fourierfont} % nieuw in versie 0.6b, op aanraden van Benoit Willems, naar 2009 toe zou ik
+%                          % fourier  standaard willen zetten, maar  voorlopig nog niet  om geen grote
+%                          %   veranderingen   te   krijgen    vlak   voor   de   deadline.   Vervangt
+% % \usepackage{fourier} in commentaar ==> werkt nog niet, voor de volgende keer...
+% \setboolean{fourierfont}{true}
+
+% %\ifthenelse{\boolean{fourierfont}}{%
+
+%%%%%%%%%%%%%%%%%%%%%
+%%% Als je fourier wilt, uncomment de volgende regio:
+%%%%%%%%%%%%%%%%%%%%%
+%\makeatletter
+%\let\my@@font@warning\@font@warning
+%\let\@font@warning\@font@info
+%\makeatother%
+%\usepackage{fourier}%
+%\makeatletter
+%\let\@font@warning\my@@font@warning
+%\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%
+% inputenc
+%%%%%%%%%%%%%%%%%%%%
+% inputenc is afhankelijk van uw systeem (en os). Waarschijnlijk maakt
+% een van de volgende \usepackage[]{inputenc} dat alles goed
+% opgeslagen kan worden. Waarschijnlijk heb je latin1 nodig. \'e werkt altijd...
+
+%\usepackage[latin1]{inputenc} % zorgt dat je ook é ë en dergelijke kan ingeven
+%\usepackage[utf8]{inputenc} % zorgt dat je ook é ë en dergelijke kan ingeven
+
+%%%%%%%%%%%%%%%%%%%%
+% andere mogelijk nuttige pakketten
+%%%%%%%%%%%%%%%%%%%%
+
+% \usepackage{subfig}   % Gebruik subfiguren
+% \usepackage{color}    % Gebruik kleuren
+% \usepackage{icomma}   % zet de spatiëring goed bij kommagetallen (Europeese notatie)
+% \usepackage{amssymb,amsmath,amsfonts} % extra wiskundige symbolen en
+% constructies
+% \usepackage{eurosym}  % \euro geeft het euroteken
+% \usepackage{cite}     % verbetert de weergave van citaties 
+% \usepackage{listings} % om code toe te voegen in uw document
+% \usepackage{booktabs} % toegevoegd in version 0.4
+
+
+% De volgende opties bepalen hoe figuren op een blad geplaatst moeten worden. Lees het volgende document voor meer informatie: http://www.ctan.org/tex-archive/info/epslatex.pdf
+
+\setcounter{topnumber}{4}
+\setcounter{bottomnumber}{4}
+\setcounter{totalnumber}{10}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.70}
+\renewcommand{\floatpagefraction}{0.66}
+
+% Opmerking: het volgende  stuk definieert de pagina opmaak. Indien de  keuze energie genomen wordt,
+% dan wordt een opmaak met anderhalve regelafstand  genomen. Ofdat dit zinvol is, dat laat ik in het
+% midden, de mensen die twijfelen lezen best de volgende url:
+% http://www.tex.ac.uk/cgi-bin/texfaq2html?label=linespace. 
+% De opmaak van energie heeft ook iets minder witruimte aan de randen. 
+% Veranderen van opmaak kan simpelweg door de  waarde van \energie (zie regel na deze commentaar) de
+% waarde "true" of "false" te geven.
+\newboolean{energie}
+\setboolean{energie}{false}
+
+\ifthenelse{\boolean{energie}}% versie 0.6
+{% deze optie is ook versie 0.6
+% zet de pagina op (zie memman.pdf p 66)
+\settrimmedsize{297mm}{210mm}{*}%
+\setlength{\trimtop}{0pt}%
+\setlength{\trimedge}{\stockwidth}%
+\addtolength{\trimedge}{-\paperwidth}%
+\settypeblocksize{654pt}{455pt}{*}% Van 634 naar 694 pt in versie 0.7
+\setulmarginsandblock{2cm+\onelineskip+1.5\onelineskip}{2.65cm}{*}% Aanpassing 0.7
+\setlrmargins{*}{*}{0.9}% verhouding buitenkantmarge/rugmarge. Verzet
+% van 1.5 naar 0.9 vanaf versie 0.4
+\setmarginnotes{17pt}{51pt}{\onelineskip}%
+\setheadfoot{\onelineskip}{2\onelineskip}%
+\setheaderspaces{*}{1.5\onelineskip}{*}% Aangepast versie 0.7
+%
+%zorg ervoor dat TOC niet te breed wordt:
+%\setpnumwidth{2.5em}
+%\setrmarg{3em} 
+%
+\checkandfixthelayout%
+\OnehalfSpacing%
+}%
+{%
+% zet de pagina op (zie memman.pdf p 66)
+\settrimmedsize{297mm}{210mm}{*}%
+\setlength{\trimtop}{0pt}%
+\setlength{\trimedge}{\stockwidth}%
+\addtolength{\trimedge}{-\paperwidth}%
+\settypeblocksize{634pt}{448.13pt}{*}%
+\setulmargins{4cm}{*}{*}%
+\setlrmargins{*}{*}{0.9}% verhouding buitenkantmarge/rugmarge. Verzet
+% van 1.5 naar 0.9 vanaf versie 0.4
+\setmarginnotes{17pt}{51pt}{\onelineskip}%
+\setheadfoot{\onelineskip}{2\onelineskip}%
+\setheaderspaces{*}{2\onelineskip}{*}%
+%
+%zorg ervoor dat TOC niet te breed wordt:
+%\setpnumwidth{2.5em}
+%\setrmarg{3em} 
+%
+\checkandfixthelayout%
+}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5\baselineskip}
+\setlength{\cftbeforechapterskip}{0pt}
+
+% Voor de nummeringsdiepte te veranderen: met level 4 nummer je ook subsecties
+\setcounter{secnumdepth}{4} % default gemaakt in versie 0.4
+%\setcounter{tocdepth}{4}
+\usepackage[hypertexnames=false]{hyperref} % geeft links zodat je een
+                                % interactief document krijgt (zeer
+                                % interessant als je het ooit online
+                                % zet) 
+
+% % caption maar 0.8  \textwidth breed maken, en normaal lettertype (dit was reeds  zo, maar nu kun je
+% % zien wat je kan veranderen indien nodig) (versie 0.7)
+% \changecaptionwidth
+% \captionwidth{0.8\textwidth}
+% %\normalcaptionwidth
+% \captiontitlefont{\normalsize} ==> werkt nog niet, later nog eens zien
+
+\usepackage{memhfixc}  % anders krijg je een error (memoir samen met hyperref...)
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "eindwerk_template"
+%%% End: 
