@@ -34,7 +34,7 @@ class NeuralNetwork:
     def __init__(self, architecture, dataset=None, loadPerSpeaker = True,
                  batch_size=1, num_features=39, num_output_units=39,
                  lstm_hidden_list=(100,), bidirectional=True,
-                 cnn_network="google", cnn_features='dense', lipRNN_hidden_list=None,
+                 cnn_network="google", cnn_features='dense', lipRNN_hidden_list=None, lipRNN_bidirectional=True,
                  dense_hidden_list=(512,),
                  seed=int(time.time()), model_paths={}, debug=False, verbose=False, logger=logger_combinedtools):
 
@@ -108,10 +108,12 @@ class NeuralNetwork:
                 # direct conv outputs is 512x7x7 = 25.088 features -> huge networks. Might need to reduce size
                 if cnn_features == 'dense':
                     self.lipreadingRNN_dict, self.lipreading_lout_features = self.build_lipreadingRNN(self.CNN_lout,
-                                                                                                      lipRNN_hidden_list)
+                                                                                                      lipRNN_hidden_list,
+                                                                                                      bidirectional=lipRNN_bidirectional)
                 else:
                     self.lipreadingRNN_dict, self.lipreading_lout_features = self.build_lipreadingRNN(self.CNN_lout_features,
-                                                                                                      lipRNN_hidden_list)
+                                                                                                      lipRNN_hidden_list,
+                                                                                                      bidirectional=lipRNN_bidirectional)
                 # For lipreading only: input to softmax FC layer now not from conv layer, but from LSTM features that are put on top of the CNNs
                 self.lipreading_lout = self.build_softmax(self.lipreading_lout_features)
 
@@ -571,33 +573,35 @@ class NeuralNetwork:
 
     # return True if successful load, false otherwise
     def load_model(self, model_type, logger=logger_combinedtools):
-        try:
-            # restore network weights
-            with np.load(self.model_paths[model_type]) as f:
-                param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-                if model_type == 'audio':
-                    lout = self.audioNet_lout
-                elif model_type == 'CNN':
-                    lout = self.CNN_lout
-                elif model_type == 'CNN_LSTM':
-                    lout = self.lipreading_lout
-                elif model_type == 'combined':
-                    lout = self.combined_lout
-                else:
-                    logger.error('Wrong network type. No weights loaded')#.format(model_type))
-                    return False
+        if not os.path.exists(self.model_paths[model_type]):
+            return False
+
+        # restore network weights
+        with np.load(self.model_paths[model_type]) as f:
+            param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+            if model_type == 'audio':
+                lout = self.audioNet_lout
+            elif model_type == 'CNN':
+                lout = self.CNN_lout
+            elif model_type == 'CNN_LSTM':
+                lout = self.lipreading_lout
+            elif model_type == 'combined':
+                lout = self.combined_lout
+            else:
+                logger.error('Wrong network type. No weights loaded')#.format(model_type))
+                return False
+            try:
+                lasagne.layers.set_all_param_values(lout, param_values)
+            except:
                 try:
                     lasagne.layers.set_all_param_values(lout, *param_values)
                 except:
+                    logger.warning('Warning: %s', traceback.format_exc())  # , model_path)
                     import pdb;pdb.set_trace()
-                    lasagne.layers.set_all_param_values(lout, param_values)
 
-            logger.info("Loading %s parameters successful.", model_type)
-            return True
+        logger.info("Loading %s parameters successful.", model_type)
+        return True
 
-        except IOError as e:
-            logger.warning('Warning: %s', os.strerror(e.errno))#, model_path)
-            return False
 
     # set as many network parameters as possible by hierarchical loading of subnetworks
     # eg for combined: if no traied combined network, try to load subnets of audio and lipreading
@@ -613,7 +617,7 @@ class NeuralNetwork:
                 self.load_model(model_type='CNN')
 
                 if self.lipreadingType == 'CNN_LSTM':  # LIP_RNN_HIDDEN_LIST != None:
-                    logger.info("CNN_LSTM : %s", self.model_paths['CNN'])
+                    logger.info("CNN_LSTM : %s", self.model_paths['CNN_LSTM'])
                     self.load_model(model_type='CNN_LSTM')
 
                 logger.info("Audio : %s", self.model_paths['audio'])
@@ -628,10 +632,10 @@ class NeuralNetwork:
                 #try to load CNN_LSTM; if not works just load the CNN so you can train the LSTM based on that
                 success = self.load_model(model_type='CNN_LSTM')
                 if not success:
+                    logger.warning("No complete network found, loading parts...")
                     self.load_model(model_type='CNN')
             else:
-                logger.info("\nAttempting to load lipreading CNN model: %s",
-                            self.model_paths['CNN'])
+                logger.info("\nAttempting to load lipreading CNN model: %s",   self.model_paths['CNN'])
                 success = self.load_model(model_type='CNN')
 
         else: ## runType == 'audio':
@@ -851,6 +855,11 @@ class NeuralNetwork:
 
             # set all params to trainable
             combined_params = L.get_all_params(self.combined_lout, trainable=True)
+
+            # remove subnet parameters so they are kept fixed (already pretrained)
+            combined_params = list(set(combined_params) - set(L.get_all_params(self.CNN_lout, trainable=True)))
+            combined_params = list(set(combined_params) - set(L.get_all_params(self.audioNet_lout, trainable=True)))
+
             combined_updates = lasagne.updates.adam(loss_or_grads=combined_loss, params=combined_params, learning_rate=self.LR_var)
 
             self.combined_train_fn = theano.function([self.CNN_input_var,self.audio_inputs_var, self.audio_masks_var,
@@ -1208,7 +1217,7 @@ class NeuralNetwork:
                 self.best_epoch = self.curr_epoch
 
                 # get the parameters of the model we're training
-                if runType == 'audio':       lout = self.audioNet_lout
+                if runType == 'audio':         lout = self.audioNet_lout
                 elif runType == 'lipreading':  lout = self.lipreading_lout
                 elif runType == 'combined':    lout = self.combined_lout
                 else: raise IOError("can't save network params; network output not found")
@@ -1344,14 +1353,17 @@ class NeuralNetwork:
         saveToPkl(store_path, self.network_train_info)
 
     def updateLR(self, LR, LR_decay, logger=logger_combinedtools):
+        this_acc = self.network_train_info['val_acc'][-1]
         this_cost = self.network_train_info['val_cost'][-1]
         try:
+            last_acc = self.network_train_info['val_acc'][-2]
             last_cost = self.network_train_info['val_cost'][-2]
         except:
+            last_acc = -10
             last_cost = 10 * this_cost  # first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_cost / float(last_cost) >= 0.98:
+        if this_cost / float(last_cost) >= 0.98 and this_acc-last_acc < 0.2:
             logger.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_cost, last_cost, LR * LR_decay)
             self.epochsNotImproved += 1
             return LR * LR_decay

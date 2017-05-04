@@ -34,13 +34,13 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_size = 128 #50
+batch_sizes = [20]#64,32]#[256,128,64,32]
 num_epochs = 20
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 nbPhonemes = 39  # number output neurons
-N_HIDDEN_LIST = [256,256]
-MAX_SEQ_LENGTH = 1000
+N_HIDDEN_LIST = [512,512]#[1024,1024]
+    # Done: [64], [256,256]
 
 BIDIRECTIONAL = True
 ADD_DENSE_LAYERS = False
@@ -51,7 +51,7 @@ logger_RNN.info("LR_start = %s", str(LR_start))
 LR_fin = 0.0000001
 logger_RNN.info("LR_fin = %s", str(LR_fin))
 # LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)  # each epoch, LR := LR * LR_decay
-LR_decay= 0.707
+LR_decay= 0.5
 logger_RNN.info("LR_decay = %s", str(LR_decay))
 
 #############################################################
@@ -119,30 +119,36 @@ logger_RNN.info('  %s %s', type(valid_frames_train[0]), valid_frames_train[0].sh
 logger_RNN.info('  %s %s', type(valid_frames_train[0][0]), valid_frames_train[0][0].shape)
 
 ##### BUIDING MODEL #####
-logger_RNN.info('\n* Building network ...')
-RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size,
-                            num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
-                            num_output_units=nbPhonemes,
-                            bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS,
-                            seed=0, debug=False)
+for batch_size in batch_sizes:
+    try:
+        logger_RNN.info('\n* Building network using batch size: %s...', batch_size)
+        RNN_network = NeuralNetwork('RNN', dataset, batch_size=batch_size,
+                                    num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
+                                    num_output_units=nbPhonemes,
+                                    bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS,
+                                    seed=0, debug=False)
 
-# print number of parameters
-nb_params = lasagne.layers.count_params(RNN_network.network_lout_batch)
-logger_RNN.info(" Number of parameters of this network: %s", nb_params)
+        # print number of parameters
+        nb_params = lasagne.layers.count_params(RNN_network.network_lout_batch)
+        logger_RNN.info(" Number of parameters of this network: %s", nb_params)
 
-# Try to load stored model
-logger_RNN.info(' Network built. Trying to load stored model: %s', model_load)
-RNN_network.load_model(model_load)
+        # Try to load stored model
+        logger_RNN.info(' Network built. Trying to load stored model: %s', model_load)
+        RNN_network.load_model(model_load)
 
-##### COMPILING FUNCTIONS #####
-logger_RNN.info("\n* Compiling functions ...")
-RNN_network.build_functions(train=True, debug=False)
+        ##### COMPILING FUNCTIONS #####
+        logger_RNN.info("\n* Compiling functions ...")
+        RNN_network.build_functions(train=True, debug=False)
 
-##### TRAINING #####
-logger_RNN.info("\n* Training ...")
-RNN_network.train(dataset, model_save, num_epochs=num_epochs,
-                  batch_size=batch_size, LR_start=LR_start, LR_decay=LR_decay,
-                  compute_confusion=False, debug=False)
+        ##### TRAINING #####
+        logger_RNN.info("\n* Training ...")
+        RNN_network.train(dataset, model_save, num_epochs=num_epochs,
+                          batch_size=batch_size, LR_start=LR_start, LR_decay=LR_decay,
+                          compute_confusion=False, debug=False)
+        break;
+    except:
+        logger_RNN.info("batch size too large; trying again with lower batch size")
+        pass  #just try again with the next batch_size
 
 logger_RNN.info("\n* Done")
 logger_RNN.info('Total time: {:.3f}'.format(time.time() - program_start_time))
