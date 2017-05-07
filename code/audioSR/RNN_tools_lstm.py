@@ -568,12 +568,12 @@ class NeuralNetwork:
                 #
         cost /= nb_batches; accuracy /= nb_batches; top3_accuracy /= nb_batches
         if get_predictions:
-            return cost, accuracy, top3_accuracy, predictions
-        return cost, accuracy, top3_accuracy
+            return cost, accuracy*100.0, top3_accuracy*100.0, predictions
+        return cost, accuracy*100.0, top3_accuracy*100.0
 
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
-              compute_confusion=False, debug=False, logger=logger_RNNtools):
+              compute_confusion=False, justTest=False, debug=False, logger=logger_RNNtools):
 
         X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
 
@@ -616,9 +616,10 @@ class NeuralNetwork:
         test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test,
                                                                       valid_frames=valid_frames_test)
         logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
-        logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy * 100))
-        logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy * 100))
+        logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy))
+        logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy))
 
+        if justTest: return 0
 
         logger.info("\n* Starting training...")
         LR = LR_start
@@ -635,24 +636,18 @@ class NeuralNetwork:
             logger.info("Pass over Validation Set")
             validation_cost, validation_accuracy, validation_top3_accuracy =    self.run_epoch(X=X_val, y = y_val, valid_frames=valid_frames_val)
 
-            logger.info("Pass over Test Set")
-            test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test, valid_frames=valid_frames_test)
-
 
             # Print epoch summary
             logger.info("Epoch {} of {} took {:.3f}s.".format(
                     epoch + 1, num_epochs, time.time() - epoch_time))
             logger.info("Learning Rate:\t\t{:.6f} %".format(LR))
             logger.info("Training cost:\t{:.6f}".format(train_cost))
-            logger.info("Validation Top 3 accuracy:\t{:.6f} %".format(validation_top3_accuracy * 100))
+            logger.info("Validation Top 3 accuracy:\t{:.6f} %".format(validation_top3_accuracy))
 
             logger.info("Validation cost:\t{:.6f} ".format(validation_cost))
-            logger.info("Validation accuracy:\t\t{:.6f} %".format(validation_accuracy * 100))
-            logger.info("Validation Top 3 accuracy:\t{:.6f} %".format(validation_top3_accuracy * 100))
+            logger.info("Validation accuracy:\t\t{:.6f} %".format(validation_accuracy))
+            logger.info("Validation Top 3 accuracy:\t{:.6f} %".format(validation_top3_accuracy))
 
-            logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
-            logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy*100))
-            logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy * 100))
 
             # better model, so save parameters
             if validation_cost < self.best_cost:
@@ -664,6 +659,13 @@ class NeuralNetwork:
                 if save_name is not None:
                     logger.info("Model saved as " + save_name)
                     self.save_model(save_name)
+
+                logger.info("Pass over Test Set")
+                test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test,
+                                                                              valid_frames=valid_frames_test)
+                logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
+                logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy))
+                logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy))
 
             # store train info (old)
             # self.network_train_info[0].append(train_cost)
@@ -722,7 +724,7 @@ class NeuralNetwork:
         except: last_cost = 10*this_cost #first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_cost / float(last_cost) >= 0.99:
+        if this_cost / float(last_cost) >= 0.98:
             logger.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_cost, last_cost, LR * LR_decay)
             self.epochsNotImproved += 1
             return LR * LR_decay

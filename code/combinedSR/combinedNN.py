@@ -33,44 +33,91 @@ from general_tools import *
 import preprocessingCombined
 
 #############################################################
+
+logToFile = True
+
 def main():
     # each element needs AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features, LIP_RNN_HIDDEN_LIST, DENSE_HIDDEN_LIST, datasetType, runType
     print("starting training of many networks...")
     networkList = [
+        #
+        # # # # # ### LIPREADING ###
+        # # # # # # # # CNN
+        # networkToTrain(runType="lipreading",LIP_RNN_HIDDEN_LIST=None),
+        # # # # # #
+        # # # # # # # CNN-LSTM -> by default only the LSTM part is trained (line 713 in build_functions in combinedNN_tools.py
+        # # # # # # #          -> you can train everything (also CNN parameters), but only do this after the CNN-LSTM has trained with fixed CNN parameters, otherwise you'll move far out of your optimal point
+        # networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64]),
+        # # # # #
+        # networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256]),
+        # #
+        # networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[512,512]),
+        # #
+        # networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64]),
+        # networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256]),
+        #
+        # # # # # ### AUDIO ###  -> see audioSR/RNN.py, there it can run in batch mode which is much faster
+        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64]),#,forceTrain=True),
+        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256,256]),#, forceTrain=True),
+        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512,512]),#,forceTrain=True),
+        #
+        # # # ### COMBINED ###
+        # # # # lipspeakers
+        # # # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[128, 64, 64]),
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
+        #                DENSE_HIDDEN_LIST=[512, 512, 512]),
+        # networkToTrain(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
+        #                DENSE_HIDDEN_LIST=[512, 512, 512]),
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512]),
+        # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #                cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512]),
+        #
+        # ## conv
+        # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512]),
+        # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512]),
+        # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512, 512],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512]),
+        # #
+        # # # TODO: train with params CNN and audio made trainable
+        # # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        # #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64],
+        # #                DENSE_HIDDEN_LIST=[512, 512, 512], allowSubnetTraining=True),
 
-        # # # ### LIPREADING ###
-        # # # # # # CNN
-        # networkToTrain(runType="lipreading",LIP_RNN_HIDDEN_LIST=None,forceTrain=True),
-        # # # #
-        # # # # # CNN-LSTM -> by default only the LSTM part is trained (line 713 in build_functions in combinedNN_tools.py
-        # # # # #          -> you can train everything (also CNN parameters), but only do this after the CNN-LSTM has trained with fixed CNN parameters, otherwise you'll move far out of your optimal point
-        networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64], forceTrain=True),
-        # # #
-        # networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],forceTrain=True),
-
-        networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[1024,1024], forceTrain=True),
-
-        # # # ### AUDIO ###  -> see audioSR/RNN.py, there it can run in batch mode which is much faster
-        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256,256], forceTrain=True),
-        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512,512],forceTrain=True),
-
-        # ### COMBINED ###
-        # # lipspeakers
-        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[128, 64, 64]),
-        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
-                       DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
-        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256],
-                       DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
-        networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[1024, 1024, 1024, 1024],
-                       cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
-                       DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
-        # networkToTrain(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
-        #                DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
 
         # # volunteers
-        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 256], datasetType="volunteers"),
-        # networkToTrain(cnn_features="conv",  LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 256], datasetType="volunteers")
+        # ## lipreading
+        # networkToTrain(runType="lipreading", LIP_RNN_HIDDEN_LIST=None,
+        #                datasetType="volunteers"),
+        # networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64],
+        #                datasetType="volunteers"),
+        # networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[512,512],
+        #                datasetType="volunteers"),
 
+        # audio -> RNN.py
+        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256],
+                        datasetType="volunteers"),
+        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #                datasetType="volunteers"),
+        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256]),
+        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512])
+
+        # # Combined
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers"),
+        # networkToTrain(cnn_features="conv",  LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers"),
+        #
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64], DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers"),
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256], DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers")#, forceTrain=True),
     ]
     trainManyNetworks(networkList)
 
@@ -78,17 +125,18 @@ class networkToTrain:
     def __init__(self,
                  AUDIO_LSTM_HIDDEN_LIST=[256, 256],
                  CNN_NETWORK="google",
-                 cnn_features="conv",
+                 cnn_features="dense",
                  LIP_RNN_HIDDEN_LIST=[256, 256],
                  lipRNN_bidirectional = True,
                  DENSE_HIDDEN_LIST=[512,512,512],
                  datasetType="lipspeakers",
                  runType="combined",
                  LR_start=0.001,
+                 allowSubnetTraining=False,
                  forceTrain=False):
         self.AUDIO_LSTM_HIDDEN_LIST = AUDIO_LSTM_HIDDEN_LIST    # LSTM architecture for audio part
         self.CNN_NETWORK            = CNN_NETWORK               # only "google" for now. Could also use resnet50 or cifar10 from lipreading/buildNetworks.py
-        self.cnn_features           = cnn_features              # conv or dense: output features of CNN that are passed on. For a CNN combinet network, it's passed to the concat layer. For a CNN-LSTM network, it's the features passed to the LSTM lipreading layers
+        self.cnn_features           = cnn_features              # conv or dense: output features of CNN that are passed on. For a CNN combined network, it's passed to the concat layer. For a CNN-LSTM network, it's the features passed to the LSTM lipreading layers
                                                                 # conv -> output is 512x7x7=25.088 features -> huge combination FC networks. Performance is better though
         self.LIP_RNN_HIDDEN_LIST    = LIP_RNN_HIDDEN_LIST       # LSTM network on top of the lipreading CNNs
         self.lipRNN_bidirectional   = lipRNN_bidirectional
@@ -96,6 +144,8 @@ class networkToTrain:
         self.datasetType            = datasetType   # volunteers or lipreaders
         self.runType                = runType       # audio, lipreading or combined
         self.LR_start               = LR_start
+        self.allowSubnetTraining    = allowSubnetTraining   # eg for first time CNN-LSTM training, you need to fix the pretrained CNN parameters or they will be lost during training of the whole network
+                                                            # only set this to true for a second round of training on a network that has already been trained, or on combined networks.
         self.forceTrain             = forceTrain   # If False, just test the network outputs when the network already exists.
                                               # If forceTrain == True, train it anyway before testing
                                               # If True, set the LR_start low enough so you don't move too far out of the objective minimum
@@ -104,14 +154,13 @@ class networkToTrain:
 # networks is a list of dictionaries, where each dictionary contains the needed parameters for training
 def trainManyNetworks(networks):
     failures = []
-    success = []
     for network in tqdm(networks,total=len(networks)):
         print("\n\n\n\n ################################")
         print("Training new network...")
         print("Network properties: ")
         pprint(vars(network))
         try:
-            networkName = trainNetwork(AUDIO_LSTM_HIDDEN_LIST     = network.AUDIO_LSTM_HIDDEN_LIST,
+            trainNetwork(AUDIO_LSTM_HIDDEN_LIST     = network.AUDIO_LSTM_HIDDEN_LIST,
                          CNN_NETWORK            = network.CNN_NETWORK,
                          cnn_features           = network.cnn_features,
                          LIP_RNN_HIDDEN_LIST    = network.LIP_RNN_HIDDEN_LIST,
@@ -120,10 +169,13 @@ def trainManyNetworks(networks):
                          datasetType            = network.datasetType,
                          runType                = network.runType,
                          LR_start               = network.LR_start,
+                         allowSubnetTraining    = network.allowSubnetTraining,
                          forceTrain             = network.forceTrain)
-            success.append(network)
         except:
-            failures.append(network)
+            name = network.runType + "_" + '_'.join([str(layer) for layer in network.AUDIO_LSTM_HIDDEN_LIST]) \
+                   + network.cnn_features + '_'.join([str(layer) for layer in network.LIP_RNN_HIDDEN_LIST]) \
+                    + '_'.join([str(layer) for layer in network.DENSE_HIDDEN_LIST]) + "_" + network.datasetType
+            failures.append(name)
     print("#########################################################")
     print("\n\n\n DONE training all networks")
 
@@ -132,7 +184,8 @@ def trainManyNetworks(networks):
         import pdb;pdb.set_trace()
         
 
-def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidirectional, LIP_RNN_HIDDEN_LIST, DENSE_HIDDEN_LIST, datasetType, runType, LR_start, forceTrain):
+def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidirectional, LIP_RNN_HIDDEN_LIST, DENSE_HIDDEN_LIST,
+                 datasetType, runType, LR_start, allowSubnetTraining, forceTrain):
     ##### SCRIPT META VARIABLES #####
     VERBOSE = True
     compute_confusion = False  # TODO: ATM this is not implemented
@@ -187,13 +240,14 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
     model_name = "RNN__" + str(len(AUDIO_LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in AUDIO_LSTM_HIDDEN_LIST]) \
                          + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if audio_bidirectional else "_unidirectional") +  "__" \
                  + "CNN_" + CNN_NETWORK + "_" + cnn_features \
-                 + ("_lipRNN_" if LIP_RNN_HIDDEN_LIST != None else "") + ('_'.join([str(layer) for layer in LIP_RNN_HIDDEN_LIST]) if LIP_RNN_HIDDEN_LIST != None else "")  + "__" \
+                 + ("_lipRNN_" if LIP_RNN_HIDDEN_LIST != None else "") + ('_'.join([str(layer) for layer in LIP_RNN_HIDDEN_LIST]) if LIP_RNN_HIDDEN_LIST != None else "") \
+                 + ("_allowSubnetTraining" if allowSubnetTraining else "") + "__" \
                  + "FC_" + '_'.join([str(layer) for layer in DENSE_HIDDEN_LIST]) + "__" \
                  + dataset + "_" + datasetType
     model_paths['combined'] = os.path.join(store_dir, model_name + ".npz")
 
     # for loading stored audio models
-    audio_dataset = "combined" # TCDTIMIT + TIMIT datasets
+    audio_dataset = "combined" #""combined" # TCDTIMIT + TIMIT datasets
     audio_model_name = str(len(AUDIO_LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join(
             [str(layer) for layer in AUDIO_LSTM_HIDDEN_LIST]) + "_nbMFCC" + str(nbMFCCs) + \
                        ("_bidirectional" if audio_bidirectional else "_unidirectional") + "_" + audio_dataset
@@ -230,16 +284,17 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
 
 
     # log file
-    logFile = store_dir + os.sep + os.path.basename(model_save) + '.log'
-    if os.path.exists(logFile):
-        fh = logging.FileHandler(logFile)       # append to existing log
-    else:
-        fh = logging.FileHandler(logFile, 'w')  # create new logFile
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    logger_combined.addHandler(fh)
+    if logToFile:
+        logFile = store_dir + os.sep + os.path.basename(model_save) + '.log'
+        if os.path.exists(logFile):
+            fh = logging.FileHandler(logFile)       # append to existing log
+        else:
+            fh = logging.FileHandler(logFile, 'w')  # create new logFile
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(formatter)
+        logger_combined.addHandler(fh)
 
-    print("log file: ", logFile)
+        print("log file: ", logFile)
     #############################################################
     
     
@@ -294,25 +349,6 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
                             model_paths=model_paths,
                             debug=False)
 
-    # print number of parameters
-    nb_params_CNN_noDense   = lasagne.layers.count_params(network.CNN_lout_features)
-    nb_params_CNN           = lasagne.layers.count_params(network.CNN_lout)
-    nb_params_lipreading    = lasagne.layers.count_params(network.lipreading_lout_features)
-    nb_params_RNN           = lasagne.layers.count_params(network.audioNet_lout_features)
-    nb_params               = lasagne.layers.count_params(network.combined_lout)
-    logger_combined.info(" # params lipreading Total: %s", nb_params_lipreading)
-
-    if LIP_RNN_HIDDEN_LIST != None:
-        logger_combined.info(" # params lipRNN:           %s", nb_params_lipreading - nb_params_CNN)
-
-    if cnn_features == 'dense':
-        logger_combined.info(" # params CNN:              %s", nb_params_CNN)
-    else:
-        logger_combined.info(" # params CNN:              %s", nb_params_CNN_noDense)
-    logger_combined.info(" # params audio LSTM:       %s", nb_params_RNN)
-    logger_combined.info(" # params combining FC:     %s", nb_params - nb_params_lipreading - nb_params_RNN)
-    logger_combined.info(" # params whole network:    %s", nb_params)
-
 
     # get the name of the model we're training/evaluating
     logger_combined.info(' Network built. \n\nTrying to load stored model: %s', runType)
@@ -322,7 +358,8 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
 
     ##### COMPILING FUNCTIONS #####
     logger_combined.info("\n\n* Compiling functions ...")
-    network.build_functions(runType=runType,train=True, debug=False)
+    network.build_functions(runType=runType, train=True, debug=False,
+                            allowSubnetTraining=allowSubnetTraining)
 
     # if runType model already exists (and loaded successfully), no need to train it, just evaluate.
     if success and not forceTrain:
@@ -333,10 +370,10 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
                                        testSpeakerFiles=testSpeakerFiles)
 
     else: # network doesn't exist, we need to train it first. Or we forced training
-        if forceTrain and not success: LR_start = LR_start/10.0  #make smaller so we don't lose the benefits of our pretrained network
+        # if we loaded an existing network and force training, make LRsmaller so we don't lose the benefits of our pretrained network
+        if forceTrain and success: LR_start = LR_start/10.0
         ##### TRAINING #####
         logger_combined.info("\n\n* Training ...")
-
 
 
         network.train(datasetFiles, database_binaryDir=database_binaryDir, runType=runType,
@@ -349,9 +386,9 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
     logger_combined.info('Total time: {:.3f}'.format(time.time() - program_start_time))
 
     # close the log file handler to be able to log to new file
-    fh.close()
-    logger_combined.removeHandler(fh)
-    print(logger_combined.handlers)
+    if logToFile:
+        fh.close()
+        logger_combined.removeHandler(fh)
 
     return model_save #so you know which network has been trained
 

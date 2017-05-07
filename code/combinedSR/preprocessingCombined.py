@@ -24,7 +24,7 @@ def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
         # if already processed, just load it from disk
         if os.path.exists(store_path):
             if loadData:  # before starting training, we just want to check if it exists, and generate otherwise. Not load the data
-                logger.info("loading stored files X's...")
+                if verbose: logger.info("loading stored files X's...")
                 return unpickle(store_path)
             return
     logger.info(" %s processed data doesn't exist yet; generating...", speakerFile)

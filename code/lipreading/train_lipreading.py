@@ -25,7 +25,7 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
           database_binaryDir,
           storeProcessed,
           processedDir,
-          loadPerSpeaker=False,
+          loadPerSpeaker=False, justTest = False,
           save_name=None,
           shuffleEnabled=True):
 
@@ -192,7 +192,7 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
         except:   last_cost = 10 * this_cost  # first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_cost / float(last_cost) >= 0.99:
+        if this_cost / float(last_cost) >= 0.98:
             logger_train.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_cost, last_cost, LR * LR_decay)
             epochsNotImproved += 1
             return LR * LR_decay, epochsNotImproved
@@ -245,10 +245,9 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
     } #used to be list of lists
     epochsNotImproved = 0
 
-    logger_train.info("starting training for %s epochs...", num_epochs)
+    logger_train.info("evaluating TEST set first...")
     # now run through the epochs
 
-# TODO: remove this
     if not loadPerSpeaker:  # all at once
         test_cost, test_acc, test_topk_acc, nb_test_batches = val_epoch(X_test, y_test)
         test_acc = test_acc / nb_test_batches * 100;
@@ -264,9 +263,12 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
     logger_train.info("\t  test cost:        %s", test_cost)
     logger_train.info("\t  test acc rate:  %s %%", test_acc)
     logger_train.info("\t  test top %s acc:  %s %%", k, test_topk_acc)
-# # TODO: end remove
 
 
+    if justTest: return 0
+
+    logger_train.info("starting training for %s epochs...", num_epochs)
+    # now run through the epochs
     for epoch in range(num_epochs):
         logger_train.info("\n\n\n Epoch %s started", epoch + 1)
         start_time = time.time()
@@ -350,7 +352,7 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
         #LR *= LR_decay
         LR, epochsNotImproved = updateLR(LR, LR_decay, network_train_info, epochsNotImproved)
 
-        if epochsNotImproved > 8:
+        if epochsNotImproved > 4:
             logger_train.warning("\n\n NO MORE IMPROVEMENTS -> stop training")
             test_cost, test_acc, test_topk_acc = evalTEST(testSpeakerFiles,
                                                           sourceDataDir=database_binaryDir,
