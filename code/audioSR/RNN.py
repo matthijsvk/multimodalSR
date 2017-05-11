@@ -34,14 +34,12 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
+# batch sizes: see just above training loop
 num_epochs = 20
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 nbPhonemes = 39  # number output neurons
 #MANY_N_HIDDEN_LISTS = [[8],[32],[64],[256],[512]]#[[64,64]]
-#MANY_N_HIDDEN_LISTS = [[32,32,32,32,32,32,32,32],[64,64,64,64,64,64,64,64]]
-#MANY_N_HIDDEN_LISTS = [[256,256,256],[512, 512,512],[256,256,256,256],[512,512,512,512]]
-
 MANY_N_HIDDEN_LISTS = [[8], [8, 8], [8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
                       [32],[32,32],[32,32,32,32],
                        [64], [64,64],[64,64,64,64],
