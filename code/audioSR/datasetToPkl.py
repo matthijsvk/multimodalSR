@@ -29,7 +29,7 @@ DEBUG = False
 debug_size = 50
 
 # TODO:  MODIFY THESE PARAMETERS for other nbPhonemes of mfccTypes. Save location is updated automatically.
-nbMFCCs = 39 # 13= just mfcc (13 features). 26 = also derivative (26 features). 39 = also 2nd derivative (39 features)
+nbMFCCs = 13 # 13= just mfcc (13 features). 26 = also derivative (26 features). 39 = also 2nd derivative (39 features)
 nbPhonemes = 39
 phoneme_set_list = phoneme_set_39_list  # import list of phonemes,
 # convert to dictionary with number mappings (see phoneme_set.py)
@@ -41,7 +41,7 @@ dataPreSplit = True #some datasets have a pre-defined TEST set (eg TIMIT)
 FRAC_VAL = 0.1 # fraction of training data to be used for validation
 root = os.path.expanduser("~/TCDTIMIT/audioSR/") # ( keep the trailing slash)
 if dataPreSplit:
-    dataset = "combined" #eg TIMIT. You can also manually split up TCDTIMIT according to train/test split in Harte, N.; Gillen, E., "TCD-TIMIT: An Audio-Visual Corpus of Continuous Speech," doi: 10.1109/TMM.2015.2407694
+    dataset = "TIMIT" #eg TIMIT. You can also manually split up TCDTIMIT according to train/test split in Harte, N.; Gillen, E., "TCD-TIMIT: An Audio-Visual Corpus of Continuous Speech," doi: 10.1109/TMM.2015.2407694
     ## eg TIMIT ##
     dataRootDir       = root+dataset+"/fixed" + str(nbPhonemes) + os.sep + dataset
     train_source_path = os.path.join(dataRootDir, 'TRAIN')
