@@ -662,12 +662,12 @@ class NeuralNetwork:
 
     # set as many network parameters as possible by hierarchical loading of subnetworks
     # eg for combined: if no traied combined network, try to load subnets of audio and lipreading
-    def setNetworkParams(self, runType, logger=logger_combinedtools):
+    def setNetworkParams(self, runType, overwriteSubnets=False, logger=logger_combinedtools):
         if runType == 'combined':
             logger.info("\nAttempting to load combined model: %s", self.model_paths['combined'])
 
             success = self.load_model(model_type='combined')
-            if (not success):
+            if (not success) or overwriteSubnets:
                 logger.warning("No complete network found, loading parts...")
 
                 logger.info("CNN : %s", self.model_paths['CNN'])
@@ -1153,7 +1153,7 @@ class NeuralNetwork:
     def train(self, dataset, database_binaryDir, runType='combined', storeProcessed=False, processedDir=None,
               save_name='Best_model',
               num_epochs=40, batch_size=1, LR_start=1e-4, LR_decay=1,
-              shuffleEnabled=True, compute_confusion=False, debug=False, logger=logger_combinedtools):
+              shuffleEnabled=True, compute_confusion=False, justTest=False, debug=False, logger=logger_combinedtools):
 
         trainingSpeakerFiles, testSpeakerFiles = dataset
         logger.info("\n* Starting training...")
@@ -1196,10 +1196,12 @@ class NeuralNetwork:
                                                               processedDir=processedDir)
         # # TODO: end remove
 
+
         logger.info("TEST results: ")
         logger.info("\t  test cost:        %s", test_cost)
         logger.info("\t  test acc rate:  %s %%", test_acc)
         logger.info("\t  test top 3 acc:  %s %%", test_topk_acc)
+        if justTest: return
 
 
         logger.info("starting training for %s epochs...", num_epochs)
@@ -1357,6 +1359,7 @@ class NeuralNetwork:
                     best_val_acc = max(old_train_info['val_acc'])
                     test_cost = min(old_train_info['test_cost'])
                     test_acc = max(old_train_info['test_acc'])
+                    self.network_train_info = old_train_info  #load old train info so it won't get lost on retrain
                     try:
                         test_topk_acc = max(old_train_info['test_topk_acc'])
                     except:
@@ -1390,12 +1393,14 @@ class NeuralNetwork:
                                                                storeProcessed=storeProcessed,
                                                                processedDir=processedDir)
         else:
+            if runType == 'audio': batch_size = 16
+            else: batch_size = 1
             test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
                                                                                  images=allImages_test,
                                                                                  mfccs=allMfccs_test,
                                                                                  validLabels=allValidLabels_test,
                                                                                  valid_frames=allValidAudioFrames_test,
-                                                                                 batch_size=1)
+                                                                                 batch_size=batch_size)
             test_cost /= nb_test_batches
             test_acc = test_acc / nb_test_batches * 100
             test_topk_acc = test_topk_acc / nb_test_batches * 100

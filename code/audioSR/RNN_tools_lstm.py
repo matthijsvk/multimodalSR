@@ -351,7 +351,8 @@ class NeuralNetwork:
         # compare targets with highest output probability. Take maximum of all probs (3rd axis (index 2) of output: 1=batch_size (input files), 2 = time_seq (frames), 3 = n_features (phonemes)
         # network_output.shape = (len(X), 39) -> (nb_inputs, nb_classes)
         predictions = (T.argmax(network_output, axis=2))
-        self.predictions_fn = theano.function([self.audio_inputs_var, self.audio_masks_var], predictions,
+        if debug:
+            self.predictions_fn = theano.function([self.audio_inputs_var, self.audio_masks_var], predictions,
                                               name='predictions_fn')
 
         if debug:
@@ -381,35 +382,9 @@ class NeuralNetwork:
 
         # get valid network output
         valid_network_output = network_output[valid_indices_example, valid_indices_seqNr]
-        self.valid_network_output_fn = theano.function([self.audio_inputs_var, self.audio_masks_var],
+        if debug:
+            self.valid_network_output_fn = theano.function([self.audio_inputs_var, self.audio_masks_var],
                                                        valid_network_output)
-
-        # using the lasagne SliceLayer:
-        # !!!! only works with batch_size == 1  !!!!
-
-        valid_network_output2 = L.get_output(self.network['l7_out_valid'])
-        self.valid_network_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
-                                                 self.audio_valid_indices_var], valid_network_output2)
-        valid_network_output_flattened = L.get_output(self.network_lout_valid_flattened)
-
-        valid_predictions2 = T.argmax(valid_network_output2,axis=2)
-        self.valid_predictions2_fn = theano.function(
-                [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var],
-                valid_predictions2, name='valid_predictions_fn')
-
-
-
-        # Functions for computing cost and training
-        top1_acc = T.mean(lasagne.objectives.categorical_accuracy(
-                valid_network_output_flattened, valid_targets.flatten(), top_k=1))
-        self.top1_acc_fn = theano.function(
-                [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
-                 self.audio_targets_var], top1_acc)
-        top3_acc = T.mean(lasagne.objectives.categorical_accuracy(
-                valid_network_output_flattened, valid_targets.flatten(), top_k=3))
-        self.top3_acc_fn = theano.function(
-                [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
-                 self.audio_targets_var], top3_acc)
 
         # Functions for computing cost and training
         top1_acc = T.mean(lasagne.objectives.categorical_accuracy(valid_network_output, valid_targets, top_k=1))
@@ -418,6 +393,33 @@ class NeuralNetwork:
         top3_acc = T.mean(lasagne.objectives.categorical_accuracy(valid_network_output, valid_targets, top_k=3))
         self.top3_acc_fn = theano.function(
                 [self.audio_inputs_var, self.audio_masks_var, self.audio_targets_var], top3_acc)
+
+
+        # # using the lasagne SliceLayer:
+        # # !!!! only works with batch_size == 1  !!!!
+        #
+        # valid_network_output2 = L.get_output(self.network['l7_out_valid'])
+        # self.valid_network_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
+        #                                          self.audio_valid_indices_var], valid_network_output2)
+        # valid_network_output_flattened = L.get_output(self.network_lout_valid_flattened)
+        #
+        # valid_predictions2 = T.argmax(valid_network_output2,axis=2)
+        # self.valid_predictions2_fn = theano.function(
+        #         [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var],
+        #         valid_predictions2, name='valid_predictions_fn')
+        #
+        # # Functions for computing cost and training
+        # top1_acc = T.mean(lasagne.objectives.categorical_accuracy(
+        #         valid_network_output_flattened, valid_targets.flatten(), top_k=1))
+        # self.top1_acc_fn = theano.function(
+        #         [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
+        #          self.audio_targets_var], top1_acc)
+        # top3_acc = T.mean(lasagne.objectives.categorical_accuracy(
+        #         valid_network_output_flattened, valid_targets.flatten(), top_k=3))
+        # self.top3_acc_fn = theano.function(
+        #         [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_indices_var,
+        #          self.audio_targets_var], top3_acc)
+
 
         if debug:
             try:
@@ -478,12 +480,6 @@ class NeuralNetwork:
         self.cost_pointwise_fn = theano.function([self.audio_inputs_var, self.audio_masks_var, target_var],
                                             cost_pointwise, name='cost_pointwise_fn')
 
-        # # Top k accuracy
-        # k = 3
-        # topk_acc = T.mean( T.any(T.eq(T.argsort(valid_network_output2, axis=2)[:, -k:],
-        #             self.audio_targets_var.dimshuffle(0, 'x')), axis=1),  dtype=theano.config.floatX)
-        # topk_acc_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
-        #                                self.audio_valid_indices_var, self.audio_targets_var], topk_acc)
 
         if debug:
             logger.debug('cost pointwise: %s', self.cost_pointwise_fn(self.X, self.masks, self.Y))
@@ -573,41 +569,14 @@ class NeuralNetwork:
 
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
-              compute_confusion=False, justTest=False, debug=False, logger=logger_RNNtools):
+              compute_confusion=False, justTest=False, debug=False, test_dataset=None, logger=logger_RNNtools):
 
         X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
 
         confusion_matrices = []
 
-
-
         # try to load performance metrics of stored model
-        best_val_acc = 0
-        test_topk_acc = 0
-        test_cost = 0
-        test_acc = 0
-        try:
-            if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
-                old_train_info = unpickle(save_name + '_trainInfo.pkl')
-                # backward compatibility
-                if type(old_train_info) == list:
-                    old_train_info = old_train_info[0]
-                    best_val_acc = min(old_train_info[2])
-                    test_cost = min(old_train_info[3])
-                    test_acc = min(old_train_info[3])
-                elif type(old_train_info) == dict:  # normal case
-                    best_val_acc = min(old_train_info['val_acc'])
-                    test_cost = min(old_train_info['test_cost'])
-                    test_acc = min(old_train_info['test_acc'])
-                    try:
-                        test_topk_acc = min(old_train_info['test_topk_acc'])
-                    except:
-                        pass
-                else:
-                    logger.warning("old trainInfo found, but wrong format: %s", save_name + "_trainInfo.pkl")
-                    # do nothing
-        except:
-            pass
+        best_val_acc, test_acc = self.loadPreviousResults(save_name, justTest)
 
         logger.info("Initial best Val acc: %s", best_val_acc)
         logger.info("Initial best test acc: %s\n", test_acc)
@@ -619,7 +588,20 @@ class NeuralNetwork:
         logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy))
         logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy))
 
-        if justTest: return 0
+        self.network_train_info['nb_params'] = lasagne.layers.count_params(self.network_lout_batch)
+        if justTest:
+            if os.path.exists(save_name+".npz"):
+                self.network_train_info[test_dataset+'final_test_cost'] = test_cost
+                self.network_train_info[test_dataset +'test_acc']       = test_accuracy
+                self.network_train_info[test_dataset +'test_topk_acc']  = test_top3_accuracy
+                saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
+                logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
+                return 0
+            # else do nothing and train anyway
+        else:
+            self.network_train_info['test_cost'].append(test_cost)
+            self.network_train_info['test_acc'].append(test_accuracy)
+            self.network_train_info['test_topk_acc'].append(test_top3_accuracy)
 
         logger.info("\n* Starting training...")
         LR = LR_start
@@ -667,13 +649,6 @@ class NeuralNetwork:
                 logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy))
                 logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy))
 
-            # store train info (old)
-            # self.network_train_info[0].append(train_cost)
-            # self.network_train_info[1].append(validation_cost)
-            # self.network_train_info[2].append(validation_accuracy)
-            # self.network_train_info[3].append(test_cost)
-            # self.network_train_info[4].append(test_accuracy)
-
             # save the training info
             self.network_train_info['train_cost'].append(train_cost)
             self.network_train_info['val_cost'].append(validation_cost)
@@ -700,6 +675,24 @@ class NeuralNetwork:
 
             if self.epochsNotImproved >= 5:
                 logging.warning("\n\nNo more improvements, stopping training...")
+                logger.info("Pass over Test Set")
+                test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test,
+                                                                              valid_frames=valid_frames_test)
+                logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
+                logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy))
+                logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy))
+
+                self.network_train_info['test_cost'].append(test_cost)
+                self.network_train_info['test_acc'].append(test_accuracy)
+                self.network_train_info['test_topk_acc'].append(test_top3_accuracy)
+                saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
+
+                self.network_train_info[test_dataset + 'final_test_cost'] = test_cost
+                self.network_train_info[test_dataset + 'test_acc'] = test_accuracy
+                self.network_train_info[test_dataset + 'test_topk_acc'] = test_top3_accuracy
+                saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
+                logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
+                logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
                 break
 
     def get_validPredictions_video(self, valid_predictions, valid_frames, videoIndexInBatch):
@@ -717,6 +710,36 @@ class NeuralNetwork:
         # now you can get the frames for a specific video:
         return valid_predictions[videoPreds[videoIndexInBatch]]
 
+    def loadPreviousResults(self, save_name, justTest, logger=logger_RNNtools):
+        # try to load performance metrics of stored model
+        best_val_acc = 0
+        test_topk_acc = 0
+        test_cost = 0
+        test_acc = 0
+        try:
+            if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
+                old_train_info = unpickle(save_name + '_trainInfo.pkl')
+                # backward compatibility
+                if type(old_train_info) == list:
+                    old_train_info = old_train_info[0]
+                    best_val_acc = max(old_train_info[2])
+                    test_cost = min(old_train_info[3])
+                    test_acc = max(old_train_info[3])
+                elif type(old_train_info) == dict:  # normal case
+                    best_val_acc = max(old_train_info['val_acc'])
+                    test_cost = min(old_train_info['test_cost'])
+                    test_acc = max(old_train_info['test_acc'])
+                    if not justTest: self.network_train_info = old_train_info
+                    try:
+                        test_topk_acc = max(old_train_info['test_topk_acc'])
+                    except:
+                        pass
+                else:
+                    logger.warning("old trainInfo found, but wrong format: %s", save_name + "_trainInfo.pkl")
+                    # do nothing
+        except:
+            pass
+        return best_val_acc, test_acc
 
     def updateLR(self, LR, LR_decay, logger=logger_RNNtools):
         this_cost = self.network_train_info['val_cost'][-1]

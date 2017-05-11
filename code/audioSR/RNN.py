@@ -34,18 +34,19 @@ from general_tools import *
 VERBOSE = True
 compute_confusion = False  # TODO: ATM this is not implemented
 
-batch_sizes = [128,64,32,16] #64,32]#[256,128,64,32]
+batch_sizes = [128,32,8,4] #64,32]#[256,128,64,32]
 num_epochs = 20
 
 nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
 nbPhonemes = 39  # number output neurons
-MANY_N_HIDDEN_LISTS = [[512, 512]] #[[64],[256, 256], [512, 512]] ##[1024,1024]
-    # Done: [64], [256,256]
+#MANY_N_HIDDEN_LISTS = [[8],[32],[64],[256],[512]]#[[64,64]]
+MANY_N_HIDDEN_LISTS = [[32,32,32,32,32,32,32,32],[64,64,64,64,64,64,64,64]]
+# MANY_N_HIDDEN_LISTS = [[8,8],[8,8,8,8],[8,8,8,8,8,8,8,8],[32,32],[32,32,32,32],[64,64],[64,64,64,64],[256,256,256],[512, 512,512],[256,256,256,256],[512,512,512,512]] #[[64],[256, 256], [512, 512]] ##[1024,1024]
 
 BIDIRECTIONAL = True
 ADD_DENSE_LAYERS = False
 
-justTest = False;
+justTest = False
 
 
 for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
@@ -60,8 +61,8 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
 
     #############################################################
     # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-    dataset = "combined" #""combined"
-    test_dataset = "TCDTIMIT";  #if justTestTrue, don't save the model, just run once over the TEST dataset
+    dataset = "TIMIT" #""combined"
+    test_dataset = "TIMIT";  #if justTestTrue, don't save the model, just run once over the TEST dataset
     root = os.path.expanduser("~/TCDTIMIT/audioSR/")
     store_dir = root + dataset + "/results"
     if not os.path.exists(store_dir): os.makedirs(store_dir)
@@ -72,7 +73,7 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
     if justTest:
         test_dataDir = root + test_dataset + "/binary" + str(nbPhonemes) + os.sep + test_dataset
         test_data_path = os.path.join(test_dataDir, test_dataset + '_' + str(nbMFCCs) + '_ch.pkl');
-        logger_RNN.info("EVALUATING ON: ", test_data_path)
+        logger_RNN.info("EVALUATING ON: %s", test_data_path)
 
 
     model_name = str(len(N_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in N_HIDDEN_LIST]) \
@@ -100,8 +101,8 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
 
     ##### IMPORTING DATA #####
 
-    logger_RNN.info('  data source: ' + data_path)
-    logger_RNN.info('  model target: ' + model_save + '.npz')
+    logger_RNN.info('  data source: %s', data_path)
+    logger_RNN.info('  model target: %s', model_save + '.npz')
 
     dataset = unpickle(data_path)
     X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
@@ -109,6 +110,7 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
     # X shape: (example, time_sequence, mfcc_feature,)
     # y shape: (example, time_sequence,)
     if justTest: _,_,_,_,_,_,X_test,y_test, valid_frames_test = unpickle(test_data_path)
+    dataset = [X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test]
 
     # Print some information
     logger_RNN.info("\n* Data information")
@@ -136,7 +138,7 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
                                         num_features=nbMFCCs, n_hidden_list=N_HIDDEN_LIST,
                                         num_output_units=nbPhonemes,
                                         bidirectional=BIDIRECTIONAL, addDenseLayers=ADD_DENSE_LAYERS,
-                                        seed=0, debug=False)
+                                        debug=False)
 
             # print number of parameters
             nb_params = lasagne.layers.count_params(RNN_network.network_lout_batch)
@@ -154,9 +156,11 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
             logger_RNN.info("\n* Training ...")
             RNN_network.train(dataset, model_save, num_epochs=num_epochs,
                               batch_size=batch_size, LR_start=LR_start, LR_decay=LR_decay,
-                              compute_confusion=False, justTest=justTest, debug=False)
+                              compute_confusion=False, justTest=justTest, test_dataset=test_dataset,debug=False)
             break;
         except:
+            print('caught this error: ' + traceback.format_exc());
+            import pdb;pdb.set_trace()
             logger_RNN.info("batch size too large; trying again with lower batch size")
             pass  #just try again with the next batch_size
 
