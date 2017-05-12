@@ -303,6 +303,15 @@ class NeuralNetwork:
             raise IOError('You must build the network before loading the weights.')
         return -1
 
+
+    def roundParams(self, param_values):
+        for i in range(len(param_values)):
+            param_values[i] = param_values[i].astype(np.float16)
+            param_values[i] = param_values[i].astype(np.float32)
+
+        return param_values
+    
+    
     def save_model(self, model_name, logger=logger_RNNtools):
         if not os.path.exists(os.path.dirname(model_name)):
             os.makedirs(os.path.dirname(model_name))
