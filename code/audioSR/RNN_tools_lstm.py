@@ -472,7 +472,9 @@ class NeuralNetwork:
         # this works, using theano masks
         cost_pointwise = lasagne.objectives.categorical_crossentropy(network_output_flattened, target_var.flatten())
         cost = lasagne.objectives.aggregate(cost_pointwise, self.audio_masks_var.flatten())
-
+        weight_decay = 1e-5
+        weightsl2 = lasagne.regularization.regularize_network_params(self.network_lout, lasagne.regularization.l2)
+        cost += weight_decay * weightsl2
 
         self.validate_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
                                             self.audio_targets_var],
@@ -580,6 +582,7 @@ class NeuralNetwork:
 
         logger.info("Initial best Val acc: %s", best_val_acc)
         logger.info("Initial best test acc: %s\n", test_acc)
+        self.best_val_acc = best_val_acc
 
         logger.info("Pass over Test Set")
         test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test,
@@ -632,8 +635,9 @@ class NeuralNetwork:
 
 
             # better model, so save parameters
-            if validation_cost < self.best_cost:
+            if validation_accuracy > self.best_val_acc:
                 self.best_cost = validation_cost
+                self.best_val_acc = validation_accuracy
                 self.best_epoch = self.curr_epoch
                 self.best_param = L.get_all_param_values(self.network_lout)
                 self.best_updates = [p.get_value() for p in self.updates.keys()]
