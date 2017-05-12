@@ -544,156 +544,7 @@ from theano.tensor.elemwise import Elemwise
 
 
 # Our own rounding function, that does not set the gradient to 0 like Theano's
-class Round3(UnaryScalarOp):
-    def c_code(self, node, name, (x, ), (z, ), sub):
-        return "%(z)s = round(%(x)s);" % locals()
-
-    def grad(self, inputs, gout):
-        (gz,) = gout
-        return gz,
-
-
-round3_scalar = Round3(same_out_nocomplex, name='round3')
-round3 = Elemwise(round3_scalar)
-
-
-def hard_sigmoid(x):
-    return T.clip((x + 1.) / 2., 0, 1)
-
-
-# The neurons' activations binarization function
-# It behaves like the sign function during forward propagation
-# And like:
-#   hard_tanh(x) = 2*hard_sigmoid(x)-1
-# during back propagation
-def binary_tanh_unit(x):
-    return 2. * round3(hard_sigmoid(x)) - 1.
-
-
-def binary_sigmoid_unit(x):
-    return round3(hard_sigmoid(x))
-
-
-# The weights' binarization function,
-# taken directly from the BinaryConnect github repository
-# (which was made available by his authors)
-def binarization(W, H, binary=True, deterministic=False, stochastic=False, srng=None):
-    # (deterministic == True) <-> test-time <-> inference-time
-    if not binary or (deterministic and stochastic):
-        # print("not binary")
-        Wb = W
-
-    else:
-
-        # [-1,1] -> [0,1]
-        Wb = hard_sigmoid(W / H)
-        # Wb = T.clip(W/H,-1,1)
-
-        # Stochastic BinaryConnect
-        if stochastic:
-
-            # print("stoch")
-            Wb = T.cast(srng.binomial(n=1, p=Wb, size=T.shape(Wb)), theano.config.floatX)
-
-        # Deterministic BinaryConnect (round to nearest)
-        else:
-            # print("det")
-            Wb = T.round(Wb)
-
-        # 0 or 1 -> -1 or 1
-        Wb = T.cast(T.switch(Wb, H, -H), theano.config.floatX)
-
-    return Wb
-
-
-# This class extends the Lasagne DenseLayer to support BinaryConnect
-class binary_DenseLayer(lasagne.layers.DenseLayer):
-    def __init__(self, incoming, num_units,
-                 binary=True, stochastic=True, H=1., W_LR_scale="Glorot", **kwargs):
-
-        self.binary = binary
-        self.stochastic = stochastic
-
-        self.H = H
-        if H == "Glorot":
-            num_inputs = int(np.prod(incoming.output_shape[1:]))
-            self.H = np.float32(np.sqrt(1.5 / (num_inputs + num_units)))
-            # print("H = "+str(self.H))
-
-        self.W_LR_scale = W_LR_scale
-        if W_LR_scale == "Glorot":
-            num_inputs = int(np.prod(incoming.output_shape[1:]))
-            self.W_LR_scale = np.float32(1. / np.sqrt(1.5 / (num_inputs + num_units)))
-
-        self._srng = RandomStreams(lasagne.random.get_rng().randint(1, 2147462579))
-
-        if self.binary:
-            super(binary_DenseLayer, self).__init__(incoming, num_units, W=lasagne.init.Uniform((-self.H, self.H)),
-                                                    **kwargs)
-            # add the binary tag to weights
-            self.params[self.W] = set(['binary'])
-
-        else:
-            super(binary_DenseLayer, self).__init__(incoming, num_units, **kwargs)
-
-    def get_output_for(self, input, deterministic=False, **kwargs):
-
-        self.Wb = binarization(self.W, self.H, self.binary, deterministic, self.stochastic, self._srng)
-        Wr = self.W
-        self.W = self.Wb
-
-        rvalue = super(binary_DenseLayer, self).get_output_for(input, **kwargs)
-
-        self.W = Wr
-
-        return rvalue
-
-
-# This class extends the Lasagne Conv2DLayer to support BinaryConnect
-class binary_Conv2DLayer(lasagne.layers.Conv2DLayer):
-    def __init__(self, incoming, num_filters, filter_size,
-                 binary=True, stochastic=True, H=1., W_LR_scale="Glorot", **kwargs):
-
-        self.binary = binary
-        self.stochastic = stochastic
-
-        self.H = H
-        if H == "Glorot":
-            num_inputs = int(np.prod(filter_size) * incoming.output_shape[1])
-            num_units = int(
-                    np.prod(filter_size) * num_filters)  # theoretically, I should divide num_units by the pool_shape
-            self.H = np.float32(np.sqrt(1.5 / (num_inputs + num_units)))
-            # print("H = "+str(self.H))
-
-        self.W_LR_scale = W_LR_scale
-        if W_LR_scale == "Glorot":
-            num_inputs = int(np.prod(filter_size) * incoming.output_shape[1])
-            num_units = int(
-                    np.prod(filter_size) * num_filters)  # theoretically, I should divide num_units by the pool_shape
-            self.W_LR_scale = np.float32(1. / np.sqrt(1.5 / (num_inputs + num_units)))
-            # print("W_LR_scale = "+str(self.W_LR_scale))
-
-        self._srng = RandomStreams(lasagne.random.get_rng().randint(1, 2147462579))
-
-        if self.binary:
-            super(binary_Conv2DLayer, self).__init__(incoming, num_filters, filter_size,
-                                                     W=lasagne.init.Uniform((-self.H, self.H)), **kwargs)
-            # add the binary tag to weights
-            self.params[self.W] = set(['binary'])
-        else:
-            super(binary_Conv2DLayer, self).__init__(incoming, num_filters, filter_size, **kwargs)
-
-    def convolve(self, input, deterministic=False, **kwargs):
-
-        self.Wb = binarization(self.W, self.H, self.binary, deterministic, self.stochastic, self._srng)
-        Wr = self.W
-        self.W = self.Wb
-
-        rvalue = super(binary_Conv2DLayer, self).convolve(input, **kwargs)
-
-        self.W = Wr
-
-        return rvalue
+import binary_net
 
 
 def build_network_google_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale):
@@ -701,6 +552,7 @@ def build_network_google_binary(activation, alpha, epsilon, input, binary, stoch
     cnn = lasagne.layers.InputLayer(
             shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
             input_var=input)
+
     # conv 1
     cnn = binary_net.Conv2DLayer(
             cnn,
@@ -797,11 +649,6 @@ def build_network_google_binary(activation, alpha, epsilon, input, binary, stoch
             W_LR_scale=W_LR_scale,
             nonlinearity=lasagne.nonlinearities.identity,
             num_units=39)
-
-    # cnn = lasagne.layers.BatchNormLayer(
-    #        cnn,
-    #        epsilon=epsilon,
-    #        alpha=alpha)
 
     return cnn
 

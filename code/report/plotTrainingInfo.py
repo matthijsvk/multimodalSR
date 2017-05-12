@@ -12,50 +12,70 @@ from general_tools import unpickle
 #############################################################
 fontSize = 16
 lineWidth = 3
+root = os.path.expanduser('~/TCDTIMIT') #/results')
+
+
+### TODO: plot weight distribution of combined network -> weights of Lipreading vs Audio
+# params = l_out.get_params()
+# W = params[0].get_value()
+# #When you print params, you will see all the parameters for l_out: [W,b]
+
+
+### TODO: confusion matrices heatmaps: sns.heatmap(confusion_matrix(y_test, y_pred))
 
 def main():
     # # plot validation accuracy through the epochs
-    # network = networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64])
-    # plotNetworkTrainInfo(network)
+    network = networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=None, datasetType="lipspeakers")
 
-    networkList = [
-        # # # ### LIPREADING ###
-        # # # # # # CNN
-        networkToTrain(runType="lipreading",LIP_RNN_HIDDEN_LIST=None,forceTrain=True),
-        # # # #
-        # # # # # CNN-LSTM -> by default only the LSTM part is trained (line 713 in build_functions in combinedNN_tools.py
-        # # # # #          -> you can train everything (also CNN parameters), but only do this after the CNN-LSTM has trained with fixed CNN parameters, otherwise you'll move far out of your optimal point
-        networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64], forceTrain=True),
-        # # #
-        networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],forceTrain=True),
+    network = networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256,256])
 
-        networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[512,512], forceTrain=True),
+    # network = networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256,256])#,  datasetType="volunteers")
+    # network = networkToTrain(runType="audio",cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
+    #                DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True)
+    # network = networkToTrain(runType="combined",cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256],
+    #                DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True, datasetType="volunteers")
+    # network = networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256], DENSE_HIDDEN_LIST=[512, 512, 512],
+    #                datasetType="volunteers", forceTrain=True)
+    plotNetworkTrainInfo(network)
 
-        # # # ### AUDIO ###  -> see audioSR/RNN.py, there it can run in batch mode which is much faster
-        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64], forceTrain=True),
-        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256,256], forceTrain=True),
-        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512,512],forceTrain=True),
-
-        # ### COMBINED ###
-        # # lipspeakers
-        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
-                       DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
-        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
-                       DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
-        networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512,512],
-                       cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
-                       DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
-        # networkToTrain(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
-        #                DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
-
-        # # volunteers
-        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 256], datasetType="volunteers"),
-        # networkToTrain(cnn_features="conv",  LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 256], datasetType="volunteers")
-    ]
-    compareNetworks(networkList, runType='lipreading')
-    compareNetworks(networkList, runType='audio')
-    compareNetworks(networkList, runType='combined')
-    compareNetworks(networkList, runType=None)
+    # networkList = [
+    #     # # # ### LIPREADING ###
+    #     # # # # # # CNN
+    #     networkToTrain(runType="lipreading",LIP_RNN_HIDDEN_LIST=None,forceTrain=True),
+    #     # # # #
+    #     # # # # # CNN-LSTM -> by default only the LSTM part is trained (line 713 in build_functions in combinedNN_tools.py
+    #     # # # # #          -> you can train everything (also CNN parameters), but only do this after the CNN-LSTM has trained with fixed CNN parameters, otherwise you'll move far out of your optimal point
+    #     networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64], forceTrain=True),
+    #     # # #
+    #     networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],forceTrain=True),
+    #
+    #     networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[512,512], forceTrain=True),
+    #
+    #     # # # ### AUDIO ###  -> see audioSR/RNN.py, there it can run in batch mode which is much faster
+    #     networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64], forceTrain=True),
+    #     networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256,256], forceTrain=True),
+    #     networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512,512],forceTrain=True),
+    #
+    #     # ### COMBINED ###
+    #     # # lipspeakers
+    #     networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
+    #                    DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
+    #     networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
+    #                    DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
+    #     networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512,512],
+    #                    cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
+    #                    DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
+    #     # networkToTrain(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
+    #     #                DENSE_HIDDEN_LIST=[512, 512, 512], forceTrain=True),
+    #
+    #     # # volunteers
+    #     # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 256], datasetType="volunteers"),
+    #     # networkToTrain(cnn_features="conv",  LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 256], datasetType="volunteers")
+    # ]
+    # compareNetworks(networkList, runType='lipreading')
+    # compareNetworks(networkList, runType='audio')
+    # compareNetworks(networkList, runType='combined')
+    # compareNetworks(networkList, runType=None)
 
 
 
@@ -111,7 +131,6 @@ def getNetworkTrainInfoPath(network):
     LR_decay = 0.5  # 0.7071
 
     # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-    root = os.path.expanduser('~/TCDTIMIT/results')
 
     dataset = "TCDTIMIT"
     root_dir = root + "/combinedSR/" + dataset
@@ -197,7 +216,7 @@ def plotNetworkTrainInfo(network):
     # Lots of examples: http://matplotlib.org/users/pyplot_tutorial.html
 
     path = getNetworkTrainInfoPath(network)
-    print(path)
+    print("plotting training graphs of : \n", path)
     network_train_info = unpickle(path)
 
     dataTypes = ['acc','topk_acc','cost']

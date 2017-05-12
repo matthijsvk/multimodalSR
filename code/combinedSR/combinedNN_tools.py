@@ -46,6 +46,14 @@ class NeuralNetwork:
         self.batch_size = batch_size
         self.epochsNotImproved = 0  # keep track, to know when to stop training
 
+        # for storage of training info
+        self.network_train_info = {
+            'train_cost': [],
+            'val_cost':   [], 'val_acc': [], 'val_topk_acc': [],
+            'test_cost':  [], 'test_acc': [], 'test_topk_acc': [],
+            'nb_params': {}
+        }  # used to be list of lists
+
         if architecture == "combined":
             if dataset != None:
                 images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = dataset
@@ -100,6 +108,7 @@ class NeuralNetwork:
             self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_CNN()
             # CNN_lout_features output shape = (nbValidFrames, 512x7x7)
 
+            self.cnn_features = cnn_features
             # for CNN-LSTM combination networks
             self.lipreadingType = 'CNN'
             if lipRNN_hidden_list != None:  #add LSTM layers on top of the CNN
@@ -131,16 +140,30 @@ class NeuralNetwork:
                                                                         audio_lout=self.audioNet_lout_features,
                                                                         dense_hidden_list=dense_hidden_list)
 
-            allLayers= L.get_all_layers(self.lipreading_lout)
-            for layer in allLayers:
-                logger_combinedtools.debug("layer : %s \t %s", layer, layer.output_shape)
+            nb_params = self.getParamsInfo()
+            self.network_train_info['nb_params'] = nb_params
+            logger_combinedtools.info(" # params lipreading seperate: %s", "{:,}".format(nb_params['nb_lipreading']))
+            logger_combinedtools.info(" # params audio seperate:      %s", "{:,}".format(nb_params['nb_audio']))
+
+            logger_combinedtools.info(" # params combining: ")
+            logger_combinedtools.info(" # params total:            %s", "{:,}".format(nb_params['nb_total']))
+            logger_combinedtools.info(" # params lip features:     %s", "{:,}".format(nb_params['nb_lipreading_features']))
+            logger_combinedtools.info(" # params CNN features:     %s", "{:,}".format(nb_params['nb_CNN_used']))
+            logger_combinedtools.info(" # params lip LSTM:         %s", "{:,}".format(nb_params['nb_lipRNN']))
+            logger_combinedtools.info(" # params audio features:   %s", "{:,}".format(nb_params['nb_audio_features']))
+            logger_combinedtools.info(" # params combining FC:     %s", "{:,}".format(nb_params['nb_combining']))
+
+            # allLayers= L.get_all_layers(self.lipreading_lout)
+            # for layer in allLayers:
+            #     logger_combinedtools.debug("layer : %s \t %s", layer, layer.output_shape)
             # [layer.output_shape for layer in allLayers[-5:-1]]
             #import pdb;pdb.set_trace()
 
 
         else:
             print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
-
+        
+        
     def build_audioRNN(self, n_hidden_list=(100,), bidirectional=False,
                        seed=int(time.time()), debug=False, logger=logger_combinedtools):
         # some inspiration from http://colinraffel.com/talks/hammer2015recurrent.pdf
@@ -571,6 +594,40 @@ class NeuralNetwork:
                     print('  %12s \nout: %s' % (cnnDict[key], cnnDict[key].output_shape))
         return 0
 
+    def getParamsInfo(self):
+        # print number of parameters
+        nb_CNN_features = lasagne.layers.count_params(self.CNN_lout_features)
+        nb_CNN = lasagne.layers.count_params(self.CNN_lout)
+        nb_lipreading_features = lasagne.layers.count_params(self.lipreading_lout_features)
+        nb_lipreading = L.count_params(self.lipreading_lout)
+        nb_audio_features = lasagne.layers.count_params(self.audioNet_lout_features)
+        nb_audio = lasagne.layers.count_params(self.audioNet_lout)
+        nb_total = lasagne.layers.count_params(self.combined_lout)
+
+        if self.lipreadingType == 'CNN_LSTM':  #features is then the output of the LSTM on top of CNN, so contains all the lipreading params
+            if self.cnn_features == 'conv':
+                nb_CNN_used = nb_CNN_features
+            else: nb_CNN_used = nb_CNN
+            nb_lipRNN = nb_lipreading - nb_CNN_used
+        else:
+            nb_CNN_used = nb_lipreading_features
+            nb_lipRNN = 0
+
+        nb_combining = nb_total - nb_lipreading_features - nb_audio
+
+        nb_params = {}
+        nb_params['nb_lipreading'] = nb_lipreading
+        nb_params['nb_audio'] = nb_audio
+        nb_params['nb_total'] = nb_total
+        nb_params['nb_audio_features'] = nb_audio_features
+        nb_params['nb_lipreading_features'] = nb_lipreading_features
+        nb_params['nb_CNN_used'] = nb_lipreading
+        nb_params['nb_lipRNN'] = nb_lipRNN
+        nb_params['nb_combining'] = nb_combining
+
+        return nb_params
+
+
     # return True if successful load, false otherwise
     def load_model(self, model_type, logger=logger_combinedtools):
         if not os.path.exists(self.model_paths[model_type]):
@@ -605,12 +662,12 @@ class NeuralNetwork:
 
     # set as many network parameters as possible by hierarchical loading of subnetworks
     # eg for combined: if no traied combined network, try to load subnets of audio and lipreading
-    def setNetworkParams(self, runType, logger=logger_combinedtools):
+    def setNetworkParams(self, runType, overwriteSubnets=False, logger=logger_combinedtools):
         if runType == 'combined':
             logger.info("\nAttempting to load combined model: %s", self.model_paths['combined'])
 
             success = self.load_model(model_type='combined')
-            if (not success):
+            if (not success) or overwriteSubnets:
                 logger.warning("No complete network found, loading parts...")
 
                 logger.info("CNN : %s", self.model_paths['CNN'])
@@ -650,7 +707,7 @@ class NeuralNetwork:
             os.makedirs(os.path.dirname(model_name))
         np.savez(model_name + '.npz', self.best_param)
 
-    def build_functions(self, runType, train=False, debug=False, logger=logger_combinedtools):
+    def build_functions(self, runType, train=False, allowSubnetTraining=False, debug=False, logger=logger_combinedtools):
 
         k = 3;  # top k accuracy
         ##########################
@@ -711,7 +768,8 @@ class NeuralNetwork:
             lipreading_params = L.get_all_params(self.lipreading_lout, trainable=True)
 
             if self.lipreadingType == 'CNN_LSTM': #only train the LSTM network, don't touch the CNN
-                lipreading_params = list(set(lipreading_params) - set(L.get_all_params(self.CNN_lout, trainable=True)))
+                if not allowSubnetTraining:
+                    lipreading_params = list(set(lipreading_params) - set(L.get_all_params(self.CNN_lout, trainable=True)))
 
             lipreading_updates = lasagne.updates.adam(loss_or_grads=lipreading_loss, params=lipreading_params, learning_rate=self.LR_var)
             # Compile a function performing a training step on a mini-batch (by giving the updates dictionary)
@@ -857,8 +915,9 @@ class NeuralNetwork:
             combined_params = L.get_all_params(self.combined_lout, trainable=True)
 
             # remove subnet parameters so they are kept fixed (already pretrained)
-            combined_params = list(set(combined_params) - set(L.get_all_params(self.CNN_lout, trainable=True)))
-            combined_params = list(set(combined_params) - set(L.get_all_params(self.audioNet_lout, trainable=True)))
+            if not allowSubnetTraining:
+                combined_params = list(set(combined_params) - set(L.get_all_params(self.CNN_lout, trainable=True)))
+                combined_params = list(set(combined_params) - set(L.get_all_params(self.audioNet_lout, trainable=True)))
 
             combined_updates = lasagne.updates.adam(loss_or_grads=combined_loss, params=combined_params, learning_rate=self.LR_var)
 
@@ -1051,7 +1110,7 @@ class NeuralNetwork:
         nb_test_batches = 0;
         # for each speaker, pass over the train set, then test set. (test is other files). save the results.
         for speakerFile in tqdm(testSpeakerFiles, total=len(testSpeakerFiles)):
-            logger.debug("processing %s", speakerFile)
+            if verbose: logger.debug("processing %s", speakerFile)
             train, val, test = preprocessingCombined.getOneSpeaker(
                     speakerFile=speakerFile, sourceDataDir=sourceDataDir,
                     trainFraction=0.0, validFraction=0.0,
@@ -1094,7 +1153,7 @@ class NeuralNetwork:
     def train(self, dataset, database_binaryDir, runType='combined', storeProcessed=False, processedDir=None,
               save_name='Best_model',
               num_epochs=40, batch_size=1, LR_start=1e-4, LR_decay=1,
-              shuffleEnabled=True, compute_confusion=False, debug=False, logger=logger_combinedtools):
+              shuffleEnabled=True, compute_confusion=False, justTest=False, debug=False, logger=logger_combinedtools):
 
         trainingSpeakerFiles, testSpeakerFiles = dataset
         logger.info("\n* Starting training...")
@@ -1107,12 +1166,7 @@ class NeuralNetwork:
         # init some performance keepers
         best_epoch = 1
         LR = LR_start
-        # for storage of training info
-        self.network_train_info = {
-            'train_cost': [],
-            'val_cost':   [], 'val_acc': [], 'val_topk_acc': [],
-            'test_cost':  [], 'test_acc': [], 'test_topk_acc': []
-        }  # used to be list of lists
+
         self.epochsNotImproved = 0
 
 
@@ -1142,10 +1196,12 @@ class NeuralNetwork:
                                                               processedDir=processedDir)
         # # TODO: end remove
 
+
         logger.info("TEST results: ")
         logger.info("\t  test cost:        %s", test_cost)
         logger.info("\t  test acc rate:  %s %%", test_acc)
         logger.info("\t  test top 3 acc:  %s %%", test_topk_acc)
+        if justTest: return
 
 
         logger.info("starting training for %s epochs...", num_epochs)
@@ -1228,6 +1284,11 @@ class NeuralNetwork:
                     logger.info("Model saved as " + save_name)
                     self.save_model(save_name)
 
+                # save top scores
+                self.network_train_info['final_test_cost'] = test_cost
+                self.network_train_info['final_test_acc'] = test_acc
+                self.network_train_info['final_test_top3_acc'] = test_topk_acc
+
             else:   #reset to best model we had
                 resetNetwork= True
 
@@ -1298,6 +1359,7 @@ class NeuralNetwork:
                     best_val_acc = max(old_train_info['val_acc'])
                     test_cost = min(old_train_info['test_cost'])
                     test_acc = max(old_train_info['test_acc'])
+                    self.network_train_info = old_train_info  #load old train info so it won't get lost on retrain
                     try:
                         test_topk_acc = max(old_train_info['test_topk_acc'])
                     except:
@@ -1331,12 +1393,14 @@ class NeuralNetwork:
                                                                storeProcessed=storeProcessed,
                                                                processedDir=processedDir)
         else:
+            if runType == 'audio': batch_size = 16
+            else: batch_size = 1
             test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
                                                                                  images=allImages_test,
                                                                                  mfccs=allMfccs_test,
                                                                                  validLabels=allValidLabels_test,
                                                                                  valid_frames=allValidAudioFrames_test,
-                                                                                 batch_size=1)
+                                                                                 batch_size=batch_size)
             test_cost /= nb_test_batches
             test_acc = test_acc / nb_test_batches * 100
             test_topk_acc = test_topk_acc / nb_test_batches * 100
@@ -1363,7 +1427,7 @@ class NeuralNetwork:
             last_cost = 10 * this_cost  # first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_cost / float(last_cost) >= 0.98 and this_acc-last_acc < 0.2:
+        if this_cost / float(last_cost) >= 0.98 or this_acc-last_acc < 0.2:
             logger.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_cost, last_cost, LR * LR_decay)
             self.epochsNotImproved += 1
             return LR * LR_decay

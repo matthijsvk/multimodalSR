@@ -10,9 +10,9 @@ np.random.seed(1234)  # for reproducibility?
 import theano
 import theano.tensor as T
 
-import lasagne
 
 import binary_net
+import lasagne
 
 from pylearn2.datasets.cifar10 import CIFAR10
 
@@ -93,6 +93,8 @@ if __name__ == "__main__":
     train_set.y = 2 * train_set.y - 1.
     valid_set.y = 2 * valid_set.y - 1.
     test_set.y = 2 * test_set.y - 1.
+
+    import pdb;pdb.set_trace()
 
     print('Building the CNN...')
 
@@ -293,7 +295,6 @@ if __name__ == "__main__":
     loss = T.mean(T.sqr(T.maximum(0., 1. - target * train_output)))
 
     if binary:
-
         # W updates
         W = lasagne.layers.get_all_params(cnn, binary=True)
         W_grads = binary_net.compute_grads(loss, cnn)

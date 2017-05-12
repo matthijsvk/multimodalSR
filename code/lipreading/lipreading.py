@@ -53,7 +53,7 @@ import lasagne.objectives as LO
 def main():
 
     # BN parameters
-    batch_size = 128
+    batch_size = 100
     logger_lip.info("batch_size = %s",batch_size)
     # alpha is the exponential moving average factor
     alpha = .1
@@ -70,7 +70,7 @@ def main():
     logger_lip.info("num_epochs = %s", num_epochs)
 
     # Decaying LR
-    LR_start = 0.0001
+    LR_start = 0.001
     logger_lip.info("LR_start = %s", LR_start)
     LR_fin = 0.0000003
     logger_lip.info("LR_fin = %s",LR_fin)
@@ -90,6 +90,7 @@ def main():
     if viseme:   nbClasses = 12
     else:        nbClasses = 39
 
+    justTest =True
 
     # get the database
     # If it's small (lipspeakers) -> generate X_train, y_train etc here
@@ -100,22 +101,25 @@ def main():
     if not os.path.exists(results_dir): os.makedirs(results_dir)
     if viseme: database_binaryDir = root_dir + '/binaryViseme'
     else:      database_binaryDir = root_dir + '/binary'
-    datasetType = "lipspeakers" #"volunteers" #"volunteers" #    lipspeakers or volunteers"
+    datasetType = "lipspeakers" #"lipspeakers" #"volunteers" #"volunteers" #    lipspeakers or volunteers"
     ##############################################
 
     if datasetType == "lipspeakers":
         loadPerSpeaker = False  # only lipspeakers small enough to fit in CPU RAM, generate X_train etc here
         storeProcessed = True
         processedDir = database_binaryDir + "_allLipspeakersProcessed"
-        pkl_path =  processedDir + os.sep + datasetType + ".pkl"
-        if not os.path.exists(pkl_path):
-            logger_lip.info("dataset not yet processed. Processing...")
-            preprocessLipreading.prepLip_all(data_path=database_binaryDir, store_path=pkl_path, trainFraction=0.8, validFraction=0.1,
-                        testFraction=0.1,
-                        nbClasses=nbClasses, onehot=oneHot, type=datasetType, verbose=True)
+        # pkl_path =  processedDir + os.sep + datasetType + ".pkl"
+        # if not os.path.exists(pkl_path):
+        #     logger_lip.info("dataset not yet processed. Processing...")
+        #     preprocessLipreading.prepLip_all(data_path=database_binaryDir, store_path=pkl_path, trainFraction=0.7, validFraction=0.1,
+        #                 testFraction=0.2,
+        #                 nbClasses=nbClasses, onehot=oneHot, type=datasetType, verbose=True)
+        #datasetFiles = general_tools.unpickle(pkl_path)
 
-        # per video -> set batch_size to 1
-        datasetFiles = general_tools.unpickle(pkl_path)
+        X_train, y_train = unpickle(os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binary/allLipspeakersTrain.pkl"))
+        X_val, y_val = unpickle(os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binary/allLipspeakersVal.pkl"))
+        X_test, y_test = unpickle(os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binary/allLipspeakersTest.pkl"))
+        datasetFiles = [X_train, y_train, X_val, y_val, X_test, y_test]
 
     else:  # we need to load and preprocess each speaker before we evaluate, because dataset is too large and doesn't fit in CPU RAM
         loadPerSpeaker = True
@@ -197,7 +201,7 @@ def main():
     test_loss = test_loss.mean()
 
     # Top k accuracy
-    k = 5
+    k = 3
     # topk_acc = T.mean( T.any(T.eq(T.argsort(test_network_output, axis=1)[:, -k:], targets.dimshuffle(0, 'x')), axis=1),
     #     dtype=theano.config.floatX)
     topk_acc = T.mean(lasagne.objectives.categorical_accuracy(test_network_output, targets.flatten(), top_k=k))
@@ -241,7 +245,7 @@ def main():
         database_binaryDir=database_binaryDir,
         storeProcessed=storeProcessed,
         processedDir=processedDir,
-        loadPerSpeaker=loadPerSpeaker,
+        loadPerSpeaker=loadPerSpeaker, justTest =justTest,
         save_name=model_save_name,
         shuffleEnabled=True)
 
