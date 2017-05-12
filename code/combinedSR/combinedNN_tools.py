@@ -1427,7 +1427,7 @@ class NeuralNetwork:
             last_cost = 10 * this_cost  # first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_cost / float(last_cost) >= 0.98 and this_acc-last_acc < 0.3:
+        if this_cost / float(last_cost) >= 0.98 or this_acc-last_acc < 0.2:
             logger.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_cost, last_cost, LR * LR_decay)
             self.epochsNotImproved += 1
             return LR * LR_decay

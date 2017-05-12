@@ -136,8 +136,10 @@ def generate_masks(inputs, valid_frames=None, batch_size=1, max_length = 1000, l
         try:
             if valid_frames != None:
                 # Sometimes phonemes are so close to each other that all are mapped to last frame -> gives error
-                if valid_frames[example_id][-1] == max_length: valid_frames[example_id][-1] = max_length - 1
-                if valid_frames[example_id][-2] == max_length: valid_frames[example_id][-1] = max_length - 1
+                if valid_frames[example_id][-1] >= max_length: valid_frames[example_id][-1] = max_length - 1
+                if valid_frames[example_id][-2] >= max_length: valid_frames[example_id][-1] = max_length - 1
+                if valid_frames[example_id][-3] >= max_length: valid_frames[example_id][-1] = max_length - 1
+
                 input_mask[example_id, valid_frames[example_id]] = 1
             else:
                 logger.warning("NO VALID FRAMES SPECIFIED!!!")

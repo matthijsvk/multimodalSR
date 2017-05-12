@@ -578,7 +578,7 @@ class NeuralNetwork:
         confusion_matrices = []
 
         # try to load performance metrics of stored model
-        best_val_acc, test_acc = self.loadPreviousResults(save_name, justTest)
+        best_val_acc, test_acc, old_train_info = self.loadPreviousResults(save_name) #stores old_train_info into self.network_train_info
 
         logger.info("Initial best Val acc: %s", best_val_acc)
         logger.info("Initial best test acc: %s\n", test_acc)
@@ -594,12 +594,14 @@ class NeuralNetwork:
         self.network_train_info['nb_params'] = lasagne.layers.count_params(self.network_lout_batch)
         if justTest:
             if os.path.exists(save_name+".npz"):
-                self.network_train_info[test_dataset+'final_test_cost'] = test_cost
-                self.network_train_info[test_dataset +'test_acc']       = test_accuracy
-                self.network_train_info[test_dataset +'test_topk_acc']  = test_top3_accuracy
+                self.loadPreviousResults(save_name)
+                self.network_train_info[test_dataset+'_final_test_cost'] = test_cost
+                self.network_train_info[test_dataset +'_final_test_acc']       = test_accuracy
+                self.network_train_info[test_dataset +'_final_test_topk_acc']  = test_top3_accuracy
+
                 saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
                 logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
-                return test_accuracy
+                return 0
             # else do nothing and train anyway
         else:
             self.network_train_info['test_cost'].append(test_cost)
@@ -687,10 +689,9 @@ class NeuralNetwork:
                 logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy))
                 logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy))
 
-                self.network_train_info['test_cost'].append(test_cost)
-                self.network_train_info['test_acc'].append(test_accuracy)
-                self.network_train_info['test_topk_acc'].append(test_top3_accuracy)
-                saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
+                self.network_train_info['test_cost'][-1]=test_cost
+                self.network_train_info['test_acc'][-1] = test_accuracy
+                self.network_train_info['test_topk_acc'][-1] = test_top3_accuracy
 
                 self.network_train_info[test_dataset + 'final_test_cost'] = test_cost
                 self.network_train_info[test_dataset + 'test_acc'] = test_accuracy
@@ -715,47 +716,43 @@ class NeuralNetwork:
         # now you can get the frames for a specific video:
         return valid_predictions[videoPreds[videoIndexInBatch]]
 
-    def loadPreviousResults(self, save_name, justTest, logger=logger_RNNtools):
+    def loadPreviousResults(self, save_name, logger=logger_RNNtools):
         # try to load performance metrics of stored model
         best_val_acc = 0
         test_topk_acc = 0
         test_cost = 0
         test_acc = 0
+        old_train_info={}
         try:
-            if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
+            if os.path.exists(save_name + "_trainInfo.pkl"):
                 old_train_info = unpickle(save_name + '_trainInfo.pkl')
-                # backward compatibility
-                if type(old_train_info) == list:
-                    old_train_info = old_train_info[0]
-                    best_val_acc = max(old_train_info[2])
-                    test_cost = min(old_train_info[3])
-                    test_acc = max(old_train_info[3])
-                elif type(old_train_info) == dict:  # normal case
-                    best_val_acc = max(old_train_info['val_acc'])
-                    test_cost = min(old_train_info['test_cost'])
-                    test_acc = max(old_train_info['test_acc'])
-                    if not justTest: self.network_train_info = old_train_info
-                    try:
-                        test_topk_acc = max(old_train_info['test_topk_acc'])
-                    except:
-                        pass
-                else:
-                    logger.warning("old trainInfo found, but wrong format: %s", save_name + "_trainInfo.pkl")
-                    # do nothing
+                best_val_acc = max(old_train_info['val_acc'])
+                test_cost = min(old_train_info['test_cost'])
+                test_acc = max(old_train_info['test_acc'])
+                self.network_train_info = old_train_info
+                try:
+                    test_topk_acc = max(old_train_info['test_topk_acc'])
+                except:
+                    pass
         except:
             pass
-        return best_val_acc, test_acc
+        return best_val_acc, test_acc, old_train_info
 
     def updateLR(self, LR, LR_decay, logger=logger_RNNtools):
+        this_acc = self.network_train_info['val_acc'][-1]
         this_cost = self.network_train_info['val_cost'][-1]
-        try:last_cost = self.network_train_info['val_cost'][-2]
-        except: last_cost = 10*this_cost #first time it will fail because there is only 1 result stored
+        try:
+            last_acc = self.network_train_info['val_acc'][-2]
+            last_cost = self.network_train_info['val_cost'][-2]
+        except:
+            last_acc = -10
+            last_cost = 10 * this_cost  # first time it will fail because there is only 1 result stored
 
         # only reduce LR if not much improvment anymore
-        if this_cost / float(last_cost) >= 0.98:
+        if this_cost / float(last_cost) >= 0.98 or this_acc - last_acc < 0.2:
             logger.info(" Error not much reduced: %s vs %s. Reducing LR: %s", this_cost, last_cost, LR * LR_decay)
             self.epochsNotImproved += 1
             return LR * LR_decay
         else:
-            self.epochsNotImproved = max(self.epochsNotImproved - 1, 0)  #reduce by 1, minimum 0
+            self.epochsNotImproved = max(self.epochsNotImproved - 1, 0)  # reduce by 1, minimum 0
             return LR

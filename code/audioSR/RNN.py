@@ -47,7 +47,12 @@ MANY_N_HIDDEN_LISTS = [[8], [8, 8], [8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
 MANY_N_HIDDEN_LISTS = [[1024], [1024, 1024], [1024, 1024, 1024, 1024]]
 
 # Selected:
-# MANY_N_HIDDEN_LISTS = [32,32],[64,64],[256,256],[512,512]
+MANY_N_HIDDEN_LISTS = [[32,32],[64,64],[256,256],[512,512]]
+MANY_N_HIDDEN_LISTS = [[64, 64], [512, 512]]
+
+# MANY_N_HIDDEN_LISTS = [[512,512]]
+# MANY_N_HIDDEN_LISTS = [[256,256]]
+
 ## for nbMFCC, uni vs bidirectional etc comparison:
 #MANY_N_HIDDEN_LISTS = [[64,64]]
 
@@ -70,8 +75,8 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
 
     #############################################################
     # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-    dataset = "TIMIT" #""combined"
-    test_dataset = "TIMIT";  #if justTestTrue, don't save the model, just run once over the TEST dataset
+    dataset = "TCDTIMIT"#combined" #""combined"
+    test_dataset = "TCDTIMIT";  #if justTestTrue, don't save the model, just run once over the TEST dataset
     root = os.path.expanduser("~/TCDTIMIT/audioSR/")
     store_dir = root + dataset + "/results"
     if not os.path.exists(store_dir): os.makedirs(store_dir)
@@ -118,7 +123,9 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
     # these are lists of np arrays, because the time sequences are different for each example
     # X shape: (example, time_sequence, mfcc_feature,)
     # y shape: (example, time_sequence,)
-    if justTest: _,_,_,_,_,_,X_test,y_test, valid_frames_test = unpickle(test_data_path)
+    if justTest:
+        logger_RNN.info("getting test data from: %s", test_data_path)
+        _,_,_,_,_,_,X_test,y_test, valid_frames_test = unpickle(test_data_path)
     dataset = [X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test]
 
     # Print some information
@@ -142,7 +149,7 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
         logger_RNN.info('  %s %s', type(valid_frames_train[0][0]), valid_frames_train[0][0].shape)
 
     ##### BUIDING MODEL #####
-    if N_HIDDEN_LIST[0] > 128: batch_sizes = [32,16,8,4]
+    if N_HIDDEN_LIST[0] > 128: batch_sizes = [64,32,16,8,4]
     else: batch_sizes = [128,64,32,16,8,4]
     for batch_size in batch_sizes:
         try:
@@ -161,6 +168,8 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
             logger_RNN.info(' Network built. Trying to load stored model: %s', model_load)
             success = RNN_network.load_model(model_load)
             if success == 0: LR_start = LR_start / 10.0
+
+            RNN_network.loadPreviousResults(model_save)
 
             ##### COMPILING FUNCTIONS #####
             logger_RNN.info("\n* Compiling functions ...")
