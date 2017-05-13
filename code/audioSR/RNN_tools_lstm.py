@@ -1,8 +1,6 @@
 from __future__ import print_function
 
 import logging  # debug < info < warn < error < critical  # from https://docs.python.org/3/howto/logging-cookbook.html
-import math
-import os
 import time
 import traceback
 
@@ -11,8 +9,6 @@ import lasagne.layers as L
 import theano
 import theano.tensor as T
 from tqdm import tqdm
-import traceback
-
 
 logger_RNNtools = logging.getLogger('audioSR.tools')
 logger_RNNtools.setLevel(logging.DEBUG)
@@ -580,7 +576,7 @@ class NeuralNetwork:
 
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
-              compute_confusion=False, justTest=False, debug=False, test_dataset=None, logger=logger_RNNtools):
+              compute_confusion=False, justTest=False, debug=False, test_type=None, logger=logger_RNNtools):
 
         X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
 
@@ -604,9 +600,9 @@ class NeuralNetwork:
         if justTest:
             if os.path.exists(save_name+".npz"):
                 self.loadPreviousResults(save_name)
-                self.network_train_info[test_dataset+'_final_test_cost'] = test_cost
-                self.network_train_info[test_dataset +'_final_test_acc']       = test_accuracy
-                self.network_train_info[test_dataset +'_final_test_topk_acc']  = test_top3_accuracy
+                self.network_train_info[test_type + '_final_test_cost'] = test_cost
+                self.network_train_info[test_type + '_final_test_acc']       = test_accuracy
+                self.network_train_info[test_type + '_final_test_topk_acc']  = test_top3_accuracy
 
                 saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
                 logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
@@ -702,9 +698,9 @@ class NeuralNetwork:
                 self.network_train_info['test_acc'][-1] = test_accuracy
                 self.network_train_info['test_topk_acc'][-1] = test_top3_accuracy
 
-                self.network_train_info[test_dataset + 'final_test_cost'] = test_cost
-                self.network_train_info[test_dataset + 'test_acc'] = test_accuracy
-                self.network_train_info[test_dataset + 'test_topk_acc'] = test_top3_accuracy
+                self.network_train_info[test_type + 'final_test_cost'] = test_cost
+                self.network_train_info[test_type + 'test_acc'] = test_accuracy
+                self.network_train_info[test_type + 'test_topk_acc'] = test_top3_accuracy
                 saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
                 logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
                 logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')

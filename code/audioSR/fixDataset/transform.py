@@ -4,10 +4,10 @@ import os
 import subprocess
 import sys
 
-from tqdm import tqdm
-
 from helpFunctions import resample
 from helpFunctions.writeToTxt import writeToTxt
+from tqdm import tqdm
+
 from phoneme_set import phoneme_set_39, phoneme_set_61_39
 
 debug = False

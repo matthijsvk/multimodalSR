@@ -1,10 +1,9 @@
 from __future__ import print_function
-import os
-import numpy as np
-from phoneme_set import *
-import general_tools
-import pdb
+
 import logging
+import pdb
+
+from phoneme_set import *
 
 logger_readData = logging.getLogger('evaluate.readData')
 logger_readData.setLevel(logging.ERROR)

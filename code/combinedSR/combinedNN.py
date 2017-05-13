@@ -35,16 +35,15 @@ import preprocessingCombined
 #############################################################
 
 logToFile = True
-justTest = False
+justTest = True
 
 def main():
     # each element needs AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features, LIP_RNN_HIDDEN_LIST, DENSE_HIDDEN_LIST, datasetType, runType
     print("starting training of many networks...")
     networkList = [
-
         # # # # # # # ### LIPREADING ###
         # # # # # # # # # # CNN
-        # networkToTrain(runType="lipreading",LIP_RNN_HIDDEN_LIST=None),
+        networkToTrain(runType="lipreading",LIP_RNN_HIDDEN_LIST=None),
         # # # # # # #
         # # # # # # # # CNN-LSTM -> by default only the LSTM part is trained (line 713 in build_functions in combinedNN_tools.py
         # # # # # # # #          -> you can train everything (also CNN parameters), but only do this after the CNN-LSTM has trained with fixed CNN parameters, otherwise you'll move far out of your optimal point
@@ -71,8 +70,8 @@ def main():
         #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
         #
         #
-        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256],
-                       DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
         # # impact of smaller or larger audio network
         # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[64],
         #                cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
@@ -113,20 +112,20 @@ def main():
 
         # audio -> RNN.py
         # test on volunteers
-        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64], datasetType="volunteers"),
-        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256], datasetType="volunteers"),
-        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512], datasetType="volunteers"),
-
-        # # Combined
-        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 512],
-                       datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
-        networkToTrain(cnn_features="conv",  LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 512],
-                       datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
-
-        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64], DENSE_HIDDEN_LIST=[512, 512, 512],
-                       datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
-        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256], DENSE_HIDDEN_LIST=[512, 512, 512],
-                       datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
+        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64], datasetType="volunteers"),
+        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256], datasetType="volunteers"),
+        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512], datasetType="volunteers"),
+        #
+        # # # Combined
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
+        # networkToTrain(cnn_features="conv",  LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
+        #
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64], DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256], DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
     ]
     trainManyNetworks(networkList)
 
@@ -183,6 +182,8 @@ def trainManyNetworks(networks):
                          forceTrain             = network.forceTrain,
                          overwriteSubnets       = network.overwriteSubnets)
         except:
+            print('caught this error: ' + traceback.format_exc());
+            import pdb;            pdb.set_trace()
             name = network.runType + "_" + '_'.join([str(layer) for layer in network.AUDIO_LSTM_HIDDEN_LIST]) \
                    + network.cnn_features + '_'.join([str(layer) for layer in network.LIP_RNN_HIDDEN_LIST]) \
                     + '_'.join([str(layer) for layer in network.DENSE_HIDDEN_LIST]) + "_" + network.datasetType

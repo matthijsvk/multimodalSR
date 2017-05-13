@@ -98,8 +98,6 @@ def preprocess_dataset(source_path, nbMFCCs=39, logger=None, debug=None, verbose
     y = []
     valid_frames = []
 
-    print(nbMFCCs)
-
     # source_path is the root dir of all the wav/phn files
     wav_files = transform.loadWavs(source_path)
     label_files = transform.loadPhns(source_path)

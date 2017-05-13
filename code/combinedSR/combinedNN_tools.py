@@ -1151,9 +1151,10 @@ class NeuralNetwork:
         return test_cost, test_acc, test_topk_acc
 
     def train(self, dataset, database_binaryDir, runType='combined', storeProcessed=False, processedDir=None,
-              save_name='Best_model',
+              save_name='Best_model', datasetName='TCDTIMIT', nbPhonemes=39,
               num_epochs=40, batch_size=1, LR_start=1e-4, LR_decay=1,
-              shuffleEnabled=True, compute_confusion=False, justTest=False, debug=False, logger=logger_combinedtools):
+              justTest=False, withNoise = False, noiseType = 'white', ratio_dB = -3,
+              shuffleEnabled=True, compute_confusion=False, debug=False, logger=logger_combinedtools):
 
         trainingSpeakerFiles, testSpeakerFiles = dataset
         logger.info("\n* Starting training...")
@@ -1170,14 +1171,23 @@ class NeuralNetwork:
         self.epochsNotImproved = 0
 
 
-        # # TODO: remove this. should not be needed
         if not self.loadPerSpeaker:  #load all the lipspeakers in memory, then don't touch the files -> no reloading needed = faster training
             allImages_train, allMfccs_train, allAudioLabels_train, allValidLabels_train, allValidAudioFrames_train = unpickle(
-                os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTrain.pkl"))
+                os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTrain.pkl"))
             allImages_val, allMfccs_val, allAudioLabels_val, allValidLabels_val, allValidAudioFrames_val = unpickle(
-                    os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersVal.pkl"))
+                    os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersVal.pkl"))
             allImages_test, allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
-                    os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTest.pkl"))
+                    os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTest.pkl"))
+            if withNoise:
+                allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = [], [], [], []
+                for speakerFile in ["Lipspkr1.pkl", "Lipspkr2.pkl", "Lipspkr3.pkl"]:
+                    mfccs_test, audioLabels_test, validLabels_test, validAudioFrames_test = unpickle(
+                            os.path.expanduser("~/TCDTIMIT/combinedSR/") + datasetName + "/binaryAudio" + str(
+                                    nbPhonemes) + "_" + noiseType + os.sep + "ratio" + str(ratio_dB) + os.sep + speakerFile)
+                    allMfccs_test += mfccs_test
+                    allAudioLabels_test += audioLabels_test
+                    allValidLabels_test += validLabels_test
+                    allValidAudioFrames_test += validAudioFrames_test
 
             test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
                                                                 images=allImages_test,

@@ -1,12 +1,6 @@
 import timeit;
 
-import numpy as np
-from tqdm import tqdm
-import os
-
 program_start_time = timeit.default_timer()
-import pdb
-import logging
 from general_tools import *
 
 logger = logging.getLogger('combined.prep')

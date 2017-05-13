@@ -6,10 +6,11 @@ import random
 random.seed(int(timeit.default_timer()))
 
 from phoneme_set import phoneme_set_39_list
+import formatting, preprocessWavs
 import general_tools
-import preprocessWavs
 
-import logging, formatting
+import logging
+
 logger = logging.getLogger('PrepTCDTIMIT')
 logger.setLevel(logging.DEBUG)
 FORMAT = '[$BOLD%(filename)s$RESET:%(lineno)d][%(levelname)-5s]: %(message)s '
