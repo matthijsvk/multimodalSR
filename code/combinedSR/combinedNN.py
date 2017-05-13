@@ -9,7 +9,8 @@ warnings.simplefilter("ignore", UserWarning)  # cuDNN warning
 
 import logging
 import formatting
-
+import os
+from tqdm import tqdm
 
 logger_combined = logging.getLogger('combined')
 logger_combined.setLevel(logging.DEBUG)
@@ -36,6 +37,10 @@ import preprocessingCombined
 
 logToFile = True
 justTest = True
+
+withNoise = True
+noiseType = 'white'
+ratio_dB = -3
 
 def main():
     # each element needs AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features, LIP_RNN_HIDDEN_LIST, DENSE_HIDDEN_LIST, datasetType, runType
@@ -185,7 +190,7 @@ def trainManyNetworks(networks):
             print('caught this error: ' + traceback.format_exc());
             import pdb;            pdb.set_trace()
             name = network.runType + "_" + '_'.join([str(layer) for layer in network.AUDIO_LSTM_HIDDEN_LIST]) \
-                   + network.cnn_features + '_'.join([str(layer) for layer in network.LIP_RNN_HIDDEN_LIST]) \
+                   + network.cnn_features + ('_'.join([str(layer) for layer in network.LIP_RNN_HIDDEN_LIST]) if network.LIP_RNN_HIDDEN_LIST != None else "") \
                     + '_'.join([str(layer) for layer in network.DENSE_HIDDEN_LIST]) + "_" + network.datasetType
             failures.append(name)
     print("#########################################################")
@@ -207,24 +212,9 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
     
     nbMFCCs = 39 # num of features to use -> see 'utils.py' in convertToPkl under processDatabase
     nbPhonemes = 39  # number output neurons
-    #AUDIO_LSTM_HIDDEN_LIST = [256, 256]
     audio_bidirectional = True
-    
-    # # lipreading
-    # CNN_NETWORK = "google"
-    # # using CNN-LSTM combo: what to input to LSTM? direct conv outputs or first through dense layers?
-    # cnn_features = 'conv' #'dense' # 39 outputs as input to LSTM
-    # LIP_RNN_HIDDEN_LIST = None #[256,256]  # set to None to disable CNN-LSTM architecture
-    #
-    # # after concatenation of audio and lipreading, which dense layers before softmax?
-    # DENSE_HIDDEN_LIST = [128,64,64] #[128,128,128,128]
-    #
-    # # Decaying LR
-    # LR_start = 0.001
+
     logger_combined.info("LR_start = %s", str(LR_start))
-    LR_fin = 0.0000001
-    # logger_combined.info("LR_fin = %s", str(LR_fin))
-    #LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)  # each epoch, LR := LR * LR_decay
     LR_decay= 0.5#0.7071
     logger_combined.info("LR_decay = %s", str(LR_decay))
     
@@ -233,71 +223,22 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
     root_dir = os.path.expanduser('~/TCDTIMIT/combinedSR/' + dataset)
     database_binaryDir = root_dir + '/binary'
     processedDir = database_binaryDir + "_finalProcessed"
-    
-    # datasetType = "lipspeakers"  # ""volunteers";
+
+    # lipspeakers: load all in mem at start; volunteers -> not possible, so load per speaker
     if datasetType == "lipspeakers": loadPerSpeaker = False
     else: loadPerSpeaker = True
-    
-    store_dir = root_dir + os.sep + "results" + os.sep + ("CNN_LSTM" if LIP_RNN_HIDDEN_LIST != None else "CNN") + os.sep + datasetType
-    if not os.path.exists(store_dir): os.makedirs(store_dir)
-    
-    # # which part of the network to train/save/...
-    # # runType = 'audio'
-    # # runType = 'lipreading'
-    # runType = 'combined'
-    ###########################
-    
-    model_paths = {}
-    # audio network + cnnNetwork + classifierNetwork
-    model_name = "RNN__" + str(len(AUDIO_LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join([str(layer) for layer in AUDIO_LSTM_HIDDEN_LIST]) \
-                         + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if audio_bidirectional else "_unidirectional") +  "__" \
-                 + "CNN_" + CNN_NETWORK + "_" + cnn_features \
-                 + ("_lipRNN_" if LIP_RNN_HIDDEN_LIST != None else "") + ('_'.join([str(layer) for layer in LIP_RNN_HIDDEN_LIST]) if LIP_RNN_HIDDEN_LIST != None else "") \
-                 + ("_allowSubnetTraining" if allowSubnetTraining else "") + "__" \
-                 + "FC_" + '_'.join([str(layer) for layer in DENSE_HIDDEN_LIST]) + "__" \
-                 + dataset + "_" + datasetType
-    model_paths['combined'] = os.path.join(store_dir, model_name + ".npz")
-
-    # for loading stored audio models
-    audio_dataset = "combined" #""combined" # TCDTIMIT + TIMIT datasets
-    audio_model_name = str(len(AUDIO_LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join(
-            [str(layer) for layer in AUDIO_LSTM_HIDDEN_LIST]) + "_nbMFCC" + str(nbMFCCs) + \
-                       ("_bidirectional" if audio_bidirectional else "_unidirectional") + "_" + audio_dataset
-    audio_model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/"+audio_dataset+"/results")
-    model_paths['audio'] = os.path.join(audio_model_dir, audio_model_name + ".npz")
-    
-    # for loading stored lipreading models
-    lip_model_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/' + dataset + "/results/CNN"))
-    viseme = False; network_type = CNN_NETWORK
-    lip_CNN_model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme") + str(nbPhonemes)
-    model_paths['CNN'] = os.path.join(lip_model_dir, lip_CNN_model_name + ".npz")
-    
-    # for CNN-LSTM networks
-    if LIP_RNN_HIDDEN_LIST != None:
-        lip_model_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/' + dataset + "/results/CNN_LSTM"))
-        lip_CNN_LSTM_model_name = lip_CNN_model_name + "_LSTM" + ("_bidirectional" if lipRNN_bidirectional else "_unidirectional") \
-                                  + "_" + '_'.join([str(layer) for layer in LIP_RNN_HIDDEN_LIST]) + "_" + cnn_features
-        model_paths['CNN_LSTM'] = os.path.join(lip_model_dir, lip_CNN_LSTM_model_name + ".npz")
 
 
-    # set correct paths for storage of results
-    if runType == 'audio':
-        model_save = model_paths['audio']
-        store_dir = audio_model_dir
-    elif runType == 'lipreading':
-        store_dir = lip_model_dir
-        if LIP_RNN_HIDDEN_LIST != None: model_save = model_paths['CNN_LSTM']
-        else: model_save = model_paths['CNN']
-    elif runType == 'combined':
-        model_save = model_paths['combined']
-    else:
-        raise IOError("can't save network params; network type not found")
-    model_save = model_save.replace(".npz", "")
+    # get paths of subnetworks, save in model_paths.
+    # path to save this network = model_save.
 
-
+    model_paths, model_save = getModelPaths(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, DENSE_HIDDEN_LIST,
+                                                       LIP_RNN_HIDDEN_LIST, allowSubnetTraining, audio_bidirectional,
+                                                       cnn_features, dataset, datasetType, lipRNN_bidirectional,
+                                                       nbMFCCs, nbPhonemes, runType)
     # log file
     if logToFile:
-        logFile = store_dir + os.sep + os.path.basename(model_save) + '.log'
+        logFile = model_save.replace(".npz",'.log')
         if os.path.exists(logFile):
             fh = logging.FileHandler(logFile)       # append to existing log
         else:
@@ -308,51 +249,22 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
 
         print("log file: ", logFile)
     #############################################################
+
     
-    
-    logger_combinedtools.info("\n\n\n\n STARTING NEW EVALUATION/TRAINING SESSION AT " + strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+    logger_combined.info("\n\n\n\n STARTING NEW EVALUATION/TRAINING SESSION AT " + strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     
     ##### IMPORTING DATA #####
     logger_combined.info('  data source: ' + database_binaryDir)
     storeProcessed = True  # if you have about 10GB hdd space, you can increase the speed by not reprocessing it each iteration
     # you can just run this program and it will generate the files the first time it encounters them, or generate them manually with datasetToPkl.py
 
-    # just get the names
-    testVolunteerNumbers = ["13F", "15F", "21M", "23M", "24M", "25M", "28M", "29M", "30F", "31F", "34M", "36F", "37F",
-                            "43F", "47M", "51F", "54M"];
-    testVolunteers = [str(testNumber) + ".pkl" for testNumber in testVolunteerNumbers];
-    lipspeakers = ["Lipspkr1.pkl", "Lipspkr2.pkl", "Lipspkr3.pkl"];
-    allSpeakers = [f for f in os.listdir(database_binaryDir) if
-                   os.path.isfile(os.path.join(database_binaryDir, f)) and os.path.splitext(f)[1] == ".pkl"]
-    trainVolunteers = [f for f in allSpeakers if not (f in testVolunteers or f in lipspeakers)];
+    data, datasetFiles, testSpeakerFiles = getData(database_binaryDir, datasetType, processedDir)
 
-    if datasetType == "combined":
-        trainingSpeakerFiles = trainVolunteers + lipspeakers
-        testSpeakerFiles = testVolunteers
-    else:# datasetType == "volunteers":
-        trainingSpeakerFiles = trainVolunteers
-        testSpeakerFiles = testVolunteers
-    # else:
-    #     raise Exception("invalid dataset entered")
-    datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
-
-
-    # get a sample of the dataset to debug the network
-    if datasetType == "lipspeakers":
-        lipspkr_path = os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTest.pkl")
-        data = unpickle(lipspkr_path)
-    else:
-        data, _, _ = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0],
-                                                             sourceDataDir=database_binaryDir,
-                                                             storeProcessed=True,
-                                                             processedDir=processedDir,
-                                                             trainFraction=1.0, validFraction=0.0,
-                                                             verbose=False)
-
+    # import pdb;pdb.set_trace()
 
     ##### BUIDING MODEL #####
     logger_combined.info('\n\n* Building network ...')
-    network = NeuralNetwork('combined', dataset=data, loadPerSpeaker = loadPerSpeaker,
+    network = NeuralNetwork('combined', data=data, loadPerSpeaker = loadPerSpeaker,
                             num_features=nbMFCCs, lstm_hidden_list=AUDIO_LSTM_HIDDEN_LIST,
                             num_output_units=nbPhonemes, bidirectional=audio_bidirectional,
                             cnn_network=CNN_NETWORK, cnn_features = cnn_features,
@@ -379,7 +291,8 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
                                        database_binaryDir=database_binaryDir,
                                        processedDir=processedDir, runType=runType,
                                        storeProcessed=storeProcessed,
-                                       testSpeakerFiles=testSpeakerFiles)
+                                       testSpeakerFiles=testSpeakerFiles,
+                                       withNoise = withNoise, noiseType = noiseType, ratio_dB = ratio_dB)
 
     else: # network doesn't exist, we need to train it first. Or we forced training
         # if we loaded an existing network and force training, make LRsmaller so we don't lose the benefits of our pretrained network
@@ -392,7 +305,9 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
                       storeProcessed=True, processedDir=processedDir,
                       num_epochs=max_num_epochs,
                       batch_size=batch_size_audio, LR_start=LR_start, LR_decay=LR_decay,
-                      compute_confusion=False, debug=False, justTest=justTest, save_name=model_save)
+                      compute_confusion=False, debug=False,
+                      justTest=justTest, withNoise=withNoise, noiseType=noiseType, ratio_dB=ratio_dB,
+                      save_name=model_save)
 
     logger_combined.info("\n\n* Done")
     logger_combined.info('Total time: {:.3f}'.format(time.time() - program_start_time))
@@ -404,6 +319,96 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
 
     return model_save #so you know which network has been trained
 
+
+def getData(database_binaryDir, datasetType, processedDir):
+    # just get the names
+    testVolunteerNumbers = ["13F", "15F", "21M", "23M", "24M", "25M", "28M", "29M", "30F", "31F", "34M", "36F", "37F",
+                            "43F", "47M", "51F", "54M"];
+    testVolunteers = [str(testNumber) + ".pkl" for testNumber in testVolunteerNumbers];
+    lipspeakers = ["Lipspkr1.pkl", "Lipspkr2.pkl", "Lipspkr3.pkl"];
+    allSpeakers = [f for f in os.listdir(database_binaryDir) if
+                   os.path.isfile(os.path.join(database_binaryDir, f)) and os.path.splitext(f)[1] == ".pkl"]
+    trainVolunteers = [f for f in allSpeakers if not (f in testVolunteers or f in lipspeakers)];
+    if datasetType == "combined":
+        trainingSpeakerFiles = trainVolunteers + lipspeakers
+        testSpeakerFiles = testVolunteers
+    else:  # datasetType == "volunteers":
+        trainingSpeakerFiles = trainVolunteers
+        testSpeakerFiles = testVolunteers
+    # else:
+    #     raise Exception("invalid dataset entered")
+    datasetFiles = [trainingSpeakerFiles, testSpeakerFiles]
+    # get a sample of the dataset to debug the network
+    if datasetType == "lipspeakers":
+        lipspkr_path = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTest.pkl")
+        data = unpickle(lipspkr_path)
+    else:
+        data, _, _ = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0],
+                                                         sourceDataDir=database_binaryDir,
+                                                         storeProcessed=True,
+                                                         processedDir=processedDir,
+                                                         trainFraction=1.0, validFraction=0.0,
+                                                         verbose=False)
+
+    return data, datasetFiles, testSpeakerFiles
+
+
+def getModelPaths(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, DENSE_HIDDEN_LIST, LIP_RNN_HIDDEN_LIST, allowSubnetTraining,
+                  audio_bidirectional, cnn_features, dataset, datasetType, lipRNN_bidirectional, nbMFCCs,
+                  nbPhonemes, runType):
+    model_paths = {}
+    # audio network + cnnNetwork + classifierNetwork
+    root_dir = os.path.expanduser('~/TCDTIMIT/combinedSR/' + dataset)
+    store_dir = root_dir + os.sep + "results" + os.sep + ("CNN_LSTM" if LIP_RNN_HIDDEN_LIST != None else "CNN") + os.sep + datasetType
+    if not os.path.exists(store_dir): os.makedirs(store_dir)
+
+    model_name = "RNN__" + str(len(AUDIO_LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join(
+            [str(layer) for layer in AUDIO_LSTM_HIDDEN_LIST]) \
+                 + "_nbMFCC" + str(nbMFCCs) + ("_bidirectional" if audio_bidirectional else "_unidirectional") + "__" \
+                 + "CNN_" + CNN_NETWORK + "_" + cnn_features \
+                 + ("_lipRNN_" if LIP_RNN_HIDDEN_LIST != None else "") + (
+                 '_'.join([str(layer) for layer in LIP_RNN_HIDDEN_LIST]) if LIP_RNN_HIDDEN_LIST != None else "") \
+                 + ("_allowSubnetTraining" if allowSubnetTraining else "") + "__" \
+                 + "FC_" + '_'.join([str(layer) for layer in DENSE_HIDDEN_LIST]) + "__" \
+                 + dataset + "_" + datasetType
+    model_paths['combined'] = os.path.join(store_dir, model_name + ".npz")
+    # for loading stored audio models
+    audio_dataset = "combined"  # ""combined" # TCDTIMIT + TIMIT datasets
+    audio_model_name = str(len(AUDIO_LSTM_HIDDEN_LIST)) + "_LSTMLayer" + '_'.join(
+            [str(layer) for layer in AUDIO_LSTM_HIDDEN_LIST]) + "_nbMFCC" + str(nbMFCCs) + \
+                       ("_bidirectional" if audio_bidirectional else "_unidirectional") + "_" + audio_dataset
+    audio_model_dir = os.path.expanduser("~/TCDTIMIT/audioSR/" + audio_dataset + "/results")
+    model_paths['audio'] = os.path.join(audio_model_dir, audio_model_name + ".npz")
+    # for loading stored lipreading models
+    lip_model_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/' + dataset + "/results/CNN"))
+    viseme = False;
+    network_type = CNN_NETWORK
+    lip_CNN_model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme") + str(nbPhonemes)
+    model_paths['CNN'] = os.path.join(lip_model_dir, lip_CNN_model_name + ".npz")
+    # for CNN-LSTM networks
+    if LIP_RNN_HIDDEN_LIST != None:
+        lip_model_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/' + dataset + "/results/CNN_LSTM"))
+        lip_CNN_LSTM_model_name = lip_CNN_model_name + "_LSTM" + (
+        "_bidirectional" if lipRNN_bidirectional else "_unidirectional") \
+                                  + "_" + '_'.join([str(layer) for layer in LIP_RNN_HIDDEN_LIST]) + "_" + cnn_features
+        model_paths['CNN_LSTM'] = os.path.join(lip_model_dir, lip_CNN_LSTM_model_name + ".npz")
+
+    # set correct paths for storage of results
+    if runType == 'audio':
+        model_save = model_paths['audio']
+        store_dir = audio_model_dir
+    elif runType == 'lipreading':
+        store_dir = lip_model_dir
+        if LIP_RNN_HIDDEN_LIST != None:
+            model_save = model_paths['CNN_LSTM']
+        else:
+            model_save = model_paths['CNN']
+    elif runType == 'combined':
+        model_save = model_paths['combined']
+    else:
+        raise IOError("can't save network params; network type not found")
+    model_save = model_save.replace(".npz", "")
+    return model_paths, model_save
 
 
 if __name__ == "__main__":

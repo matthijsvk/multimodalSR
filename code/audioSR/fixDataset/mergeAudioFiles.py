@@ -6,9 +6,6 @@ import scipy.io.wavfile as wav
 
 def main():
 
-    noiseType = 'voices'
-    noiseType = 'white'
-
     nbPhonemes = 39
     ############### DATA LOCATIONS  ###################
     FRAC_VAL = 0.1  # fraction of training data to be used for validation
@@ -16,19 +13,20 @@ def main():
     dataset = "TCDTIMIT"  # eg TIMIT. You can also manually split up TCDTIMIT according to train/test split in Harte, N.; Gillen, E., "TCD-TIMIT: An Audio-Visual Corpus of Continuous Speech," doi: 10.1109/TMM.2015.2407694
 
     dataRootDir = root + dataset + "/fixed" + str(nbPhonemes) + os.sep + dataset
-    test_source = os.path.join(dataRootDir, 'TEST')
+    #source = os.path.join(dataRootDir, 'TEST')
+    source = os.path.join(dataRootDir, 'TRAIN/lipspeakers')
 
-    print("src: " + test_source)
+    print("src: " + source)
 
     noiseTypes = ['voices','white']
-    ratio_dBs = [0,-3,-5,-10]
+    ratio_dBs = [0,-3,-3,-5,-10]
     for noiseType in noiseTypes:
         for ratio_dB in ratio_dBs:
             test_dst = root + dataset + "/fixed" + str(nbPhonemes) + "_" + noiseType + os.sep + "ratio" + str(
-                ratio_dB) + os.sep + 'TEST'
+                ratio_dB) + os.sep + os.path.basename(source)
             print("dest: " + test_dst)
-
-            generateBadAudio(noiseType, test_source, test_dst, ratio_dB)
+            #import pdb;pdb.set_trace()
+            generateBadAudio(noiseType, source, test_dst, ratio_dB)
 
 
 # from scikits.audiolab import wavread, wavwrite
@@ -38,34 +36,38 @@ def mergeAudioFiles(wav1_path, wav2_path, out_path, ratio_dB):
 
     # https://github.com/jiaaro/pydub/b
 
-    sound1 = AudioSegment.from_file(wav1_path);    loud1 = sound1.dBFS
-    sound2 = AudioSegment.from_file(wav2_path)
+    sound1 = AudioSegment.from_file(wav1_path); loud1 = sound1.rms
+    sound2 = AudioSegment.from_file(wav2_path); loud2 = sound2.rms
+
+    targetRMS = (sound1 + ratio_dB).rms
 
     # bring them to approx equal volume + ratio_dB
-    min_acc = 0.5
-    while sound2.dBFS < loud1 + ratio_dB - min_acc:
-        sound2 += min_acc / 2.0
-    while sound2.dBFS > loud1 + ratio_dB + min_acc:
-        sound2 -= min_acc / 2.0
+    min_acc = 5
+    while sound2.rms < targetRMS - min_acc:
+        sound2 += min_acc / 20.0  #this changes in dB, but we're looking at the RMS result -> /20
+    while sound2.rms > targetRMS + min_acc:
+        sound2 -= min_acc / 20.0
+
+    # print(sound1.rms, targetRMS, sound2.rms)
 
     combined = sound1.overlay(sound2, loop=True)
 
     combined.export(out_path, format='wav')
 
-
-def addWhiteNoise(wav_path, noise_path, out_path, ratio_dB):
-    sound1 = AudioSegment.from_file(wav_path); loud1 = sound1.dBFS
-    sound2 = AudioSegment.from_file(noise_path); loud2 = sound2.dBFS
-
-    # bring them to approx equal volume + ratio_dB
-    min_acc = 0.5
-    while sound2.dBFS < loud1 + ratio_dB - min_acc:
-        sound2 += min_acc/2.0
-    while sound2.dBFS > loud1 + ratio_dB + min_acc:
-        sound2 -= min_acc/2.0
-
-    combined = sound1.overlay(sound2, loop=True)
-    combined.export(out_path, format='wav')
+#
+# def addWhiteNoise(wav_path, noise_path, out_path, ratio_dB):
+#     sound1 = AudioSegment.from_file(wav_path); loud1 = sound1.dBFS
+#     sound2 = AudioSegment.from_file(noise_path); loud2 = sound2.dBFS
+#
+#     # bring them to approx equal volume + ratio_dB
+#     min_acc = 0.5
+#     while sound2.dBFS < loud1 + ratio_dB - min_acc:
+#         sound2 += min_acc/2.0
+#     while sound2.dBFS > loud1 + ratio_dB + min_acc:
+#         sound2 -= min_acc/2.0
+#
+#     combined = sound1.overlay(sound2, loop=True)
+#     combined.export(out_path, format='wav')
 
 
 def generateBadAudio(outType, srcDir, dstDir, ratio_dB):
@@ -84,7 +86,7 @@ def generateBadAudio(outType, srcDir, dstDir, ratio_dB):
             j = random.randint(0,len(src_wavs)-1)
             mergeAudioFiles(src_wavs[i],src_wavs[j],destPath, ratio_dB)
         else:
-            addWhiteNoise(src_wavs[i], noiseFile, destPath, ratio_dB)
+            mergeAudioFiles(src_wavs[i], noiseFile, destPath, ratio_dB)
 
 
 import random

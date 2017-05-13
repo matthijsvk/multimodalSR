@@ -92,7 +92,7 @@ def query_yes_no(question, default="yes"):
                              "(or 'y' or 'n').\n")
 
 
-def copyFilesOfType(srcDir, destDir, extension, interactive=False):
+def copyFilesOfType(srcDir, dstDir, extension, interactive=False):
     print("Source Dir: %s, Destination Dir: %s, Extension: %s" % (srcDir, dstDir, extension))
 
     src = []
@@ -105,7 +105,7 @@ def copyFilesOfType(srcDir, destDir, extension, interactive=False):
                 relSrcPath = relpath(srcDir, srcPath).lstrip("../")
                 # print(relSrcPath)
                 destPath = os.path.join(dstDir, relSrcPath)
-                print("copying from : %s to \t\t %s" % (srcPath, destPath))
+                #print("copying from : %s to \t\t %s" % (srcPath, destPath))
                 src.append(srcPath)
                 dest.append(destPath)
 

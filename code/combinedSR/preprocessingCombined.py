@@ -27,7 +27,7 @@ def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
             if loadData:  # before starting training, we just want to check if it exists, and generate otherwise. Not load the data
                 if verbose: logger.info("loading stored files X's...")
                 train, val, test = unpickle(store_path)
-                if withNoise:
+                if withNoise: #only works for loadPerSpeaker, for lipspeakers you have to generate test audio with datasetToPkl_lipspeakers.py
                     audio_data_path = os.path.expanduser("~/TCDTIMIT/combinedSR/") + dataset + "/binaryAudio" + str(
                         nbPhonemes) + "_" + noiseType + os.sep + "ratio" + str(ratio_dB) + os.sep + speakerFile
                     test[1:] = unpickle(audio_data_path)

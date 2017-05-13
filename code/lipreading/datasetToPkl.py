@@ -16,14 +16,14 @@ logger_combinedPKL.addHandler(ch)
 
 ### The raw data was already saved in pkl files by FileDirOps, now we need to preprocess it (normalize and split in train/val/test sets)
 dataset = "TCDTIMIT"
-datasetType = "lipspeakers";
 viseme = False
 root_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/' + dataset))
 database_binaryDir = root_dir + "/binary" # the raw data
+processedDir = root_dir + "/binary"
 if not os.path.exists(database_binaryDir): os.makedirs(database_binaryDir)
 
 # set log file
-logFile = database_binaryDir + os.sep + datasetType + "_preprocessing.log"
+logFile = database_binaryDir + os.sep + "volunteers" + "_preprocessing.log"
 fh = logging.FileHandler(logFile, 'w')  # create new logFile
 fh.setLevel(logging.DEBUG)
 fh.setFormatter(formatter)
@@ -41,14 +41,8 @@ allSpeakers = sorted([f for f in os.listdir(database_binaryDir) if
                       os.path.isfile(os.path.join(database_binaryDir, f)) and os.path.splitext(f)[1] == ".pkl"])
 trainVolunteers = sorted([f for f in allSpeakers if not (f in testVolunteers or f in lipspeakers)])
 
-if datasetType == "combined":
-    trainingSpeakerFiles = trainVolunteers + lipspeakers
-    testSpeakerFiles = testVolunteers
-elif datasetType == "volunteers":
-    trainingSpeakerFiles = trainVolunteers
-    testSpeakerFiles = testVolunteers
-else:
-    raise Exception("invalid dataset entered")
+trainingSpeakerFiles = trainVolunteers
+testSpeakerFiles = testVolunteers
 
 
 # add the directory to create paths
@@ -62,9 +56,10 @@ logger_combinedPKL.info("Generating Training data... ")
 for speakerFile in trainingSpeakerFiles:
     logger_combinedPKL.info("%s", os.path.basename(speakerFile))
     preprocessLipreading.prepLip_one(speakerFile=speakerFile, trainFraction=0.8, validFraction=0.2,
-                                     sourceDataDir=database_binaryDir, loadData=False, viseme=viseme, storeProcessed=True)
+                                     sourceDataDir=database_binaryDir, loadData=False, viseme=viseme, storeProcessed=True, processedDir=processedDir)
 logger_combinedPKL.info("Generating Test data... ")
 for speakerFile in testSpeakerFiles:
     logger_combinedPKL.info("%s", os.path.basename(speakerFile))
     preprocessLipreading.prepLip_one(speakerFile=speakerFile, trainFraction=0.0, validFraction=0.0,
-                                     sourceDataDir=database_binaryDir, loadData=False, viseme=viseme, storeProcessed=True)
+                                     sourceDataDir=database_binaryDir, loadData=False, viseme=viseme, storeProcessed=True,
+                                     processedDir=processedDir)
