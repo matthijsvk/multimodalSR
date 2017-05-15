@@ -10,11 +10,13 @@ def main():
     ############### DATA LOCATIONS  ###################
     FRAC_VAL = 0.1  # fraction of training data to be used for validation
     root = os.path.expanduser("~/TCDTIMIT/audioSR/")  # ( keep the trailing slash)
+
+    #dataset = "TIMIT"
     dataset = "TCDTIMIT"  # eg TIMIT. You can also manually split up TCDTIMIT according to train/test split in Harte, N.; Gillen, E., "TCD-TIMIT: An Audio-Visual Corpus of Continuous Speech," doi: 10.1109/TMM.2015.2407694
 
     dataRootDir = root + dataset + "/fixed" + str(nbPhonemes) + os.sep + dataset
     #source = os.path.join(dataRootDir, 'TEST')
-    source = os.path.join(dataRootDir, 'TRAIN/lipspeakers')
+    source = os.path.join(dataRootDir, 'lipspeakers')
 
     print("src: " + source)
 

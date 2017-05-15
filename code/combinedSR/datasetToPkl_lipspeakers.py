@@ -16,8 +16,8 @@ dataset = "TCDTIMIT"
 trainFraction = 0.7
 validFraction = 0.1
 
-# runType = 'normal'
-runType = 'noisyAudio'  #just get the noisy audio
+runType = 'normal'
+#runType = 'noisyAudio'  #just get the noisy audio
 
 noiseTypes = ['white','voices']
 ratio_dBs = [0,-3, -5, -10]

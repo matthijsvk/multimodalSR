@@ -53,7 +53,7 @@ import lasagne.objectives as LO
 def main():
 
     # BN parameters
-    batch_size = 32
+    batch_size = 120
     logger_lip.info("batch_size = %s",batch_size)
     # alpha is the exponential moving average factor
     alpha = .1

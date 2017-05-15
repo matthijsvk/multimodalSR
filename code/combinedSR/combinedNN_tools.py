@@ -1361,7 +1361,7 @@ class NeuralNetwork:
             if self.epochsNotImproved > 3:
                 logger.warning("\n\n NO MORE IMPROVEMENTS -> stop training")
 
-                self.finalNetworkEvaluation(save_name=save_name,
+                finalTestResults = self.finalNetworkEvaluation(save_name=save_name,
                                             database_binaryDir=database_binaryDir,
                                             processedDir=processedDir,
                                             runType=runType,
@@ -1371,6 +1371,7 @@ class NeuralNetwork:
                 break
 
         logger.info("Done.")
+        return finalTestResults
 
     def loadPreviousResults(self, save_name, logger=logger_combinedtools):
         # try to load performance metrics of stored model
@@ -1455,12 +1456,18 @@ class NeuralNetwork:
             self.network_train_info['final_test_cost_roundParams'] = test_cost
             self.network_train_info['final_test_acc_roundParams'] = test_acc
             self.network_train_info['final_test_top3_acc_roundParams'] = test_topk_acc
+        elif withNoise:
+            self.network_train_info['final_test_cost_' + noiseType + "_" + "ratio" + str(ratio_dB)] = test_cost
+            self.network_train_info['final_test_acc_' + noiseType + "_" + "ratio" + str(ratio_dB)] = test_acc
+            self.network_train_info['final_test_top3_acc_' + noiseType + "_" + "ratio" + str(ratio_dB)] = test_topk_acc
         else:
             self.network_train_info['final_test_cost'] = test_cost
             self.network_train_info['final_test_acc'] = test_acc
             self.network_train_info['final_test_top3_acc'] = test_topk_acc
 
         saveToPkl(store_path, self.network_train_info)
+
+        return test_cost, test_acc, test_topk_acc
 
     def updateLR(self, LR, LR_decay, logger=logger_combinedtools):
         this_acc = self.network_train_info['val_acc'][-1]

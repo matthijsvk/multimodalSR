@@ -207,16 +207,10 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
     #try to load performance metrics of stored model
     if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
         old_train_info = preprocessLipreading.unpickle(save_name + '_trainInfo.pkl')
-        # backward compatibility
-        if type(old_train_info) == list:
-            old_train_info = old_train_info[0]
-            best_val_acc = min(old_train_info[2])
-            test_cost = min(old_train_info[3])
-            test_acc = min(old_train_info[3])
-        elif type(old_train_info) == dict:  # normal case
-            best_val_acc = min(old_train_info['val_acc'])
+        if type(old_train_info) == dict:  # normal case
+            best_val_acc = max(old_train_info['val_acc'])
             test_cost = min(old_train_info['test_cost'])
-            test_acc = min(old_train_info['test_acc'])
+            test_acc = max(old_train_info['test_acc'])
             try:
                 test_topk_acc = min(old_train_info['test_topk_acc'])
             except:

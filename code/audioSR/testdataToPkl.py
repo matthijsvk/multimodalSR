@@ -8,7 +8,7 @@ random.seed(int(timeit.default_timer()))
 from general_tools import *
 
 import logging
-from audioSR import formatting, preprocessWavs
+import formatting, preprocessWavs
 
 logger = logging.getLogger('PrepTCDTIMIT')
 logger.setLevel(logging.DEBUG)

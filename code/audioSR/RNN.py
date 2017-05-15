@@ -52,20 +52,19 @@ MANY_N_HIDDEN_LISTS = [[8], [8, 8], [8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
 # Selected:
 MANY_N_HIDDEN_LISTS = [[32,32],[64,64],[256,256],[512,512]]
 
-MANY_N_HIDDEN_LISTS = [[1024,1024], [512,512,512,512]]
+#TODO: train these networks properly
+# MANY_N_HIDDEN_LISTS = [[1024,1024], [512,512,512,512]]
 
 ## for nbMFCC, uni vs bidirectional etc comparison:
-MANY_N_HIDDEN_LISTS = [[64,64]]
+MANY_N_HIDDEN_LISTS = [[256,256]]
 
 
-# evaluating test
-
+# evaluating the network
 BIDIRECTIONAL = True
 ADD_DENSE_LAYERS = False
-ROUND_PARAMS = False
-justTest = True
 
-justTest = False
+justTest = True
+ROUND_PARAMS = False
 withNoise = False
 
 dataset = "TIMIT"       # combined"
@@ -218,7 +217,10 @@ def setupNetwork(dataset, N_HIDDEN_LIST, batch_size):
 
     # Try to load stored model
     logger_RNN.info(' Network built. Trying to load stored model: %s', model_load)
-    success = RNN_network.load_model(model_load)
+    if justTest and ROUND_PARAMS:
+        success = RNN_network.load_model(model_load, roundParams=True)
+    else:
+        success = RNN_network.load_model(model_load)
 
     RNN_network.loadPreviousResults(model_save)
 
@@ -227,13 +229,6 @@ def setupNetwork(dataset, N_HIDDEN_LIST, batch_size):
     RNN_network.build_functions(train=True, debug=False)
 
     return RNN_network, success, model_save, batch_size, fh
-            # Try to load stored model
-            logger_RNN.info(' Network built. Trying to load stored model: %s', model_load)
-            if justTest and ROUND_PARAMS:
-                success = RNN_network.load_model(model_load, roundParams=True)
-            else:
-                success = RNN_network.load_model(model_load)
-            if success == 0: LR_start = LR_start / 10.0
 
 def trainNetwork(network, loadParamsSuccess, model_save, batch_size, datasetFiles, noiseType=None, ratio_dB=None, fh=None):
     # Decaying LR

@@ -18,8 +18,6 @@ ch.setFormatter(formatter)
 logger_prepLip.addHandler(ch)
 
 from general_tools import *
-
-
 #######################
 
 #TODO Beware, this isn't written very efficiently and copies all the data, requiring about 6GB of RAM by itself.

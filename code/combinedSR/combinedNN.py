@@ -39,7 +39,7 @@ logToFile = True
 justTest = False
 ROUND_PARAMS=True
 
-withNoise = True
+withNoise = False
 noiseType = 'white'
 ratio_dB = -3
 
@@ -60,44 +60,44 @@ def main():
         #
         # # compare with conv
         # networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64])#, forceTrain=True),
-        # networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256])#, forceTrain=True),
-        # networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512,512], forceTrain=True),
+        #networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256])#, forceTrain=True),
+        networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512,512], forceTrain=True),
         #
         # # # # # # ### AUDIO ###  -> see audioSR/RNN.py, there it can run in batch mode which is much faster
-        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64],forceTrain=True),
-        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256,256],forceTrain=True),
-        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512,512],forceTrain=True),
+        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64],forceTrain=True),
+        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256,256],forceTrain=True),
+        # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512,512],forceTrain=True),
         #
         # # # # ### COMBINED ###  ## TODO: retrain
         # # # # # lipspeakers
-        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
-                       DENSE_HIDDEN_LIST=[256,256],overwriteSubnets=True, forceTrain=True),
-        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
-                       DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
-
-
-        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256],
-                       DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
-        # impact of smaller or larger audio network
-        networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[64],
-                       cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
-                       DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
-        networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
-                       cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
-                       DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
-
-        # ## conv
-        networkToTrain(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
-                       DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=True, forceTrain=True),
-        networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
-                       cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64],
-                       DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
-        networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
-                       cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
-                       DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
-        networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
-                       cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512, 512],
-                       DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True)
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
+        #                DENSE_HIDDEN_LIST=[256,256],overwriteSubnets=True, forceTrain=True),
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
+        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
+        #
+        #
+        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
+        # # impact of smaller or larger audio network
+        # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[64],
+        #                cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
+        # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #                cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
+        #
+        # # ## conv
+        # networkToTrain(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
+        #                DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=True, forceTrain=True),
+        # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
+        # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
+        # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512, 512],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True)
         #
         # # # # TODO: train with params CNN and audio made trainable
         # # # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
@@ -168,6 +168,7 @@ class networkToTrain:
 
 # networks is a list of dictionaries, where each dictionary contains the needed parameters for training
 def trainManyNetworks(networks):
+    results = {}
     failures = []
     for network in tqdm(networks,total=len(networks)):
         print("\n\n\n\n ################################")
@@ -175,7 +176,7 @@ def trainManyNetworks(networks):
         print("Network properties: ")
         pprint(vars(network))
         try:
-            trainNetwork(AUDIO_LSTM_HIDDEN_LIST     = network.AUDIO_LSTM_HIDDEN_LIST,
+            model_save, test_results = trainNetwork(AUDIO_LSTM_HIDDEN_LIST     = network.AUDIO_LSTM_HIDDEN_LIST,
                          CNN_NETWORK            = network.CNN_NETWORK,
                          cnn_features           = network.cnn_features,
                          LIP_RNN_HIDDEN_LIST    = network.LIP_RNN_HIDDEN_LIST,
@@ -187,6 +188,9 @@ def trainManyNetworks(networks):
                          allowSubnetTraining    = network.allowSubnetTraining,
                          forceTrain             = network.forceTrain,
                          overwriteSubnets       = network.overwriteSubnets)
+            name = model_save + "_withNoise"+withNoise + (noiseType+"_"+ratio_dB if withNoise else "")
+            results[name] = test_results #should be test_cost, test_acc, test_topk_acc
+
         except:
             print('caught this error: ' + traceback.format_exc());
             import pdb;            pdb.set_trace()
@@ -259,6 +263,7 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
     storeProcessed = True  # if you have about 10GB hdd space, you can increase the speed by not reprocessing it each iteration
     # you can just run this program and it will generate the files the first time it encounters them, or generate them manually with datasetToPkl.py
 
+    # some data for
     data, datasetFiles, testSpeakerFiles = getData(database_binaryDir, datasetType, processedDir)
 
     # import pdb;pdb.set_trace()
@@ -291,7 +296,7 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
         if ROUND_PARAMS: #safety for if we forget to set round_params to false when training
             logger_combined.info("Loading Rounded Parameters...")
             network.setNetworkParams(runType, roundParams=ROUND_PARAMS, overwriteSubnets=overwriteSubnets)
-        network.finalNetworkEvaluation(save_name=model_save,
+            testResults = network.finalNetworkEvaluation(save_name=model_save,
                                        database_binaryDir=database_binaryDir,
                                        processedDir=processedDir, runType=runType,
                                        storeProcessed=storeProcessed,
@@ -306,7 +311,7 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
         logger_combined.info("\n\n* Training ...")
 
 
-        network.train(datasetFiles, database_binaryDir=database_binaryDir, runType=runType,
+        testResults = network.train(datasetFiles, database_binaryDir=database_binaryDir, runType=runType,
                       storeProcessed=True, processedDir=processedDir,
                       num_epochs=max_num_epochs,
                       batch_size=batch_size_audio, LR_start=LR_start, LR_decay=LR_decay,
@@ -322,7 +327,7 @@ def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidire
         fh.close()
         logger_combined.removeHandler(fh)
 
-    return model_save #so you know which network has been trained
+    return model_save, testResults #so you know which network has been trained
 
 
 def getData(database_binaryDir, datasetType, processedDir):
@@ -346,6 +351,7 @@ def getData(database_binaryDir, datasetType, processedDir):
     # get a sample of the dataset to debug the network
     if datasetType == "lipspeakers":
         lipspkr_path = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTest.pkl")
+        logger_combined.info("data: lipspkr_path")
         data = unpickle(lipspkr_path)
     else:
         data, _, _ = preprocessingCombined.getOneSpeaker(trainingSpeakerFiles[0],
