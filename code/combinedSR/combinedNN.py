@@ -50,7 +50,7 @@ def main():
     networkList = [
         # # # # # # # ### LIPREADING ###
         # # # # # # # # # # CNN
-        networkToTrain(runType="lipreading",LIP_RNN_HIDDEN_LIST=None),
+        #networkToTrain(runType="lipreading",LIP_RNN_HIDDEN_LIST=None),
         # # # # # # #
         # # # # # # # # CNN-LSTM -> by default only the LSTM part is trained (line 713 in build_functions in combinedNN_tools.py
         # # # # # # # #          -> you can train everything (also CNN parameters), but only do this after the CNN-LSTM has trained with fixed CNN parameters, otherwise you'll move far out of your optimal point
@@ -58,11 +58,11 @@ def main():
         # networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64], forceTrain=True),
         # networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256], forceTrain=True),
         # networkToTrain(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[512,512], forceTrain=True),
-        #
-        # # compare with conv
+        # #
+        # # # compare with conv
         # networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64])#, forceTrain=True),
-        #networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256])#, forceTrain=True),
-        networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512,512])#, forceTrain=True),
+        # networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256])#, forceTrain=True),
+        # networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512,512])#, forceTrain=True),
 
         # # # # # # ### AUDIO ###  -> see audioSR/RNN.py, there it can run in batch mode which is much faster
         # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64],forceTrain=True),
@@ -73,8 +73,8 @@ def main():
         # # # # # lipspeakers
         # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
         #                DENSE_HIDDEN_LIST=[256,256],overwriteSubnets=True, forceTrain=True),
-        # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
-        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
+        networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
+                        DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=True),
         #
         #
         # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256],
