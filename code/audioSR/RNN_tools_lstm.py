@@ -277,21 +277,19 @@ class NeuralNetwork:
         del self.network_train_info[1][self.best_epoch:]
         del self.network_train_info[2][self.best_epoch:]
 
-    def load_model(self, model_name, logger=logger_RNNtools):
+    def load_model(self, model_name, roundParams=False, logger=logger_RNNtools):
         if self.network is not None:
             try:
                 logger.info("Loading stored model...")
 
                 # restore network weights
                 with np.load(model_name) as f:
-                    param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-                    L.set_all_param_values(self.network_lout, *param_values)
+                    param_values = [f['arr_%d' % i] for i in range(len(f.files))][0]
+                    if roundParams:
+                        logger.info("ROUND PARAMS")
+                        param_values = self.roundParams(param_values)
+                    L.set_all_param_values(self.network_lout, param_values)
 
-                # # restore 'updates' training parameters
-                # with np.load(model_name + "_updates.npz") as f:
-                #     updates_values = [f['arr_%d' % i] for i in range(len(f.files))]
-                #     for p, value in zip(self.updates.keys(), updates_values):
-                #         p.set_value(value)
                 logger.info("Loading parameters successful.")
                 return 0
 
@@ -580,7 +578,7 @@ class NeuralNetwork:
 
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
-              compute_confusion=False, justTest=False, debug=False, test_dataset=None, logger=logger_RNNtools):
+              compute_confusion=False, justTest=False, debug=False, roundParams=False, test_dataset=None, logger=logger_RNNtools):
 
         X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
 
@@ -604,9 +602,14 @@ class NeuralNetwork:
         if justTest:
             if os.path.exists(save_name+".npz"):
                 self.loadPreviousResults(save_name)
-                self.network_train_info[test_dataset+'_final_test_cost'] = test_cost
-                self.network_train_info[test_dataset +'_final_test_acc']       = test_accuracy
-                self.network_train_info[test_dataset +'_final_test_topk_acc']  = test_top3_accuracy
+                if roundParams:
+                    self.network_train_info[test_dataset + '_final_test_cost_roundParams'] = test_cost
+                    self.network_train_info[test_dataset + '_final_test_acc_roundParams'] = test_accuracy
+                    self.network_train_info[test_dataset + '_final_test_topk_acc_roundParams'] = test_top3_accuracy
+                else:
+                    self.network_train_info[test_dataset+'_final_test_cost'] = test_cost
+                    self.network_train_info[test_dataset +'_final_test_acc']       = test_accuracy
+                    self.network_train_info[test_dataset +'_final_test_topk_acc']  = test_top3_accuracy
 
                 saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
                 logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
@@ -647,12 +650,15 @@ class NeuralNetwork:
 
             # better model, so save parameters
             if validation_accuracy > self.best_val_acc:
+                # only reset if significant improvement
+                if validation_accuracy - self.best_val_acc > 0.2:
+                    self.epochsNotImproved = 0
+                # store new parameters
                 self.best_cost = validation_cost
                 self.best_val_acc = validation_accuracy
                 self.best_epoch = self.curr_epoch
                 self.best_param = L.get_all_param_values(self.network_lout)
                 self.best_updates = [p.get_value() for p in self.updates.keys()]
-                self.epochsNotImproved = 0
                 logger.info("New best model found!")
                 if save_name is not None:
                     logger.info("Model saved as " + save_name)

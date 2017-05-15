@@ -43,29 +43,29 @@ MANY_N_HIDDEN_LISTS = [[8], [8, 8], [8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
                       [32],[32,32],[32,32,32,32],
                        [64], [64,64],[64,64,64,64],
                        [256],[256,256],[256,256,256],
-                       [512],[512,512],[512,512,512]]
-MANY_N_HIDDEN_LISTS = [[1024], [1024, 1024], [1024, 1024, 1024, 1024]]
-
-# Selected:
-MANY_N_HIDDEN_LISTS = [[32,32],[64,64],[256,256],[512,512]]
-MANY_N_HIDDEN_LISTS = [[64, 64], [512, 512]]
-
-# MANY_N_HIDDEN_LISTS = [[512,512]]
-# MANY_N_HIDDEN_LISTS = [[256,256]]
+                       [512],[512,512],[512,512,512],
+                       [1024,1024]]
 
 ## for nbMFCC, uni vs bidirectional etc comparison:
-#MANY_N_HIDDEN_LISTS = [[64,64]]
+# MANY_N_HIDDEN_LISTS = [[64,64]]
+
+# Selected:
+MANY_N_HIDDEN_LISTS = [[32, 32], [64, 64], [256, 256], [512, 512]]
+
+# MANY_N_HIDDEN_LISTS = [[1024,1024],[512,512,512,512]]
+#MANY_N_HIDDEN_LISTS = [[256, 256], [512, 512]]
+
 
 
 BIDIRECTIONAL = True
 ADD_DENSE_LAYERS = False
-
-justTest = False
+ROUND_PARAMS = False
+justTest = True
 
 
 for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
     # Decaying LR
-    LR_start = 0.01
+    LR_start = 0.01 #0.01
     logger_RNN.info("LR_start = %s", str(LR_start))
     LR_fin = 0.0000001
     logger_RNN.info("LR_fin = %s", str(LR_fin))
@@ -75,8 +75,8 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
 
     #############################################################
     # Set locations for DATA, LOG, PARAMETERS, TRAIN info
-    dataset = "TCDTIMIT"#combined" #""combined"
-    test_dataset = "TCDTIMIT";  #if justTestTrue, don't save the model, just run once over the TEST dataset
+    dataset = "combined" #""combined"
+    test_dataset = "combined"#TIMIT";  #if justTestTrue, don't save the model, just run once over the TEST dataset
     root = os.path.expanduser("~/TCDTIMIT/audioSR/")
     store_dir = root + dataset + "/results"
     if not os.path.exists(store_dir): os.makedirs(store_dir)
@@ -149,7 +149,8 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
         logger_RNN.info('  %s %s', type(valid_frames_train[0][0]), valid_frames_train[0][0].shape)
 
     ##### BUIDING MODEL #####
-    if N_HIDDEN_LIST[0] > 128: batch_sizes = [64,32,16,8,4]
+    if N_HIDDEN_LIST[0] > 256: batch_sizes = [32, 16, 8, 4]
+    elif N_HIDDEN_LIST[0] > 128: batch_sizes = [64,32,16,8,4]
     else: batch_sizes = [128,64,32,16,8,4]
     for batch_size in batch_sizes:
         try:
@@ -166,7 +167,10 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
 
             # Try to load stored model
             logger_RNN.info(' Network built. Trying to load stored model: %s', model_load)
-            success = RNN_network.load_model(model_load)
+            if justTest and ROUND_PARAMS:
+                success = RNN_network.load_model(model_load, roundParams=True)
+            else:
+                success = RNN_network.load_model(model_load)
             if success == 0: LR_start = LR_start / 10.0
 
             RNN_network.loadPreviousResults(model_save)
@@ -179,7 +183,7 @@ for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS:
             logger_RNN.info("\n* Training ...")
             RNN_network.train(dataset, model_save, num_epochs=num_epochs,
                               batch_size=batch_size, LR_start=LR_start, LR_decay=LR_decay,
-                              compute_confusion=False, justTest=justTest, test_dataset=test_dataset,debug=False)
+                              compute_confusion=False, justTest=justTest, roundParams=ROUND_PARAMS,test_dataset=test_dataset,debug=False)
             break;
         except:
             print('caught this error: ' + traceback.format_exc());

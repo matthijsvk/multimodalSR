@@ -78,7 +78,7 @@ class modelEvaluator:
                                     logger=logger_evaluate)
         # Try to load stored model
         logger_evaluate.info(' Network built. Trying to load stored model: %s', model_load)
-        returnVal = self.RNN_network.load_model(model_load, logger=logger_evaluate)
+        returnVal = self.RNN_network.load_model(model_load, roundParams=ROUND_PARAMS,logger=logger_evaluate)
         if returnVal != 0: raise IOError("Model not found, no weights loaded. Train the model first with RNN.py")
 
         # print number of parameters

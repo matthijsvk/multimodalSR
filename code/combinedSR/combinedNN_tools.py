@@ -629,13 +629,14 @@ class NeuralNetwork:
 
 
     # return True if successful load, false otherwise
-    def load_model(self, model_type, logger=logger_combinedtools):
+    def load_model(self, model_type, roundParams=False, logger=logger_combinedtools):
         if not os.path.exists(self.model_paths[model_type]):
             return False
 
         # restore network weights
         with np.load(self.model_paths[model_type]) as f:
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+            if len(param_values) == 1: param_values = param_values[0]
             if model_type == 'audio':
                 lout = self.audioNet_lout
             elif model_type == 'CNN':
@@ -648,10 +649,12 @@ class NeuralNetwork:
                 logger.error('Wrong network type. No weights loaded')#.format(model_type))
                 return False
             try:
-                lasagne.layers.set_all_param_values(lout, param_values)
+                if roundParams: lasagne.layers.set_all_param_values(lout, self.round_params(param_values))
+                else: lasagne.layers.set_all_param_values(lout, param_values)
             except:
                 try:
-                    lasagne.layers.set_all_param_values(lout, *param_values)
+                    if roundParams: lasagne.layers.set_all_param_values(lout, self.round_params(*param_values))
+                    else: lasagne.layers.set_all_param_values(lout, *param_values)
                 except:
                     logger.warning('Warning: %s', traceback.format_exc())  # , model_path)
                     import pdb;pdb.set_trace()
@@ -659,26 +662,32 @@ class NeuralNetwork:
         logger.info("Loading %s parameters successful.", model_type)
         return True
 
+    def round_params(self, param_values):
+        for i in range(len(param_values)):
+            param_values[i] = param_values[i].astype(np.float16)
+            param_values[i] = param_values[i].astype(np.float32)
+
+        return param_values
 
     # set as many network parameters as possible by hierarchical loading of subnetworks
     # eg for combined: if no traied combined network, try to load subnets of audio and lipreading
-    def setNetworkParams(self, runType, overwriteSubnets=False, logger=logger_combinedtools):
+    def setNetworkParams(self, runType, overwriteSubnets=False, roundParams=False, logger=logger_combinedtools):
         if runType == 'combined':
             logger.info("\nAttempting to load combined model: %s", self.model_paths['combined'])
 
-            success = self.load_model(model_type='combined')
+            success = self.load_model(model_type='combined', roundParams=roundParams)
             if (not success) or overwriteSubnets:
                 logger.warning("No complete network found, loading parts...")
 
                 logger.info("CNN : %s", self.model_paths['CNN'])
-                self.load_model(model_type='CNN')
+                self.load_model(model_type='CNN', roundParams=roundParams)
 
                 if self.lipreadingType == 'CNN_LSTM':  # LIP_RNN_HIDDEN_LIST != None:
                     logger.info("CNN_LSTM : %s", self.model_paths['CNN_LSTM'])
-                    self.load_model(model_type='CNN_LSTM')
+                    self.load_model(model_type='CNN_LSTM', roundParams=roundParams)
 
                 logger.info("Audio : %s", self.model_paths['audio'])
-                self.load_model(model_type='audio')
+                self.load_model(model_type='audio', roundParams=roundParams)
 
         elif runType == 'lipreading':
 
@@ -687,18 +696,18 @@ class NeuralNetwork:
                             self.model_paths['CNN_LSTM'])
 
                 #try to load CNN_LSTM; if not works just load the CNN so you can train the LSTM based on that
-                success = self.load_model(model_type='CNN_LSTM')
+                success = self.load_model(model_type='CNN_LSTM', roundParams=roundParams)
                 if not success:
                     logger.warning("No complete network found, loading parts...")
-                    self.load_model(model_type='CNN')
+                    self.load_model(model_type='CNN', roundParams=roundParams)
             else:
                 logger.info("\nAttempting to load lipreading CNN model: %s",   self.model_paths['CNN'])
-                success = self.load_model(model_type='CNN')
+                success = self.load_model(model_type='CNN', roundParams=roundParams)
 
         else: ## runType == 'audio':
             logger.info("\nAttempting to load audio model: %s",
                         self.model_paths['audio'])
-            success = self.load_model(model_type='audio')
+            success = self.load_model(model_type='audio', roundParams=roundParams)
         return success
 
 
@@ -1375,7 +1384,8 @@ class NeuralNetwork:
     # Combined network  -> evaluate audio, lipreading and then combined network
     # Audio network     -> evaluate audio
     # Lipreading        -> evaluate lipreading
-    def finalNetworkEvaluation(self, save_name, database_binaryDir, processedDir, runType, testSpeakerFiles, storeProcessed=False,  logger=logger_combinedtools):
+    def finalNetworkEvaluation(self, save_name, database_binaryDir, processedDir, runType, testSpeakerFiles,
+                               storeProcessed=False,  roundParams=False, logger=logger_combinedtools):
         if runType == 'lipreading': networkType = "lipreading " + self.lipreadingType
         else: networkType = runType
         logger.info(" \n\n Running FINAL evaluation on Test set... (%s network type)", networkType)
@@ -1406,13 +1416,19 @@ class NeuralNetwork:
             test_topk_acc = test_topk_acc / nb_test_batches * 100
 
         logger.info("FINAL TEST results on %s: ", runType)
+        logger.info("ROUND_PARAMS")
         logger.info("\t  %s test cost:        %s", runType, test_cost)
         logger.info("\t  %s test acc rate:  %s %%", runType, test_acc)
         logger.info("\t  %s test top 3 acc:  %s %%", runType, test_topk_acc)
 
-        self.network_train_info['final_test_cost'] = test_cost
-        self.network_train_info['final_test_acc'] = test_acc
-        self.network_train_info['final_test_top3_acc'] = test_topk_acc
+        if roundParams:
+            self.network_train_info['final_test_cost_roundParams'] = test_cost
+            self.network_train_info['final_test_acc_roundParams'] = test_acc
+            self.network_train_info['final_test_top3_acc_roundParams'] = test_topk_acc
+        else:
+            self.network_train_info['final_test_cost'] = test_cost
+            self.network_train_info['final_test_acc'] = test_acc
+            self.network_train_info['final_test_top3_acc'] = test_topk_acc
 
         saveToPkl(store_path, self.network_train_info)
 
