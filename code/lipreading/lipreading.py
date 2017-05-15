@@ -53,7 +53,7 @@ import lasagne.objectives as LO
 def main():
 
     # BN parameters
-    batch_size = 120
+    batch_size = 32
     logger_lip.info("batch_size = %s",batch_size)
     # alpha is the exponential moving average factor
     alpha = .1
@@ -84,13 +84,13 @@ def main():
     oneHot = False
 
     ##############################################
-    network_type = "google"
+    network_type = "cifar10" #resnet50"# ""google"
     viseme = False  # will set nbClasses and store path   vis: 6.498.828   phn: 7.176.231
 
     if viseme:   nbClasses = 12
     else:        nbClasses = 39
 
-    justTest =True
+    justTest =False
 
     # get the database
     # If it's small (lipspeakers) -> generate X_train, y_train etc here

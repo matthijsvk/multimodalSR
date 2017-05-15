@@ -34,6 +34,7 @@ from general_tools import *
 import preprocessingCombined
 
 #############################################################
+resultsPath = os.path.expanduser('~/TCDTIMIT/combinedSR/TCDTIMIT/results/allResults.pkl')
 
 logToFile = True
 justTest = False
@@ -61,8 +62,8 @@ def main():
         # # compare with conv
         # networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64])#, forceTrain=True),
         #networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256])#, forceTrain=True),
-        networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512,512], forceTrain=True),
-        #
+        networkToTrain(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512,512])#, forceTrain=True),
+
         # # # # # # ### AUDIO ###  -> see audioSR/RNN.py, there it can run in batch mode which is much faster
         # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64],forceTrain=True),
         # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256,256],forceTrain=True),
@@ -133,7 +134,13 @@ def main():
         # networkToTrain(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256], DENSE_HIDDEN_LIST=[512, 512, 512],
         #                datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
     ]
-    trainManyNetworks(networkList)
+    results = trainManyNetworks(networkList)
+    try: prevResults = unpickle(resultsPath)
+    except: prevResults = {}
+    import pdb;pdb.set_trace()
+    prevResults.update(results)
+    import pdb;pdb.set_trace()
+    saveToPkl(resultsPath, prevResults)
 
 class networkToTrain:
     def __init__(self,
@@ -188,7 +195,7 @@ def trainManyNetworks(networks):
                          allowSubnetTraining    = network.allowSubnetTraining,
                          forceTrain             = network.forceTrain,
                          overwriteSubnets       = network.overwriteSubnets)
-            name = model_save + "_withNoise"+withNoise + (noiseType+"_"+ratio_dB if withNoise else "")
+            name = model_save + ("_Noise" +noiseType+"_"+str(ratio_dB) if withNoise else "")
             results[name] = test_results #should be test_cost, test_acc, test_topk_acc
 
         except:
@@ -204,6 +211,7 @@ def trainManyNetworks(networks):
     if len(failures) > 0:
         print("Some networks failed to train...")
         import pdb;pdb.set_trace()
+    return results
         
 
 def trainNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features,lipRNN_bidirectional, LIP_RNN_HIDDEN_LIST, DENSE_HIDDEN_LIST,

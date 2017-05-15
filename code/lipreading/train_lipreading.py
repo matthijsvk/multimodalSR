@@ -343,10 +343,10 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
         logger_train.info("Train info written to:\t %s", store_path)
 
         # decay the LR
-        #LR *= LR_decay
         LR, epochsNotImproved = updateLR(LR, LR_decay, network_train_info, epochsNotImproved)
+        logger_train.info("Epochs not improved: %s", epochsNotImproved)
 
-        if epochsNotImproved > 4:
+        if epochsNotImproved > 3:
             logger_train.warning("\n\n NO MORE IMPROVEMENTS -> stop training")
             test_cost, test_acc, test_topk_acc = evalTEST(testSpeakerFiles,
                                                           sourceDataDir=database_binaryDir,
