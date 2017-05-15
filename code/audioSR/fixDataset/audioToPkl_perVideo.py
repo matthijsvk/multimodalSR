@@ -1,18 +1,23 @@
-import math
-import os
-from tqdm import tqdm
 import timeit;
+
+from tqdm import tqdm
+import sys, os
+sys.path.insert(0, os.path.abspath('../'))
+print(os.path.abspath('../'))
+
 program_start_time = timeit.default_timer()
 import random
 random.seed(int(timeit.default_timer()))
 
 # label files are in audio frames @16kHz, not in seconds
-from PIL import Image
-from phoneme_set import phoneme_set_39, classToPhoneme39
+from phoneme_set import phoneme_set_39
+
 import math
 import cPickle
 
-import logging, formatting
+import logging
+import formatting
+
 logger_combinedPrep = logging.getLogger('prepcombined')
 logger_combinedPrep.setLevel(logging.DEBUG)
 FORMAT = '[$BOLD%(filename)s$RESET:%(lineno)d][%(levelname)-5s]: %(message)s '
@@ -24,41 +29,44 @@ ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger_combinedPrep.addHandler(ch)
 
-from preprocessWavs import *
 from general_tools import *
+from preprocessWavs import *
 
 nbMFCCs = 39
+nbPhonemes = 39
 
 def main():
+    # This file can be used to generate the audio arrays for use in combinedSR (replace the clean audio with noisy audio)
+    # If you don't want to use noisy audio, just use combinedSR/datasetToPkl.py
+    # Only works for test set for now, but should be easily adaptable for train set as well if you want to train on noisy data
+    # In that case you'll need to generate noisy audio using mergeAudioFiles.py in audioSR/fixDataset/
 
-    root = os.path.expanduser("~/TCDTIMIT/combinedSR/")  # ( keep the trailing slash)
+    # when training/evaluating on combinedSR, when
 
     dataset = "TCDTIMIT"
-    databaseDir = root + dataset + "/database"
-    outputDir = root + dataset + "/binary"
+    noiseTypes = ['voices', 'white']
+    ratio_dBs = [0, -3, -5, -10]
 
-    meanStdAudio = unpickle("./database_averages/TCDTIMITMeanStd.pkl")
-    allSpeakersToBinary(databaseDir, outputDir, meanStdAudio, test=False, overWrite=False)
+    for noiseType in noiseTypes:
+        for ratio_dB in ratio_dBs:
+            databaseDir = os.path.expanduser("~/TCDTIMIT/audioSR/") + dataset + "/fixed" + str(nbPhonemes) \
+                          + "_" + noiseType + os.sep + "ratio" + str(ratio_dB)
+
+            outputDir = os.path.expanduser("~/TCDTIMIT/combinedSR/") + dataset + "/binaryAudio" + str(nbPhonemes) \
+                        + "_" + noiseType + os.sep + "ratio" + str(ratio_dB)
+
+            meanStdAudio = unpickle("../database_averages/TCDTIMITMeanStd.pkl")
+            allSpeakersToBinary(databaseDir, outputDir, meanStdAudio, test=False, overWrite=False)
 
 
-def dirToArrays(dir, nbMFCCs=39, verbose=False):
-    bad = []
-
-    thisImages = []
-    # just one mfcc file, don't store in list
+def audioDirToArrays(dir, nbMFCCs=39, verbose=False):
     thisValidAudioFrames = []  # these are the audio valid frames of this video
-
     labels_fromAudio = []
-    imageValidFrames_fromAudio = []
+    # only 1 mfcc file, no need for a list
 
-    imagePaths = []
     for root, dirs, files in os.walk(dir):  # files in videoDir, should only be .jpg, .wav and .phn (and .vphn)
         for file in files:
             name, extension = os.path.splitext(file)
-            if extension == ".jpg":
-                imagePath = ''.join([root, os.sep, file])
-                imagePaths.append(imagePath)
-                # do the processing after all the files have been found, because then we can sort on frame number
 
             if extension == ".wav":
                 # Get MFCC of the WAV
@@ -71,8 +79,7 @@ def dirToArrays(dir, nbMFCCs=39, verbose=False):
                 phn_path = ''.join([root, os.sep, name, ".phn"])
                 if not os.path.exists(phn_path):
                     raise IOError("Phoneme files ", phn_path, " not found...")
-                    import pdb;
-                    pdb.set_trace()
+                    import pdb;                    pdb.set_trace()
 
                 # some .PHN files don't start at 0. Set default phoneme to silence (expected at the end of phoneme_set_list)
                 labels_fromAudio = total_frames * [phoneme_set_39_list[-1]]
@@ -101,7 +108,6 @@ def dirToArrays(dir, nbMFCCs=39, verbose=False):
                     end = float(end_time) / 16000
                     extractionTime = start * (1 - 0.5) + (0.5) * end
                     frame = int(math.floor(extractionTime * 29.97))  # convert to
-                    imageValidFrames_fromAudio.append(frame + 1)
 
                     if verbose:
                         logger.debug('%s', (total_frames / float(total_duration)))
@@ -116,49 +122,6 @@ def dirToArrays(dir, nbMFCCs=39, verbose=False):
                     validLabels_fromAudio = [labels_fromAudio[i] if (i< len(labels_fromAudio)) else labels_fromAudio[-1] for i in thisValidAudioFrames]
                 except: import pdb;pdb.set_trace()
 
-    imageValidFrames_fromImages = []  # just to check sanity, make sure audio and video correspond
-    labels_fromImages = []  # use both to do sanity check
-    imagePaths = sort_nicely(imagePaths)
-    for imagePath in imagePaths:
-        name = os.path.splitext(os.path.basename(imagePath))[0]
-        try:videoName, frame, phoneme = name.split("_")
-        except:
-            print("Not a proper image, removing... : ", imagePath)
-            os.remove(imagePath)
-            continue
-
-        # add the image, flattened as numpy array
-        thisImages.append(np.array(Image.open(imagePath), dtype=np.uint8).flatten())
-        # add the phoneme, converted to its class number
-        labels_fromImages.append(phoneme)
-        # save the imageFrame, to check later
-        imageValidFrames_fromImages.append(int(frame))
-
-    # do the sanity check on image frames and labels
-    try:
-        assert imageValidFrames_fromImages == imageValidFrames_fromAudio
-    except:
-        logger_combinedPrep.info("imageValidFrames don't match %s", getWrongIndices(imageValidFrames_fromImages, imageValidFrames_fromImages));
-        #return [],[],[],[],[], [dir]; #pdb.set_trace()
-
-    # # and on the labels
-    try:    assert labels_fromImages == validLabels_fromAudio
-    except:
-        try:
-            wrongIndices = getWrongIndices(validLabels_fromAudio, labels_fromImages);
-            # possibly just 2 images for the same video frame; order could be swapped because of alphabetic sorting (b/c sorting on frame number is the same (same frame number)
-            if len(wrongIndices) == 2:
-                if validLabels_fromAudio[wrongIndices[1]] == labels_fromImages[wrongIndices[0]] and \
-                    validLabels_fromAudio[wrongIndices[0]] == labels_fromImages[wrongIndices[1]]:
-                    pass
-                else:
-                    raise Exception("something wrong: audio and image labels don't match.")
-        except:
-            logger_combinedPrep.info("Video: %s", dir)
-            logger_combinedPrep.info("audio and image labels don't match. Offending indices: %s", getWrongIndices(imageValidFrames_fromImages, imageValidFrames_fromImages))
-            #import pdb; pdb.set_trace()
-            return [], [], [], [], [], [dir]; # pdb.set_trace()
-
     # if the checks succeed, set final values and convert to proper formats
     thisValidAudioFrames = np.array(thisValidAudioFrames)
     thisAudioLabels = np.array(map(int, [phoneme_set_39[phoneme] for phoneme in labels_fromAudio]))
@@ -166,7 +129,6 @@ def dirToArrays(dir, nbMFCCs=39, verbose=False):
 
     # now convert to proper format
     input_data_type = 'float32'
-    thisImages = set_type(thisImages, input_data_type)
     thisMFCCs = set_type(thisMFCCs, input_data_type)
 
     label_data_type = 'int32'
@@ -174,7 +136,7 @@ def dirToArrays(dir, nbMFCCs=39, verbose=False):
     thisValidLabels = set_type(thisValidLabels, label_data_type)
     thisValidAudioFrames = set_type(thisValidAudioFrames, label_data_type)
 
-    return thisImages, thisMFCCs, thisValidLabels, thisAudioLabels, thisValidAudioFrames, bad
+    return thisMFCCs, thisValidLabels, thisAudioLabels, thisValidAudioFrames
 
 def getWrongIndices(a,b):
     wrong = []
@@ -186,22 +148,6 @@ def getWrongIndices(a,b):
 
 def normalizeMFCC(MFCC, mean, std_dev):
     return (MFCC - mean) / std_dev
-
-def normalizeImages(X, verbose=False):
-    # rescale to interval [-1,1], cast to float32 for GPU use
-    X = np.multiply(2. / 255., X, dtype='float32')
-    X = np.subtract(X, 1., dtype='float32');
-
-    if verbose:  logger_combinedPrep.info("Train: %s %s", X.shape, X[0][0].dtype)
-
-    # reshape to get one image per row
-    X = np.reshape(X, (-1, 1, 120, 120))
-
-    # cast to correct datatype, just to be sure. Everything needs to be float32 for GPU processing
-    dtypeX = 'float32'
-    X = X.astype(dtypeX);
-
-    return X
 
 def speakerToBinary_perVideo(speakerDir, binaryDatabaseDir, mean, std_dev, test=False, overWrite=True):  # meanStdAudio is tuple of mean and std_dev of audio training data
     targetDir = binaryDatabaseDir
@@ -226,33 +172,40 @@ def speakerToBinary_perVideo(speakerDir, binaryDatabaseDir, mean, std_dev, test=
 
     for videoDir in directories(speakerDir):  # rootDir is the speakerDir, below that are the videodirs
         #logger_combinedPrep.info("    Extracting video: %s", os.path.basename(videoDir))
-        thisImages, thisMFCCs, thisValidLabels, thisAudioLabels, thisValidAudioFrames, badDirs= dirToArrays(videoDir, nbMFCCs)
-        if len(badDirs) == 0:
-            thisMFCCs = normalizeMFCC(thisMFCCs, mean, std_dev)
-            thisImages = normalizeImages(thisImages)
+        thisMFCCs, thisValidLabels, thisAudioLabels, thisValidAudioFrames = audioDirToArrays(videoDir, nbMFCCs)
+        thisMFCCs = normalizeMFCC(thisMFCCs, mean, std_dev)
 
-            allvideosMFCCs.append(thisMFCCs)
-            allvideosImages.append(thisImages)
-            allvideosAudioLabels.append(thisAudioLabels)
-            allvideosValidLabels.append(thisValidLabels)
-            allvideosValidAudioFrames.append(thisValidAudioFrames)
-
-        badDirsThisSpeaker = badDirsThisSpeaker + badDirs
+        allvideosMFCCs.append(thisMFCCs)
+        allvideosAudioLabels.append(thisAudioLabels)
+        allvideosValidLabels.append(thisValidLabels)
+        allvideosValidAudioFrames.append(thisValidAudioFrames)
 
     # now write python dict to a file
     logger_combinedPrep.info("the data file takes: %s bytes of memory", sys.getsizeof(allvideosImages))
-    if not test:
-        mydict = {'images': allvideosImages, 'mfccs': allvideosMFCCs, 'audioLabels': allvideosAudioLabels, 'validLabels': allvideosValidLabels, 'validAudioFrames': allvideosValidAudioFrames}
-        output = open(outputPath, 'wb'); cPickle.dump(mydict, output, 2); output.close()
-        logger_combinedPrep.info("%s files have been written to: %s", speakerName, outputPath)
-    return badDirsThisSpeaker
+
+    mfccs_test = list(allvideosMFCCs)
+    audioLabels_test = list(allvideosAudioLabels)
+    validLabels_test = list(allvideosValidLabels)
+    validAudioFrames_test = list(allvideosValidAudioFrames)
+
+    dtypeX = 'float32'
+    dtypeY = 'int32'
+    if isinstance(mfccs_test, list):                mfccs_test = set_type(mfccs_test, dtypeX);
+    if isinstance(audioLabels_test, list):          audioLabels_test = set_type(audioLabels_test, dtypeY);
+    if isinstance(validLabels_test, list):          validLabels_test = set_type(validLabels_test, dtypeY);
+    if isinstance(validAudioFrames_test, list):     validAudioFrames_test = set_type(validAudioFrames_test, dtypeY);
+
+    data = [mfccs_test, audioLabels_test, validLabels_test, validAudioFrames_test]
+    output = open(outputPath, 'wb');
+    cPickle.dump(data, output, 2);
+    output.close()
+    logger_combinedPrep.info("%s files have been written to: %s", speakerName, outputPath)
+    return 0
 
 
 def allSpeakersToBinary(databaseDir, binaryDatabaseDir, meanStdAudio, test=False, overWrite=True):
     mean = meanStdAudio[0]
     std_dev = meanStdAudio[1]
-
-    badDirectories = []
 
     rootDir = databaseDir
     dirList = []
@@ -267,11 +220,8 @@ def allSpeakersToBinary(databaseDir, binaryDatabaseDir, meanStdAudio, test=False
 
     for speakerDir in tqdm(dirList, total=len(dirList)):
         logger_combinedPrep.info("\nExtracting files of speaker: %s", os.path.basename(speakerDir))
-        badDirsSpeaker = speakerToBinary_perVideo(speakerDir, binaryDatabaseDir, mean, std_dev, test, overWrite=overWrite)
-        badDirectories = badDirectories + badDirsSpeaker
+        speakerToBinary_perVideo(speakerDir, binaryDatabaseDir, mean, std_dev, test, overWrite=overWrite)
 
-    print(badDirectories)
-    pdb.set_trace()
     return 0
 
 

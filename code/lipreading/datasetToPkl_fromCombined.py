@@ -17,17 +17,25 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger_prepLip.addHandler(ch)
 
-
 from general_tools import *
 
-lipspkr_path = os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTrain.pkl")
+
+#######################
+
+#TODO Beware, this isn't written very efficiently and copies all the data, requiring about 6GB of RAM by itself.
+# If you don't have enough RAM, this could take quite some time (15-30min)
+# It's a one-time operation though, so not that bad. Or you could rewrite the flattenVideos() function
+
+
+#####################
+lipspkr_path = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTrain.pkl")
 train = unpickle(lipspkr_path)
 
 
-lipspkr_path = os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersVal.pkl")
+lipspkr_path = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersVal.pkl")
 val = unpickle(lipspkr_path)
 
-lipspkr_path = os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTest.pkl")
+lipspkr_path = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTest.pkl")
 test = unpickle(lipspkr_path)
 
 images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = train

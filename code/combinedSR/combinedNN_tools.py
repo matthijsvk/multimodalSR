@@ -31,7 +31,7 @@ class NeuralNetwork:
 
     network_train_info = [[], [], []]
 
-    def __init__(self, architecture, dataset=None, loadPerSpeaker = True,
+    def __init__(self, architecture, data=None, loadPerSpeaker = True,
                  batch_size=1, num_features=39, num_output_units=39,
                  lstm_hidden_list=(100,), bidirectional=True,
                  cnn_network="google", cnn_features='dense', lipRNN_hidden_list=None, lipRNN_bidirectional=True,
@@ -55,8 +55,10 @@ class NeuralNetwork:
         }  # used to be list of lists
 
         if architecture == "combined":
-            if dataset != None:
-                images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = dataset
+            if data != None:
+                images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = data
+
+                # import pdb;pdb.set_trace()
 
                 self.images = images_train[0]  # images are stored per video file. batch_size is for audio
                 self.mfccs = mfccs_train[:batch_size]
@@ -64,6 +66,7 @@ class NeuralNetwork:
                 self.validLabels = validLabels_train[:batch_size]
                 self.validAudioFrames = validAudioFrames_train[:batch_size]
 
+                # import pdb;pdb.set_trace()
                 self.masks = generate_masks(inputs=self.mfccs, valid_frames=self.validAudioFrames,
                                             batch_size=len(self.mfccs),
                                             logger=logger_combinedtools)
@@ -1049,7 +1052,9 @@ class NeuralNetwork:
 
     # evaluate many TRAINING speaker files -> train loss, val loss and val error. Load them in one by one (so they fit in memory)
     def evalTRAINING(self, trainingSpeakerFiles, LR, runType='audio', shuffleEnabled=True, sourceDataDir=None,
-                     storeProcessed=False, processedDir=None, verbose=False, logger=logger_combinedtools):
+                     storeProcessed=False, processedDir=None,
+                     withNoise=False, noiseType='white', ratio_dB=-3,
+                     verbose=False, logger=logger_combinedtools):
         train_cost = 0;
         val_acc = 0;
         val_cost = 0;
@@ -1063,7 +1068,8 @@ class NeuralNetwork:
             train, val, test = preprocessingCombined.getOneSpeaker(
                     speakerFile=speakerFile, sourceDataDir=sourceDataDir,
                     trainFraction=0.8, validFraction=0.2,
-                    storeProcessed=storeProcessed, processedDir=processedDir, logger=logger)
+                    storeProcessed=storeProcessed, processedDir=processedDir, logger=logger,
+                    withNoise=withNoise, noiseType=noiseType, ratio_dB=ratio_dB)
 
             if shuffleEnabled: train = self.shuffle(train)
             images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = train
@@ -1111,6 +1117,7 @@ class NeuralNetwork:
         return train_cost, val_cost, val_acc, val_topk_acc
 
     def evalTEST(self, testSpeakerFiles, runType='audio', sourceDataDir=None, storeProcessed=False, processedDir=None,
+                 withNoise=False, noiseType='white', ratio_dB=-3,
                  verbose=False, logger=logger_combinedtools):
 
         test_acc = 0;
@@ -1123,7 +1130,8 @@ class NeuralNetwork:
             train, val, test = preprocessingCombined.getOneSpeaker(
                     speakerFile=speakerFile, sourceDataDir=sourceDataDir,
                     trainFraction=0.0, validFraction=0.0,
-                    storeProcessed=storeProcessed, processedDir=processedDir, logger=logger)
+                    storeProcessed=storeProcessed, processedDir=processedDir, logger=logger,
+                    withNoise=False, noiseType='white', ratio_dB=-3)
 
             images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = train
             images_val, mfccs_val, audioLabels_val, validLabels_val, validAudioFrames_val = val
@@ -1160,9 +1168,10 @@ class NeuralNetwork:
         return test_cost, test_acc, test_topk_acc
 
     def train(self, dataset, database_binaryDir, runType='combined', storeProcessed=False, processedDir=None,
-              save_name='Best_model',
+              save_name='Best_model', datasetName='TCDTIMIT', nbPhonemes=39,
               num_epochs=40, batch_size=1, LR_start=1e-4, LR_decay=1,
-              shuffleEnabled=True, compute_confusion=False, justTest=False, debug=False, logger=logger_combinedtools):
+              justTest=False, withNoise=False, noiseType = 'white', ratio_dB = -3,
+              shuffleEnabled=True, compute_confusion=False, debug=False, logger=logger_combinedtools):
 
         trainingSpeakerFiles, testSpeakerFiles = dataset
         logger.info("\n* Starting training...")
@@ -1179,14 +1188,22 @@ class NeuralNetwork:
         self.epochsNotImproved = 0
 
 
-        # # TODO: remove this. should not be needed
         if not self.loadPerSpeaker:  #load all the lipspeakers in memory, then don't touch the files -> no reloading needed = faster training
             allImages_train, allMfccs_train, allAudioLabels_train, allValidLabels_train, allValidAudioFrames_train = unpickle(
-                os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTrain.pkl"))
+                os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTrain.pkl"))
             allImages_val, allMfccs_val, allAudioLabels_val, allValidLabels_val, allValidAudioFrames_val = unpickle(
-                    os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersVal.pkl"))
+                    os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersVal.pkl"))
             allImages_test, allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
-                    os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTest.pkl"))
+                    os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTest.pkl"))
+
+            # if you wish to train with noise, you need to replace the audio data with noisy audio from audioSR/firDataset/audioToPkl_perVideo.py,
+            # like so (but also for train and val)
+            if withNoise:
+                allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
+                        os.path.expanduser("~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep + \
+                        + 'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl')
+
+
 
             test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
                                                                 images=allImages_test,
@@ -1202,7 +1219,8 @@ class NeuralNetwork:
                                                               runType=runType,
                                                               sourceDataDir=database_binaryDir,
                                                               storeProcessed=storeProcessed,
-                                                              processedDir=processedDir)
+                                                              processedDir=processedDir,
+                                                              withNoise=withNoise, noiseType=noiseType, ratio_dB=ratio_dB)
         # # TODO: end remove
 
 
@@ -1225,7 +1243,9 @@ class NeuralNetwork:
                                                                             shuffleEnabled=shuffleEnabled,
                                                                             sourceDataDir=database_binaryDir,
                                                                             storeProcessed=storeProcessed,
-                                                                            processedDir=processedDir)
+                                                                            processedDir=processedDir,
+                                                                            withNoise=withNoise,
+                                                                                noiseType=noiseType, ratio_dB=ratio_dB)
             else:
                 train_cost, nb_train_batches = self.train_epoch(runType=runType,
                                                                  images=allImages_train,
@@ -1261,7 +1281,9 @@ class NeuralNetwork:
                     test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles, runType=runType,
                                                                    sourceDataDir=database_binaryDir,
                                                                    storeProcessed=storeProcessed,
-                                                                   processedDir=processedDir)
+                                                                   processedDir=processedDir,
+                                                                       withNoise=withNoise, noiseType=noiseType,
+                                                                       ratio_dB=ratio_dB)
                 else:
                     test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
                                                                                          images=allImages_test,
@@ -1344,7 +1366,8 @@ class NeuralNetwork:
                                             processedDir=processedDir,
                                             runType=runType,
                                             storeProcessed=storeProcessed,
-                                            testSpeakerFiles=testSpeakerFiles)
+                                            testSpeakerFiles=testSpeakerFiles,
+                                            withNoise=withNoise, noiseType=noiseType, ratio_dB=ratio_dB)
                 break
 
         logger.info("Done.")
@@ -1385,7 +1408,8 @@ class NeuralNetwork:
     # Audio network     -> evaluate audio
     # Lipreading        -> evaluate lipreading
     def finalNetworkEvaluation(self, save_name, database_binaryDir, processedDir, runType, testSpeakerFiles,
-                               storeProcessed=False,  roundParams=False, logger=logger_combinedtools):
+                               withNoise=False, noiseType='white', ratio_dB=-3,  datasetName='TCDTIMIT', roundParams=False,
+                               storeProcessed=False,  nbPhonemes=39, logger=logger_combinedtools):
         if runType == 'lipreading': networkType = "lipreading " + self.lipreadingType
         else: networkType = runType
         logger.info(" \n\n Running FINAL evaluation on Test set... (%s network type)", networkType)
@@ -1395,13 +1419,19 @@ class NeuralNetwork:
         # for the lipspeaker files that are all loaded in memory at once, we still need to get the data
         if not self.loadPerSpeaker:  # load all the lipspeakers in memory, then don't touch the files -> no reloading needed = faster
             allImages_test, allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
-                    os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binaryPerVideo/allLipspeakersTest.pkl"))
+                    os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTest.pkl"))
+            if withNoise:
+                allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
+                        os.path.expanduser("~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep \
+                        +'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl')
 
         if self.loadPerSpeaker:
             test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles, runType=runType,
                                                                sourceDataDir=database_binaryDir,
                                                                storeProcessed=storeProcessed,
-                                                               processedDir=processedDir)
+                                                               processedDir=processedDir,
+                                                               withNoise=withNoise, noiseType=noiseType,
+                                                               ratio_dB=ratio_dB)
         else:
             if runType == 'audio': batch_size = 16
             else: batch_size = 1

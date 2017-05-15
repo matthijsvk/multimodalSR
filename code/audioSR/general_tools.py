@@ -14,10 +14,36 @@ def path_reader(filename):
     return path_list
 
 
-def unpickle(file_path):  # TODO: split X_train in train and validation sets
+def unpickle(file_path):
     with open(file_path, 'rb') as cPickle_file:
         a = cPickle.load(cPickle_file)
     return a
+
+
+# find all files of a type under a directory, recursive
+def load_wavPhn(rootDir):
+    wavs = loadWavs(rootDir)
+    phns = loadPhns(rootDir)
+    return wavs, phns
+
+
+def loadWavs(rootDir):
+    wav_files = []
+    for dirpath, dirs, files in os.walk(rootDir):
+        for f in files:
+            if (f.lower().endswith(".wav")):
+                wav_files.append(os.path.join(dirpath, f))
+    return sorted(wav_files)
+
+
+def loadPhns(rootDir):
+    phn_files = []
+    for dirpath, dirs, files in os.walk(rootDir):
+        for f in files:
+            if (f.lower().endswith(".phn")):
+                phn_files.append(os.path.join(dirpath, f))
+    return sorted(phn_files)
+
 
 
 def pad_sequences_X(sequences, maxlen=None, padding='post', truncating='post', value=0.):
@@ -200,3 +226,62 @@ def saveToPkl(target_path, data):  # data can be list or dictionary
                 cPickle_file,
                 protocol=cPickle.HIGHEST_PROTOCOL)
     return 0
+
+
+def depth(path):
+    return path.count(os.sep)
+
+
+# stuff for getting relative paths between two directories
+def pathsplit(p, rest=[]):
+    (h, t) = os.path.split(p)
+    if len(h) < 1: return [t] + rest
+    if len(t) < 1: return [h] + rest
+    return pathsplit(h, [t] + rest)
+
+
+def commonpath(l1, l2, common=[]):
+    if len(l1) < 1: return (common, l1, l2)
+    if len(l2) < 1: return (common, l1, l2)
+    if l1[0] != l2[0]: return (common, l1, l2)
+    return commonpath(l1[1:], l2[1:], common + [l1[0]])
+
+
+# p1 = main path, p2= the one you want to get the relative path of
+def relpath(p1, p2):
+    (common, l1, l2) = commonpath(pathsplit(p1), pathsplit(p2))
+    p = []
+    if len(l1) > 0:
+        p = ['../' * len(l1)]
+    p = p + l2
+    return os.path.join(*p)
+
+
+# need this to traverse directories, find depth
+def directories(root):
+    dirList = []
+    for path, folders, files in os.walk(root):
+        for name in folders:
+            dirList.append(os.path.join(path, name))
+    return dirList
+
+
+def tryint(s):
+    try:
+        return int(s)
+    except ValueError:
+        return s
+
+
+def alphanum_key(s):
+    return [tryint(c) for c in re.split('([0-9]+)', s)]
+
+
+def sort_nicely(l):
+    return sorted(l, key=alphanum_key)
+
+
+def set_type(X, type):
+    for i in range(len(X)):
+        X[i] = X[i].astype(type)
+    return X

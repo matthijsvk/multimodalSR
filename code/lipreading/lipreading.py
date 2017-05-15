@@ -53,7 +53,7 @@ import lasagne.objectives as LO
 def main():
 
     # BN parameters
-    batch_size = 100
+    batch_size = 32
     logger_lip.info("batch_size = %s",batch_size)
     # alpha is the exponential moving average factor
     alpha = .1
@@ -101,7 +101,7 @@ def main():
     if not os.path.exists(results_dir): os.makedirs(results_dir)
     if viseme: database_binaryDir = root_dir + '/binaryViseme'
     else:      database_binaryDir = root_dir + '/binary'
-    datasetType = "lipspeakers" #"lipspeakers" #"volunteers" #"volunteers" #    lipspeakers or volunteers"
+    datasetType = "lipspeakers"  #"volunteers" #    lipspeakers or volunteers"
     ##############################################
 
     if datasetType == "lipspeakers":
@@ -116,6 +116,7 @@ def main():
         #                 nbClasses=nbClasses, onehot=oneHot, type=datasetType, verbose=True)
         #datasetFiles = general_tools.unpickle(pkl_path)
 
+        # if this doesn't succeed, you probably have to generate the files with datasetToPkl_fromCombined.py
         X_train, y_train = unpickle(os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binary/allLipspeakersTrain.pkl"))
         X_val, y_val = unpickle(os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binary/allLipspeakersVal.pkl"))
         X_test, y_test = unpickle(os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binary/allLipspeakersTest.pkl"))

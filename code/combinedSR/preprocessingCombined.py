@@ -15,22 +15,25 @@ logger.setLevel(logging.DEBUG)
 # just split the thing up in training and validation set
 def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
                   sourceDataDir=None, storeProcessed=False, processedDir=None,
-                  verbose=False, loadData=True, viseme=False, logger=logger):
+                  verbose=False, loadData=True, viseme=False, nbPhonemes=39,
+                  withNoise = False, noiseType = 'white', ratio_dB = -3,
+                  logger=logger):
 
     if processedDir != None:
         store_path = ''.join([processedDir, "_train", str(trainFraction).replace("0.", ""), "valid",
                               str(validFraction).replace("0.", ""), os.sep, os.path.basename(speakerFile)])
-        # import pdb;pdb.set_trace()
         # if already processed, just load it from disk
         if os.path.exists(store_path):
             if loadData:  # before starting training, we just want to check if it exists, and generate otherwise. Not load the data
                 if verbose: logger.info("loading stored files X's...")
-                return unpickle(store_path)
-            return
+                train, val, test = unpickle(store_path)
+                if withNoise: #only works for loadPerSpeaker, for lipspeakers you have to generate test audio with datasetToPkl_lipspeakers.py
+                    audio_data_path = os.path.expanduser("~/TCDTIMIT/combinedSR/") + dataset + "/binaryAudio" + str(
+                        nbPhonemes) + "_" + noiseType + os.sep + "ratio" + str(ratio_dB) + os.sep + speakerFile
+                    test[1:] = unpickle(audio_data_path)
+            return [train,val,test]
     logger.info(" %s processed data doesn't exist yet; generating...", speakerFile)
 
-    # load the images
-    # first initialize the matrices
 
     logger.info('loading file %s', speakerFile)
     data = unpickle(sourceDataDir + os.sep + speakerFile)  #    mydict = {'images': allvideosImages, 'mfccs': allvideosMFCCs, 'audioLabels': allvideosAudioLabels, 'validLabels': allvideosValidLabels, 'validAudioFrames': allvideosValidAudioFrames}
