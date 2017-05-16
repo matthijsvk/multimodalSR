@@ -84,7 +84,7 @@ def main():
     oneHot = False
 
     ##############################################
-    network_type = "cifar10" #resnet50"# ""google"
+    network_type = "resnet50"# ""google"
     viseme = False  # will set nbClasses and store path   vis: 6.498.828   phn: 7.176.231
 
     if viseme:   nbClasses = 12
@@ -150,6 +150,7 @@ def main():
 
     model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme")+str(nbClasses)
     model_save_name = os.path.join(results_dir,model_name)
+
 
     # log file
     logFile = results_dir + os.sep + model_name + '.log'

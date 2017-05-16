@@ -26,8 +26,8 @@ class NeuralNetwork:
     Y = None
 
 
-    def __init__(self, architecture, dataset=None, batch_size=1, max_seq_length=1000, num_features=26, n_hidden_list=(100,), num_output_units=61,
-                 bidirectional=False, addDenseLayers=False, seed=int(time.time()), debug=False, logger=logger_RNNtools):
+    def __init__(self, architecture, data=None, batch_size=1, max_seq_length=1000, num_features=26, n_hidden_list=(100,), num_output_units=61,
+                 bidirectional=False, addDenseLayers=False, seed=int(time.time()), debug=False, logger=logger_RNNtools, dataset="", test_dataset=""):
         self.num_output_units = num_output_units
         self.num_features = num_features
         self.batch_size = batch_size
@@ -40,10 +40,12 @@ class NeuralNetwork:
             'val_cost':   [], 'val_acc': [], 'val_topk_acc': [],
             'test_cost':  [], 'test_acc': [], 'test_topk_acc': []
         }
+        self.dataset = dataset
+        self.test_dataset=  test_dataset
 
         if architecture == 'RNN':
-            if dataset != None:
-                X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
+            if data != None:
+                X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = data
 
                 X = X_train[:batch_size]
                 y = y_train[:batch_size]
@@ -574,7 +576,8 @@ class NeuralNetwork:
 
 
     def train(self, dataset, save_name='Best_model', num_epochs=100, batch_size=1, LR_start=1e-4, LR_decay=1,
-              compute_confusion=False, justTest=False, debug=False, roundParams=False, test_type=None, logger=logger_RNNtools):
+              compute_confusion=False, justTest=False, debug=False, roundParams=False,
+              withNoise=False, noiseType='white',ratio_dB=0, logger=logger_RNNtools):
 
         X_train, y_train, valid_frames_train, X_val, y_val, valid_frames_val, X_test, y_test, valid_frames_test = dataset
 
@@ -588,33 +591,24 @@ class NeuralNetwork:
         self.best_val_acc = best_val_acc
 
         logger.info("Pass over Test Set")
-        test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test,
+        test_cost, test_acc, test_topk_acc = self.run_epoch(X=X_test, y=y_test,
                                                                       valid_frames=valid_frames_test)
         logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
-        logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy))
-        logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy))
+        logger.info("Test accuracy:\t\t{:.6f} %".format(test_acc))
+        logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_topk_acc))
 
         self.network_train_info['nb_params'] = lasagne.layers.count_params(self.network_lout_batch)
         if justTest:
             if os.path.exists(save_name+".npz"):
                 self.loadPreviousResults(save_name)
-                if roundParams:
-                    self.network_train_info[test_type + '_final_test_cost_roundParams'] = test_cost
-                    self.network_train_info[test_type + '_final_test_acc_roundParams'] = test_accuracy
-                    self.network_train_info[test_type + '_final_test_topk_acc_roundParams'] = test_top3_accuracy
-                else:
-                    self.network_train_info[test_type + '_final_test_cost'] = test_cost
-                    self.network_train_info[test_type + '_final_test_acc']       = test_accuracy
-                    self.network_train_info[test_type + '_final_test_topk_acc']  = test_top3_accuracy
-
-                saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
-                logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
+                self.saveFinalResults(logger, noiseType, ratio_dB, roundParams, save_name, test_acc, test_cost,
+                                      test_topk_acc, withNoise)
                 return 0
             # else do nothing and train anyway
         else:
             self.network_train_info['test_cost'].append(test_cost)
-            self.network_train_info['test_acc'].append(test_accuracy)
-            self.network_train_info['test_topk_acc'].append(test_top3_accuracy)
+            self.network_train_info['test_acc'].append(test_acc)
+            self.network_train_info['test_topk_acc'].append(test_topk_acc)
 
         logger.info("\n* Starting training...")
         LR = LR_start
@@ -626,10 +620,10 @@ class NeuralNetwork:
 
 
             logger.info("Pass over Training Set")
-            train_cost, train_accuracy, train_top3_accuracy =     self.run_epoch(X=X_train, y=y_train, valid_frames=valid_frames_train, LR=LR)
+            train_cost, train_acc, train_topk_acc =     self.run_epoch(X=X_train, y=y_train, valid_frames=valid_frames_train, LR=LR)
 
             logger.info("Pass over Validation Set")
-            validation_cost, validation_accuracy, validation_top3_accuracy =    self.run_epoch(X=X_val, y = y_val, valid_frames=valid_frames_val)
+            val_cost, val_acc, val_topk_acc =    self.run_epoch(X=X_val, y = y_val, valid_frames=valid_frames_val)
 
 
             # Print epoch summary
@@ -637,21 +631,21 @@ class NeuralNetwork:
                     epoch + 1, num_epochs, time.time() - epoch_time))
             logger.info("Learning Rate:\t\t{:.6f} %".format(LR))
             logger.info("Training cost:\t{:.6f}".format(train_cost))
-            logger.info("Validation Top 3 accuracy:\t{:.6f} %".format(validation_top3_accuracy))
+            logger.info("Validation Top 3 accuracy:\t{:.6f} %".format(val_topk_acc))
 
-            logger.info("Validation cost:\t{:.6f} ".format(validation_cost))
-            logger.info("Validation accuracy:\t\t{:.6f} %".format(validation_accuracy))
-            logger.info("Validation Top 3 accuracy:\t{:.6f} %".format(validation_top3_accuracy))
+            logger.info("Validation cost:\t{:.6f} ".format(val_cost))
+            logger.info("Validation accuracy:\t\t{:.6f} %".format(val_acc))
+            logger.info("Validation Top 3 accuracy:\t{:.6f} %".format(val_topk_acc))
 
 
             # better model, so save parameters
-            if validation_accuracy > self.best_val_acc:
+            if val_acc > self.best_val_acc:
                 # only reset if significant improvement
-                if validation_accuracy - self.best_val_acc > 0.2:
+                if val_acc - self.best_val_acc > 0.2:
                     self.epochsNotImproved = 0
                 # store new parameters
-                self.best_cost = validation_cost
-                self.best_val_acc = validation_accuracy
+                self.best_cost = val_cost
+                self.best_val_acc = val_acc
                 self.best_epoch = self.curr_epoch
                 self.best_param = L.get_all_param_values(self.network_lout)
                 self.best_updates = [p.get_value() for p in self.updates.keys()]
@@ -661,20 +655,20 @@ class NeuralNetwork:
                     self.save_model(save_name)
 
                 logger.info("Pass over Test Set")
-                test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test,
+                test_cost, test_acc, test_topk_acc = self.run_epoch(X=X_test, y=y_test,
                                                                               valid_frames=valid_frames_test)
                 logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
-                logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy))
-                logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy))
+                logger.info("Test accuracy:\t\t{:.6f} %".format(test_acc))
+                logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_topk_acc))
 
             # save the training info
             self.network_train_info['train_cost'].append(train_cost)
-            self.network_train_info['val_cost'].append(validation_cost)
-            self.network_train_info['val_acc'].append(validation_accuracy)
-            self.network_train_info['val_topk_acc'].append(validation_top3_accuracy)
+            self.network_train_info['val_cost'].append(val_cost)
+            self.network_train_info['val_acc'].append(val_acc)
+            self.network_train_info['val_topk_acc'].append(val_topk_acc)
             self.network_train_info['test_cost'].append(test_cost)
-            self.network_train_info['test_acc'].append(test_accuracy)
-            self.network_train_info['test_topk_acc'].append(test_top3_accuracy)
+            self.network_train_info['test_acc'].append(test_acc)
+            self.network_train_info['test_topk_acc'].append(test_topk_acc)
 
             saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
             logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
@@ -694,23 +688,40 @@ class NeuralNetwork:
             if self.epochsNotImproved >= 3:
                 logging.warning("\n\nNo more improvements, stopping training...")
                 logger.info("Pass over Test Set")
-                test_cost, test_accuracy, test_top3_accuracy = self.run_epoch(X=X_test, y=y_test,
+                test_cost, test_acc, test_topk_acc = self.run_epoch(X=X_test, y=y_test,
                                                                               valid_frames=valid_frames_test)
                 logger.info("Test cost:\t\t{:.6f} ".format(test_cost))
-                logger.info("Test accuracy:\t\t{:.6f} %".format(test_accuracy))
-                logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_top3_accuracy))
+                logger.info("Test accuracy:\t\t{:.6f} %".format(test_acc))
+                logger.info("Test Top 3 accuracy:\t{:.6f} %".format(test_topk_acc))
 
                 self.network_train_info['test_cost'][-1]=test_cost
-                self.network_train_info['test_acc'][-1] = test_accuracy
-                self.network_train_info['test_topk_acc'][-1] = test_top3_accuracy
+                self.network_train_info['test_acc'][-1] = test_acc
+                self.network_train_info['test_topk_acc'][-1] = test_topk_acc
 
-                self.network_train_info[test_type + 'final_test_cost'] = test_cost
-                self.network_train_info[test_type + 'test_acc'] = test_accuracy
-                self.network_train_info[test_type + 'test_topk_acc'] = test_top3_accuracy
-                saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
-                logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
-                logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
+                self.saveFinalResults(logger, noiseType, ratio_dB, roundParams, save_name, test_acc, test_cost,
+                                      test_topk_acc, withNoise)
                 break
+
+    def saveFinalResults(self, logger, noiseType, ratio_dB, roundParams, save_name, test_acc, test_cost, test_topk_acc,
+                         withNoise):
+        if self.test_dataset!=self.dataset:
+            testType = "_"+self.test_dataset
+        else: testType = ""
+        if roundParams:
+            testType = "_roundParams"+ testType
+
+        if withNoise:
+            self.network_train_info['final_test_cost_' + noiseType + "_" + "ratio" + str(ratio_dB) + testType] = test_cost
+            self.network_train_info['final_test_acc_' + noiseType + "_" + "ratio" + str(ratio_dB) + testType] = test_acc
+            self.network_train_info[
+                'final_test_top3_acc_' + noiseType + "_" + "ratio" + str(ratio_dB) + testType] = test_topk_acc
+        else:
+            self.network_train_info['final_test_cost' + testType] = test_cost
+            self.network_train_info['final_test_acc' + testType] = test_acc
+            self.network_train_info['final_test_top3_acc' + testType] = test_topk_acc
+
+        saveToPkl(save_name + '_trainInfo.pkl', self.network_train_info)
+        logger.info("Train info written to:\t %s", save_name + '_trainInfo.pkl')
 
     def get_validPredictions_video(self, valid_predictions, valid_frames, videoIndexInBatch):
         # get indices of the valid frames for each video, using the valid_frames

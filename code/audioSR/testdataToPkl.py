@@ -27,7 +27,7 @@ nbPhonemes = 39
 
 ############### DATA LOCATIONS  ###################
 root = os.path.expanduser("~/TCDTIMIT/audioSR/")  # ( keep the trailing slash)
-dataset = "TIMIT"
+dataset = "TCDTIMIT"
 forceOverwrite = False
 ###################
 normalizePkl_path = root + dataset + "/binary" + str(nbPhonemes) + os.sep + dataset + "MeanStd.pkl"

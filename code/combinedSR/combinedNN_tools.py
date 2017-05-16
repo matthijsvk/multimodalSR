@@ -634,6 +634,7 @@ class NeuralNetwork:
     # return True if successful load, false otherwise
     def load_model(self, model_type, roundParams=False, logger=logger_combinedtools):
         if not os.path.exists(self.model_paths[model_type]):
+            logger.warning("WARNING: Loading %s Failed. \n path: %s", model_type, self.model_paths[model_type])
             return False
 
         # restore network weights
@@ -680,7 +681,7 @@ class NeuralNetwork:
 
             success = self.load_model(model_type='combined', roundParams=roundParams)
             if (not success) or overwriteSubnets:
-                logger.warning("No complete network found, loading parts...")
+                logger.warning("No complete combined network found, loading parts...")
 
                 logger.info("CNN : %s", self.model_paths['CNN'])
                 self.load_model(model_type='CNN', roundParams=roundParams)
@@ -701,7 +702,7 @@ class NeuralNetwork:
                 #try to load CNN_LSTM; if not works just load the CNN so you can train the LSTM based on that
                 success = self.load_model(model_type='CNN_LSTM', roundParams=roundParams)
                 if not success:
-                    logger.warning("No complete network found, loading parts...")
+                    logger.warning("No complete CNN_LSTM network found, loading parts...")
                     self.load_model(model_type='CNN', roundParams=roundParams)
             else:
                 logger.info("\nAttempting to load lipreading CNN model: %s",   self.model_paths['CNN'])
@@ -1271,9 +1272,9 @@ class NeuralNetwork:
             resetNetwork=False
             if val_acc > best_val_acc:
                 printTest = True
+                if val_acc - best_val_acc > 0.2: self.epochsNotImproved = 0 #don't keep training if just a little bit of improvment
                 best_val_acc = val_acc
                 best_epoch = epoch + 1
-                self.epochsNotImproved = 0
 
                 logger.info("\n\nBest ever validation score; evaluating TEST set...")
 
@@ -1382,25 +1383,27 @@ class NeuralNetwork:
         try:
             if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
                 old_train_info = unpickle(save_name + '_trainInfo.pkl')
-                # backward compatibility
-                if type(old_train_info) == list:
-                    old_train_info = old_train_info[0]
-                    best_val_acc = max(old_train_info[2])
-                    test_cost = min(old_train_info[3])
-                    test_acc = max(old_train_info[3])
-                elif type(old_train_info) == dict:  # normal case
+                if type(old_train_info) == dict:  # normal case
                     best_val_acc = max(old_train_info['val_acc'])
                     test_cost = min(old_train_info['test_cost'])
                     test_acc = max(old_train_info['test_acc'])
+                    test_topk_acc = max(old_train_info['test_topk_acc'])
                     self.network_train_info = old_train_info  #load old train info so it won't get lost on retrain
-                    try:
-                        test_topk_acc = max(old_train_info['test_topk_acc'])
-                    except:
-                        pass
+
+
+                    if not 'final_test_cost' in self.network_train_info.keys():
+                        self.network_train_info['final_test_cost'] = min(self.network_train_info['test_cost'])
+                    if not 'final_test_acc' in self.network_train_info.keys():
+                        self.network_train_info['final_test_acc'] = max(self.network_train_info['test_acc'])
+                    if not 'final_test_top3_acc' in self.network_train_info.keys():
+                        self.network_train_info['final_test_top3_acc'] = max(self.network_train_info['test_topk_acc'])
                 else:
                     logger.warning("old trainInfo found, but wrong format: %s", save_name + "_trainInfo.pkl")
                     # do nothing
+            else:
+                return -1,-1
         except:
+            logger.warning("No old trainInfo found...")
             pass
         return best_val_acc, test_acc
 
@@ -1456,7 +1459,7 @@ class NeuralNetwork:
             self.network_train_info['final_test_cost_roundParams'] = test_cost
             self.network_train_info['final_test_acc_roundParams'] = test_acc
             self.network_train_info['final_test_top3_acc_roundParams'] = test_topk_acc
-        elif withNoise:
+        elif runType!= 'lipreading' and withNoise:
             self.network_train_info['final_test_cost_' + noiseType + "_" + "ratio" + str(ratio_dB)] = test_cost
             self.network_train_info['final_test_acc_' + noiseType + "_" + "ratio" + str(ratio_dB)] = test_acc
             self.network_train_info['final_test_top3_acc_' + noiseType + "_" + "ratio" + str(ratio_dB)] = test_topk_acc
