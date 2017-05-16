@@ -39,7 +39,7 @@ resultsPath = os.path.expanduser('~/TCDTIMIT/combinedSR/TCDTIMIT/results/allEval
 
 logToFile = True; overwriteResults = False
 
-justTest = False
+justTest = True
 ROUND_PARAMS=False
 
 withNoise = True
@@ -110,7 +110,7 @@ def main():
         # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64], audio_dataset="TIMIT", test_dataset="TIMIT"),
         # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256], audio_dataset="TIMIT", test_dataset="TIMIT"),
         # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        #networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256], audio_dataset="TIMIT", test_dataset="TIMIT"),
         # networkToTrain(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512], audio_dataset="TIMIT", test_dataset="TIMIT"),
 
         # # # # ### COMBINED ###  ## TODO: retrain
@@ -141,9 +141,9 @@ def main():
         # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
         #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64],
         #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
-        #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
-        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain)
+        networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+                       cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
+                       DENSE_HIDDEN_LIST=[512, 512, 512])#,overwriteSubnets=overwriteSubnets, forceTrain=forceTrain)
         # networkToTrain(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
         #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512, 512],
         #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=True, forceTrain=forceTrain
@@ -183,10 +183,10 @@ def main():
     ]
 
 
-    results, resultsPath = mainGetResults(networkList)
-    exportResultsToExcel(results, resultsPath)
+    # results, resultsPath = mainGetResults(networkList)
+    # exportResultsToExcel(results, resultsPath)
 
-    #mainTraining(networkList)
+    mainTraining(networkList)
 
 # this loads the specified results from networks in networkList
 def mainGetResults(networkList):

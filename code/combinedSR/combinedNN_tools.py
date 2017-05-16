@@ -1425,9 +1425,11 @@ class NeuralNetwork:
             allImages_test, allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
                     os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTest.pkl"))
             if withNoise:
-                allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
-                        os.path.expanduser("~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep \
-                        +'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl')
+                testDataPath= os.path.expanduser("~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep \
+                              + 'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl'
+                allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(testDataPath)
+
+                import pdb;pdb.set_trace()
 
         if self.loadPerSpeaker:
             test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles, runType=runType,
