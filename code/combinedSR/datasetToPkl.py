@@ -34,7 +34,7 @@ def main():
     root = os.path.expanduser("~/TCDTIMIT/combinedSR/")  # ( keep the trailing slash)
 
     dataset = "TCDTIMIT"
-    databaseDir = root + dataset + "/database"
+    databaseDir = root + dataset + "/database/lipspeakers"
     outputDir = root + dataset + "/binary"
 
     meanStdAudio = unpickle("./database_averages/TCDTIMITMeanStd.pkl")
@@ -212,7 +212,7 @@ def speakerToBinary_perVideo(speakerDir, binaryDatabaseDir, mean, std_dev, test=
     speakerName = os.path.basename(speakerDir)
     outputPath = targetDir + os.sep + speakerName + ".pkl"
 
-    if os.path.exists(outputPath) and not overWrite:
+    if os.path.exists(outputPath) and overWrite==False:
         logger_combinedPrep.info("%s files have NOT been written; %s already exists", speakerName, outputPath)
         return []
 
@@ -224,7 +224,9 @@ def speakerToBinary_perVideo(speakerDir, binaryDatabaseDir, mean, std_dev, test=
     allvideosAudioLabels = []
     allvideosValidAudioFrames = []  #valid audio frames
 
+    import pdb;pdb.set_trace()
     for videoDir in directories(speakerDir):  # rootDir is the speakerDir, below that are the videodirs
+        print(videoDir)
         #logger_combinedPrep.info("    Extracting video: %s", os.path.basename(videoDir))
         thisImages, thisMFCCs, thisValidLabels, thisAudioLabels, thisValidAudioFrames, badDirs= dirToArrays(videoDir, nbMFCCs)
         if len(badDirs) == 0:
@@ -267,6 +269,7 @@ def allSpeakersToBinary(databaseDir, binaryDatabaseDir, meanStdAudio, test=False
 
     for speakerDir in tqdm(dirList, total=len(dirList)):
         logger_combinedPrep.info("\nExtracting files of speaker: %s", os.path.basename(speakerDir))
+        print(speakerDir)
         badDirsSpeaker = speakerToBinary_perVideo(speakerDir, binaryDatabaseDir, mean, std_dev, test, overWrite=overWrite)
         badDirectories = badDirectories + badDirsSpeaker
 

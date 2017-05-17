@@ -14,6 +14,25 @@ logger_train = logging.getLogger('lipreading.train')
 logger_train.setLevel(logging.DEBUG)
 
 
+def load_model(model_path, network_output_layer, logger=logger_train):
+    try:
+        logger.info("Loading stored model...")
+        # restore network weights
+        with np.load(model_path) as f:
+            param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+            try:
+                lasagne.layers.set_all_param_values(network_output_layer, param_values)
+            except:
+                lasagne.layers.set_all_param_values(network_output_layer, *param_values)
+
+        logger.info("Loading parameters successful.")
+        return 0
+
+    except IOError as e:
+        logger.info("%s", os.strerror(e.errno))
+        logger.info('Model: %s not found. No weights loaded', model_path)
+        return -1
+
 # Given a dataset and a model, this function trains the model on the dataset for several epochs
 # (There is no default trainer function in Lasagne yet)
 def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
@@ -186,6 +205,7 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
         return test_cost, test_acc, test_topk_acc
 
 
+
     def updateLR(LR, LR_decay, network_train_info, epochsNotImproved):
         this_cost = network_train_info['val_cost'][-1] #validation cost
         try:      last_cost = network_train_info['val_cost'][-2]
@@ -312,6 +332,8 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
                 os.makedirs(os.path.dirname(save_name))
             logger_train.info("saving model to %s", save_name)
             np.savez(save_name, *lasagne.layers.get_all_param_values(network_output_layer))
+        else:
+            load_model(model_path=save_name+".npz",network_output_layer=network_output_layer)
 
         epoch_duration = time.time() - start_time
 
@@ -348,10 +370,17 @@ def train(train_fn, val_fn, out_fn, topk_acc_fn, k,
 
         if epochsNotImproved > 3:
             logger_train.warning("\n\n NO MORE IMPROVEMENTS -> stop training")
-            test_cost, test_acc, test_topk_acc = evalTEST(testSpeakerFiles,
-                                                          sourceDataDir=database_binaryDir,
-                                                          storeProcessed=storeProcessed,
-                                                          processedDir=processedDir)
+            if not loadPerSpeaker:  # all at once
+                test_cost, test_acc, test_topk_acc, nb_test_batches = val_epoch(X_test, y_test)
+                test_acc = test_acc / nb_test_batches * 100;
+                test_cost /= nb_test_batches
+                test_topk_acc = test_topk_acc / nb_test_batches * 100
+
+            else:  # process each speaker seperately
+                test_cost, test_acc, test_topk_acc = evalTEST(testSpeakerFiles,
+                                                              sourceDataDir=database_binaryDir,
+                                                              storeProcessed=storeProcessed,
+                                                              processedDir=processedDir)
 
             logger_train.info("FINAL TEST results: ")
             logger_train.info("\t  test cost:        %s", test_cost)

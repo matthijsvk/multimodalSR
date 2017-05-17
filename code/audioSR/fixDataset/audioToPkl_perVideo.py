@@ -50,7 +50,7 @@ def main():
     for noiseType in noiseTypes:
         for ratio_dB in ratio_dBs:
             databaseDir = os.path.expanduser("~/TCDTIMIT/audioSR/") + dataset + "/fixed" + str(nbPhonemes) \
-                          + "_" + noiseType + os.sep + "ratio" + str(ratio_dB)
+                          + "_" + noiseType + os.sep + "ratio" + str(ratio_dB) + "/lipspeakers"
 
             outputDir = os.path.expanduser("~/TCDTIMIT/combinedSR/") + dataset + "/binaryAudio" + str(nbPhonemes) \
                         + "_" + noiseType + os.sep + "ratio" + str(ratio_dB)
@@ -170,7 +170,20 @@ def speakerToBinary_perVideo(speakerDir, binaryDatabaseDir, mean, std_dev, test=
     allvideosAudioLabels = []
     allvideosValidAudioFrames = []  #valid audio frames
 
-    for videoDir in directories(speakerDir):  # rootDir is the speakerDir, below that are the videodirs
+    videoSequence = []
+
+    print(speakerDir)
+    dirs = directories(speakerDir)
+    #import pdb;pdb.set_trace()
+    if 'Lipspkr' in speakerDir:  #ugly hack because the dirs for combinedSR/dataToPkl were not sorted, just random. We need the same order to have same train/val/test videos
+        nr = speakerDir[-1]
+        dirOrder = unpickle('/home/matthijs/TCDTIMIT/lip'+str(nr)+'order.pkl')
+        dirs = [speakerDir+os.sep+dirtje for dirtje in dirOrder]
+    #import pdb;pdb.set_trace()
+
+    for videoDir in dirs:  # rootDir is the speakerDir, below that are the videodirs
+        print(videoDir)
+        videoSequence.append(os.path.basename(videoDir))
         #logger_combinedPrep.info("    Extracting video: %s", os.path.basename(videoDir))
         thisMFCCs, thisValidLabels, thisAudioLabels, thisValidAudioFrames = audioDirToArrays(videoDir, nbMFCCs)
         thisMFCCs = normalizeMFCC(thisMFCCs, mean, std_dev)
@@ -213,7 +226,7 @@ def allSpeakersToBinary(databaseDir, binaryDatabaseDir, meanStdAudio, test=False
         # logger_combinedPrep.info(dir)
         # logger_combinedPrep.info(relpath(rootDir, dir))
         # logger_combinedPrep.info(depth(relpath(rootDir, dir)))
-        if depth(relpath(rootDir, dir)) == 1:
+        if depth(relpath(rootDir, dir)) == 0:
             dirList.append(dir)
     logger_combinedPrep.info("\n %s", [os.path.basename(directory) for directory in dirList])
     dirList = sorted(dirList)

@@ -13,6 +13,10 @@ allImages_test, allMfccs_test, allAudioLabels_test, allValidLabels_test, allVali
 for el in original: assert len(el) == len(original[0]);
 print(len(original[0]))
 
+print("images:", allImages_test[0].shape)
+print("validLabels:", allValidLabels_test[0].shape)
+import pdb;pdb.set_trace()
+
 if withNoise:
     testDataPath = os.path.expanduser("~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep \
                    + 'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl'

@@ -43,11 +43,11 @@ nbPhonemes = 39  # number output neurons
 
 # for each dataset type as key this dictionary contains as value a list of all the network architectures that need to be trained for this dataset
 MANY_N_HIDDEN_LISTS = {}
-MANY_N_HIDDEN_LISTS['TIMIT'] = [[8], [8, 8], [8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
-                      [32],[32,32],[32,32,32,32],
-                       [64], [64,64],[64,64,64,64],
-                       [256],[256,256],[256,256,256],
-                       [512],[512,512],[512,512,512]]
+MANY_N_HIDDEN_LISTS['TIMIT'] = [[1024,1024]]#[[8], [8, 8], [8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
+                      # [32],[32,32],[32,32,32,32],
+                      #  [64], [64,64],[64,64,64,64],
+                      #  [256],[256,256],[256,256,256],
+                      #  [512],[512,512],[512,512,512]]
 
 MANY_N_HIDDEN_LISTS['TCDTIMIT'] = [[32,32],[64,64],[256,256],[512,512]]
 # combined is TIMIT and TCDTIMIT put together
@@ -70,14 +70,14 @@ ADD_DENSE_LAYERS = False
 
 justTest = True
 
-
+MANY_N_HIDDEN_LISTS['combined'] = MANY_N_HIDDEN_LISTS['default']
 # this sets up parameters for training/evaluation of networks.
 # it has lots of nested for loops so that you can train lots of different networks automatically.
 # Just set the parameters
 def main():
     #global  justTest, withNoise, noiseTypes, ratio_dBs
 
-    datasets = ["combined"]#,"TIMIT","combined"]  # combined"
+    datasets = ["TIMIT"]#,"TCDTIMIT","combined"]  # combined"
     test_datasets = {}
     test_datasets['TIMIT'] = ["TIMIT"]
     test_datasets['TCDTIMIT'] = ["TCDTIMIT"]

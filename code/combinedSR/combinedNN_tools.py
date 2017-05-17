@@ -31,13 +31,15 @@ class NeuralNetwork:
 
     network_train_info = [[], [], []]
 
-    def __init__(self, architecture, data=None, loadPerSpeaker = True,
+    def __init__(self, architecture, data=None, loadPerSpeaker = True, dataset="TCDTIMIT", test_dataset="TCDTIMIT",
                  batch_size=1, num_features=39, num_output_units=39,
                  lstm_hidden_list=(100,), bidirectional=True,
                  cnn_network="google", cnn_features='dense', lipRNN_hidden_list=None, lipRNN_bidirectional=True,
-                 dense_hidden_list=(512,),
+                 dense_hidden_list=(512,), save_name=None,
                  seed=int(time.time()), model_paths={}, debug=False, verbose=False, logger=logger_combinedtools):
 
+        self.dataset= dataset
+        self.test_dataset = test_dataset
         self.loadPerSpeaker = loadPerSpeaker
         self.model_paths = model_paths
 
@@ -45,6 +47,7 @@ class NeuralNetwork:
         self.num_features = num_features
         self.batch_size = batch_size
         self.epochsNotImproved = 0  # keep track, to know when to stop training
+
 
         # for storage of training info
         self.network_train_info = {
@@ -143,8 +146,12 @@ class NeuralNetwork:
                                                                         audio_lout=self.audioNet_lout_features,
                                                                         dense_hidden_list=dense_hidden_list)
 
+            self.loadPreviousResults(save_name)
             nb_params = self.getParamsInfo()
             self.network_train_info['nb_params'] = nb_params
+            store_path = save_name + '_trainInfo.pkl'
+            saveToPkl(store_path, self.network_train_info)
+
             logger_combinedtools.info(" # params lipreading seperate: %s", "{:,}".format(nb_params['nb_lipreading']))
             logger_combinedtools.info(" # params audio seperate:      %s", "{:,}".format(nb_params['nb_audio']))
 
@@ -1033,9 +1040,10 @@ class NeuralNetwork:
             batch_mfccs = pad_sequences_X(batch_mfccs)
             batch_valid_frames = pad_sequences_y(batch_valid_frames)
             batch_validLabels = pad_sequences_y(batch_validLabels)
+
             # print("batch_mfccs.shape: ", batch_mfccs.shape)
             # print("batch_validLabels.shape: ", batch_validLabels.shape)
-            #import pdb;    pdb.set_trace()
+            # import pdb;    pdb.set_trace()
 
             if runType == 'audio':
                 cst, acc, top3_acc = self.audio_val_fn(batch_mfccs, batch_masks, batch_valid_frames,
@@ -1168,13 +1176,13 @@ class NeuralNetwork:
 
         return test_cost, test_acc, test_topk_acc
 
-    def train(self, dataset, database_binaryDir, runType='combined', storeProcessed=False, processedDir=None,
+    def train(self, datasetFiles, database_binaryDir, runType='combined', storeProcessed=False, processedDir=None,
               save_name='Best_model', datasetName='TCDTIMIT', nbPhonemes=39,
               num_epochs=40, batch_size=1, LR_start=1e-4, LR_decay=1,
               justTest=False, withNoise=False, noiseType = 'white', ratio_dB = -3,
               shuffleEnabled=True, compute_confusion=False, debug=False, logger=logger_combinedtools):
 
-        trainingSpeakerFiles, testSpeakerFiles = dataset
+        trainingSpeakerFiles, testSpeakerFiles = datasetFiles
         logger.info("\n* Starting training...")
 
         best_val_acc, test_acc = self.loadPreviousResults(save_name)
@@ -1200,10 +1208,10 @@ class NeuralNetwork:
             # if you wish to train with noise, you need to replace the audio data with noisy audio from audioSR/firDataset/audioToPkl_perVideo.py,
             # like so (but also for train and val)
             if withNoise:
-                allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
-                        os.path.expanduser("~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep + \
-                        + 'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl')
-
+                testDataPath = os.path.expanduser(
+                    "~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep \
+                               + 'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl'
+                allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(testDataPath)
 
 
             test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
@@ -1349,6 +1357,9 @@ class NeuralNetwork:
             self.network_train_info['test_acc'].append(test_acc)
             self.network_train_info['test_topk_acc'].append(test_topk_acc)
 
+            nb_params = self.getParamsInfo()
+            self.network_train_info['nb_params'] = nb_params
+
             store_path = save_name + '_trainInfo.pkl'
             saveToPkl(store_path, self.network_train_info)
             logger.info("Train info written to:\t %s", store_path)
@@ -1414,10 +1425,12 @@ class NeuralNetwork:
     def finalNetworkEvaluation(self, save_name, database_binaryDir, processedDir, runType, testSpeakerFiles,
                                withNoise=False, noiseType='white', ratio_dB=-3,  datasetName='TCDTIMIT', roundParams=False,
                                storeProcessed=False,  nbPhonemes=39, logger=logger_combinedtools):
+        # print what kind of network we're running
         if runType == 'lipreading': networkType = "lipreading " + self.lipreadingType
         else: networkType = runType
         logger.info(" \n\n Running FINAL evaluation on Test set... (%s network type)", networkType)
 
+        # get the data to test
         store_path = save_name + '_trainInfo.pkl'  #dictionary with lists that contain training info for each epoch (train/val/test accuracy, cost etc)
         self.network_train_info = unpickle(store_path)
         # for the lipspeaker files that are all loaded in memory at once, we still need to get the data
@@ -1429,8 +1442,6 @@ class NeuralNetwork:
                               + 'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl'
                 allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(testDataPath)
 
-                import pdb;pdb.set_trace()
-
         if self.loadPerSpeaker:
             test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles, runType=runType,
                                                                sourceDataDir=database_binaryDir,
@@ -1439,36 +1450,43 @@ class NeuralNetwork:
                                                                withNoise=withNoise, noiseType=noiseType,
                                                                ratio_dB=ratio_dB)
         else:
-            if runType == 'audio': batch_size = 16
-            else: batch_size = 1
             test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
                                                                                  images=allImages_test,
                                                                                  mfccs=allMfccs_test,
                                                                                  validLabels=allValidLabels_test,
                                                                                  valid_frames=allValidAudioFrames_test,
-                                                                                 batch_size=batch_size)
+                                                                                 batch_size=1)
             test_cost /= nb_test_batches
             test_acc = test_acc / nb_test_batches * 100
             test_topk_acc = test_topk_acc / nb_test_batches * 100
 
         logger.info("FINAL TEST results on %s: ", runType)
-        logger.info("ROUND_PARAMS")
+        if roundParams: logger.info("ROUND_PARAMS")
         logger.info("\t  %s test cost:        %s", runType, test_cost)
         logger.info("\t  %s test acc rate:  %s %%", runType, test_acc)
         logger.info("\t  %s test top 3 acc:  %s %%", runType, test_topk_acc)
 
-        if roundParams:
-            self.network_train_info['final_test_cost_roundParams'] = test_cost
-            self.network_train_info['final_test_acc_roundParams'] = test_acc
-            self.network_train_info['final_test_top3_acc_roundParams'] = test_topk_acc
-        elif runType!= 'lipreading' and withNoise:
-            self.network_train_info['final_test_cost_' + noiseType + "_" + "ratio" + str(ratio_dB)] = test_cost
-            self.network_train_info['final_test_acc_' + noiseType + "_" + "ratio" + str(ratio_dB)] = test_acc
-            self.network_train_info['final_test_top3_acc_' + noiseType + "_" + "ratio" + str(ratio_dB)] = test_topk_acc
+        if self.test_dataset != self.dataset:
+            testType = "_" + self.test_dataset
         else:
-            self.network_train_info['final_test_cost'] = test_cost
-            self.network_train_info['final_test_acc'] = test_acc
-            self.network_train_info['final_test_top3_acc'] = test_topk_acc
+            testType = ""
+        if roundParams:
+            testType = "_roundParams" + testType
+
+        if runType != 'lipreading' and withNoise:
+            print(noiseType + "_" + "ratio" + str(ratio_dB) + testType)
+            self.network_train_info[
+                'final_test_cost_' + noiseType + "_" + "ratio" + str(ratio_dB) + testType] = test_cost
+            self.network_train_info['final_test_acc_' + noiseType + "_" + "ratio" + str(ratio_dB) + testType] = test_acc
+            self.network_train_info[
+                'final_test_top3_acc_' + noiseType + "_" + "ratio" + str(ratio_dB) + testType] = test_topk_acc
+        else:
+            self.network_train_info['final_test_cost' + testType] = test_cost
+            self.network_train_info['final_test_acc' + testType] = test_acc
+            self.network_train_info['final_test_top3_acc' + testType] = test_topk_acc
+
+        nb_params = self.getParamsInfo()
+        self.network_train_info['nb_params'] = nb_params
 
         saveToPkl(store_path, self.network_train_info)
 

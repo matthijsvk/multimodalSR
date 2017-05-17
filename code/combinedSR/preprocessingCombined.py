@@ -16,12 +16,14 @@ logger.setLevel(logging.DEBUG)
 def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
                   sourceDataDir=None, storeProcessed=False, processedDir=None,
                   verbose=False, loadData=True, viseme=False, nbPhonemes=39,
-                  withNoise = False, noiseType = 'white', ratio_dB = -3,
+                  withNoise = False, noiseType = 'white', ratio_dB = -3, dataset="TCDTIMIT",
                   logger=logger):
 
+    store_path = None
     if processedDir != None:
         store_path = ''.join([processedDir, "_train", str(trainFraction).replace("0.", ""), "valid",
                               str(validFraction).replace("0.", ""), os.sep, os.path.basename(speakerFile)])
+        print(store_path)
         # if already processed, just load it from disk
         if os.path.exists(store_path):
             if loadData:  # before starting training, we just want to check if it exists, and generate otherwise. Not load the data
@@ -31,7 +33,7 @@ def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
                     audio_data_path = os.path.expanduser("~/TCDTIMIT/combinedSR/") + dataset + "/binaryAudio" + str(
                         nbPhonemes) + "_" + noiseType + os.sep + "ratio" + str(ratio_dB) + os.sep + speakerFile
                     test[1:] = unpickle(audio_data_path)
-            return [train,val,test]
+                return [train,val,test]
     logger.info(" %s processed data doesn't exist yet; generating...", speakerFile)
 
 

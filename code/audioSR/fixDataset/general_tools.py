@@ -263,7 +263,7 @@ def directories(root):
     for path, folders, files in os.walk(root):
         for name in folders:
             dirList.append(os.path.join(path, name))
-    return sorted(dirList)
+    return dirList
 
 
 def tryint(s):

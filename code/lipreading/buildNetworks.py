@@ -375,7 +375,7 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
             nonlinearity=lasagne.nonlinearities.identity)
 
     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-
+    #
     cnn = lasagne.layers.BatchNormLayer(
             cnn,
             epsilon=epsilon,
@@ -384,7 +384,7 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-
+    #
     # 512C3-512C3-P2
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
@@ -401,7 +401,7 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
     cnn = lasagne.layers.NonlinearityLayer(
             cnn,
             nonlinearity=activation)
-
+    #
     cnn = lasagne.layers.Conv2DLayer(
             cnn,
             num_filters=512,
@@ -437,19 +437,19 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
     #         cnn,
     #         nonlinearity=activation)
 
-    cnn = lasagne.layers.DenseLayer(
-            cnn,
-            nonlinearity=lasagne.nonlinearities.identity,
-            num_units=256)
-    #
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
+    # cnn = lasagne.layers.DenseLayer(
+    #         cnn,
+    #         nonlinearity=lasagne.nonlinearities.identity,
+    #         num_units=256)
+    # #
+    # cnn = lasagne.layers.BatchNormLayer(
+    #         cnn,
+    #         epsilon=epsilon,
+    #         alpha=alpha)
 
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
+    # cnn = lasagne.layers.NonlinearityLayer(
+    #         cnn,
+    #         nonlinearity=activation)
 
     cnn = lasagne.layers.DenseLayer(
             cnn,
