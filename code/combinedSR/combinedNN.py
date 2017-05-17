@@ -316,12 +316,9 @@ def exportResultsToExcelManyNoise(resultsList, path):
             allNets = results[runType]
 
             # write the column titles
-            import pdb;pdb.set_trace()
-            nb_paramNames=  allNets.keys()[0]['nb_params'].keys()
-            startVals = 5+len(nb_paramNames)  # column number of first value
+            startVals=5
             colNames = ['Network Path', 'Network Name', 'Dataset', 'Test Dataset', 'Noise Type', 'Test Cost', 'Test Accuracy',
                         'Test Top 3 Accuracy']
-            for paramName in nb_paramNames: colNames.append(paramName)
             for i in range(len(colNames)):
                 worksheet.write(0, i, colNames[i])
 
@@ -340,11 +337,7 @@ def exportResultsToExcelManyNoise(resultsList, path):
                     worksheet.write(row, 2, thisNet['dataset'])
                     worksheet.write(row, 3, thisNet['test_dataset'])
                 worksheet.write(row, 4, noiseType)
-
-                # now write the params
-                vals = thisNet['nb_params'].values()  # vals is list of [test_cost, test_acc, test_top3_acc]
-                for i in range(len(vals)):
-                    worksheet.write(row, 5 + i, vals[i])
+                
 
                 # now write the values
                 vals = thisNet['values']  # vals is list of [test_cost, test_acc, test_top3_acc]
