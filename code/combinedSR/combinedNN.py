@@ -39,9 +39,26 @@ resultsPath = os.path.expanduser('~/TCDTIMIT/combinedSR/TCDTIMIT/results/allEval
 
 logToFile = True; overwriteResults = False
 
-justTest = False
+# if you wish to force retrain of networks, set justTest to False, forceTrain in main() to True, and overwriteSubnets to True.
+# if True, and justTest=False, even if a network exists it will continue training. If False, it will just be evaluated
+forceTrain = True
+
+# use when you want to train a combined network or lipreading-LSTM when you've created a better subnetwork.
+# You can load the new subnet (eg lipreading CNN or audio network) in the combined network, and retrain it. You dont' have to redo everything.
+overwriteSubnets = True
+
+# JustTest: If True, mainGetResults just runs over the trained networks. If a network doesn't exist, it's skipped
+#           If False, ask user to train networks, then start training networks that don't exist.
+justTest=False
+
+# use this for testing with reduced precision. It converts the network weights to float16, then back to float32 for execution.
+# This amounts to rounding. Performance should hardly be impacted.
 ROUND_PARAMS=False
 
+
+# use this to test trained networks on the test dataset with noise added.
+# This data is generated using audioSR/fixDataset/mergeAudiofiles.py + audioToPkl_perVideo.py and combinedSR/dataToPkl_lipspeakers.py
+# It is loaded in in combinedNN_tools/finalEvaluation (also just before training in 'train'. You could also generate noisy training data and train on that, but I haven't tried that
 withNoise = False
 noiseType = 'white'
 ratio_dB = 0
@@ -49,8 +66,6 @@ noiseTypes=['white','voices']
 ratio_dBs = [0,-3,-5,-10]
 
 def main():
-    forceTrain= True
-    overwriteSubnets = True
     networkList = [
         # # # # # # # ### LIPREADING ###
         # # # # # # # # # # CNN
@@ -131,7 +146,7 @@ def main():
 
         # # ### COMBINED ###
         # # # lipspeakers
-        # #compare number of dense units usefulness
+        # different number of FC softmax dense for DENSE
         networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
                        DENSE_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
         networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
@@ -140,27 +155,7 @@ def main():
                         DENSE_HIDDEN_LIST=[256,256,256],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
         networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
                        DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-
-
-        # impact of small audio network
-        networkToRun(AUDIO_LSTM_HIDDEN_LIST=[32,32],
-                       cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
-                       DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-
-
-        # 39 phoneme probabilities instaed of lipRNN as outputs. Also see if DENSE_HIDDEN_LIST has influece (Should as we give more easily interpretable results as output (phonen probs instead of RNN features)
-        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
-                     DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
-                     DENSE_HIDDEN_LIST=[512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        # compare with dense
-        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
-                     DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
-                     DENSE_HIDDEN_LIST=[512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-
-
-        # # # ## conv
+        # different number of FC softmax dense for CONV
         networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
                      DENSE_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
         networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
@@ -170,22 +165,40 @@ def main():
         networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
                      DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
 
-
-        # networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
-        #                DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        # networkToRun(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
-        #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64],
-        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-
-        networkToRun(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        # impact of small audio network
+        networkToRun(AUDIO_LSTM_HIDDEN_LIST=[32,32],
                        cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
                        DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+
+        # lipRNN features as output
         networkToRun(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
                      cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
-                     DENSE_HIDDEN_LIST=[256,256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+                     DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        networkToRun(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+                     cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
+                     DENSE_HIDDEN_LIST=[256, 256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
         networkToRun(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
                      cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
                      DENSE_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+
+
+        # not lipRNNfeatures, but 39 phoneme probabilities instaed of lipRNN as outputs. Also see if DENSE_HIDDEN_LIST has influece (Should as we give more easily interpretable results as output (phonen probs instead of RNN features)
+        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
+                     DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
+                     DENSE_HIDDEN_LIST=[512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # with dense cnn features
+        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
+                     DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
+                     DENSE_HIDDEN_LIST=[512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+
+
+        # with subNetTraining
+        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
+                     DENSE_HIDDEN_LIST=[512, 512, 512], allowSubnetTraining=True, overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+
+
 
 
 
@@ -567,7 +580,7 @@ def runManyNetworks(networks, withNoise=False,noiseType='white',ratio_dB=0):
 
     if len(failures) > 0:
         print("Some networks failed to run...")
-        import pdb;pdb.set_trace()
+        #import pdb;pdb.set_trace()
     return results
 
 def runNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features, lipRNN_bidirectional, LIP_RNN_HIDDEN_LIST, lipRNN_features, DENSE_HIDDEN_LIST,
