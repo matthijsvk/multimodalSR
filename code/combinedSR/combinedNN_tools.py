@@ -34,7 +34,7 @@ class NeuralNetwork:
     def __init__(self, architecture, data=None, loadPerSpeaker = True, dataset="TCDTIMIT", test_dataset="TCDTIMIT",
                  batch_size=1, num_features=39, num_output_units=39,
                  lstm_hidden_list=(100,), bidirectional=True,
-                 cnn_network="google", cnn_features='dense', lipRNN_hidden_list=None, lipRNN_bidirectional=True,
+                 cnn_network="google", cnn_features='dense', lipRNN_hidden_list=None, lipRNN_bidirectional=True, lipRNN_features="rawRNNfeatures",
                  dense_hidden_list=(512,), save_name=None,
                  seed=int(time.time()), model_paths={}, debug=False, verbose=False, logger=logger_combinedtools):
 
@@ -131,6 +131,8 @@ class NeuralNetwork:
                                                                                                       bidirectional=lipRNN_bidirectional)
                 # For lipreading only: input to softmax FC layer now not from conv layer, but from LSTM features that are put on top of the CNNs
                 self.lipreading_lout = self.build_softmax(self.lipreading_lout_features)
+                if lipRNN_features == 'dense':
+                    self.lipreading_lout_features = self.lipreading_lout
 
             else:  #only use the CNN
                 if cnn_features == 'dense':
