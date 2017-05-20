@@ -22,8 +22,7 @@ def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
     store_path = None
     if processedDir != None:
         store_path = ''.join([processedDir, "_train", str(trainFraction).replace("0.", ""), "valid",
-                              str(validFraction).replace("0.", ""), os.sep, os.path.basename(speakerFile)])
-        print(store_path)
+                              str(validFraction).replace("0.", ""), os.sep, os.path.basename(speakerFile).replace(".pkl","")+("_viseme" if viseme else "")+".pkl"])
         # if already processed, just load it from disk
         if os.path.exists(store_path):
             if loadData:  # before starting training, we just want to check if it exists, and generate otherwise. Not load the data
@@ -70,6 +69,16 @@ def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
     validLabels_test = list(data['validLabels'][thisTrain + thisValid:thisN])
     validAudioFrames_test = list(data['validAudioFrames'][thisTrain + thisValid:thisN])
 
+    if viseme: #convert all labels from phoneme to viseme
+        from phoneme_set import phonemeToViseme, viseme_set, classToPhoneme39  # dictionary of phoneme-viseme key-value pairs
+        for labelList in [validLabels_train, validLabels_val, validLabels_test]:
+            for videoNr in range(len(labelList)):
+                for frameNr in range(len(labelList[videoNr])):
+                    label = labelList[videoNr][frameNr]
+                    phoneme = classToPhoneme39[label]
+                    viseme = phonemeToViseme[phoneme]
+                    labelList[videoNr][frameNr] = viseme_set[viseme]
+
     if verbose:
         logger.info("nbTrainLoaded: %s", len(images_train))
         logger.info("nbValidLoaded: %s", len(images_val))
@@ -102,6 +111,8 @@ def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
     dataList = [[images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train],
                 [images_val, mfccs_val, audioLabels_val, validLabels_val, validAudioFrames_val],
                 [images_test, mfccs_test, audioLabels_test, validLabels_test, validAudioFrames_test]]
+
+    import pdb;pdb.set_trace()
     if store_path != None and storeProcessed: saveToPkl(store_path, dataList)
 
     return dataList

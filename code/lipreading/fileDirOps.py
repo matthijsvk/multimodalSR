@@ -281,8 +281,8 @@ from phoneme_set import phoneme_set_39, viseme_set
 def getPhonemeNumberMap():
     return phoneme_set_39
 
-    def getVisemeNumberMap():
-        return viseme_set
+def getVisemeNumberMap():
+    return viseme_set
 
 
 # for training on visemes
@@ -306,7 +306,7 @@ def getPhonemeToVisemeMap():
     return map
 
 
-def speakerToBinary(speakerDir, binaryDatabaseDir, phoneme=True):
+def speakerToBinary(speakerDir, binaryDatabaseDir, phonemeType=True):
     rootDir = speakerDir
     targetDir = binaryDatabaseDir
     if not os.path.exists(targetDir):
@@ -341,7 +341,7 @@ def speakerToBinary(speakerDir, binaryDatabaseDir, phoneme=True):
         label = labels[i]
         image = images[i]
 
-        if phoneme:# for mapping to phonemes (nbClasses = 39)
+        if phonemeType:# for mapping to phonemes (nbClasses = 39)
             labelNumber = phoneme_set_39[label]  # you could also use the phoneme to viseme map afterwards.
             try:assert labelNumber >=0 and labelNumber <=38
             except: import pdb;pdb.set_trace()

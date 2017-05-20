@@ -16,8 +16,9 @@ dataset = "TCDTIMIT"
 trainFraction = 0.7
 validFraction = 0.1
 
-runType = 'normal'
-runType = 'noisyAudio'  #just get the noisy audio
+runType = 'normal'; viseme = True
+
+#runType = 'noisyAudio'  #just get the noisy audio
 
 noiseTypes = ['white','voices']
 ratio_dBs = [0,-3, -5, -10]
@@ -44,7 +45,8 @@ if runType == 'normal':
         train, val, test = preprocessingCombined.getOneSpeaker(lipspeaker,
                                                                sourceDataDir=database_binaryDir,
                                                                storeProcessed=False, processedDir= processedDir,
-                                                               trainFraction=trainFraction, validFraction=validFraction, verbose=False, logger=logger_combined)
+                                                               trainFraction=trainFraction, validFraction=validFraction, viseme=viseme,
+                                                               verbose=False, logger=logger_combined)
         images_train, mfccs_train, audioLabels_train, validLabels_train, validAudioFrames_train = train
         images_val, mfccs_val, audioLabels_val, validLabels_val, validAudioFrames_val = val
         images_test, mfccs_test, audioLabels_test, validLabels_test, validAudioFrames_test = test
@@ -67,36 +69,21 @@ if runType == 'normal':
         allValidLabels_test += validLabels_test
         allValidAudioFrames_test += validAudioFrames_test
 
-        # get all audio of this lipspeaker
-        path = '/home/matthijs/TCDTIMIT/combinedSR/TCDTIMIT/binaryAudio39_white/ratio0/Lipspkr1.pkl'
-        mfccs_test1, audioLabels_test1, validLabels_test1, validAudioFrames_test1 = unpickle(path)
-        print("validLabels1:", validLabels_test1[0].shape)
-        import pdb;pdb.set_trace()
-
-        mfccs_test2, audioLabels_test2, validLabels_test2, validAudioFrames_test2 = unpickle(
-            os.path.expanduser("~/TCDTIMIT/combinedSR/") + dataset + "/binaryAudio" + str(39) \
-            + "_" + 'voices' + os.sep + "ratio" + str(-5) + os.sep + lipspeaker)
-
-        print("images:", allImages_test[0].shape)
-        print("validLabels:", allValidLabels_test[0].shape)
-        print("validLabels2:", validLabels_test2[0].shape)
-        import pdb;     pdb.set_trace()
-
-    storePath = store_dir + os.sep + '/allLipspeakersTrain.pkl'
+    storePath = store_dir + os.sep + 'allLipspeakersTrain' +("_viseme" if viseme else "") + '.pkl'
     saveToPkl(storePath, [allImages_train,
                           allMfccs_train ,
                           allAudioLabels_train,
                           allValidLabels_train,
                           allValidAudioFrames_train ])
 
-    storePath = store_dir + os.sep + 'allLipspeakersVal.pkl'
+    storePath = store_dir + os.sep + 'allLipspeakersVal' + ("_viseme" if viseme else "") + '.pkl'
     saveToPkl(storePath, [allImages_val,
                           allMfccs_val,
                           allAudioLabels_val,
                           allValidLabels_val,
                           allValidAudioFrames_val])
 
-    storePath = store_dir + os.sep + 'allLipspeakersTest.pkl'
+    storePath = store_dir + os.sep + 'allLipspeakersTest' + ("_viseme" if viseme else "") + '.pkl'
     saveToPkl(storePath, [allImages_test,
                           allMfccs_test,
                           allAudioLabels_test,
