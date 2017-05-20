@@ -75,34 +75,36 @@ def main():
     networkList = [
         # # # # # # # # ### LIPREADING ###
         # # # # # # # # # # # CNN
-        # networkToRun(runType="lipreading", CNN_NETWORK="google",LIP_RNN_HIDDEN_LIST=None, forceTrain=forceTrain),
-        networkToRun(runType="lipreading", CNN_NETWORK="resnet50",LIP_RNN_HIDDEN_LIST=None, forceTrain=forceTrain),
-        # networkToRun(runType="lipreading", CNN_NETWORK="cifar10", LIP_RNN_HIDDEN_LIST=None, forceTrain=forceTrain),
+        #networkToRun(runType="lipreading", CNN_NETWORK="google",LIP_RNN_HIDDEN_LIST=None, forceTrain=forceTrain),
+        #networkToRun(runType="lipreading", CNN_NETWORK="resnet50",LIP_RNN_HIDDEN_LIST=None, forceTrain=forceTrain),
+        #networkToRun(runType="lipreading", CNN_NETWORK="cifar10", LIP_RNN_HIDDEN_LIST=None, forceTrain=forceTrain),
         #
         # # # # # # # # # #
         # # # # # # # # # # # CNN-LSTM -> by default only the LSTM part is trained (line 713 in build_functions in combinedNN_tools.py
         # # # # # # # # # # #          -> you can train everything (also CNN parameters), but only do this after the CNN-LSTM has trained with fixed CNN parameters, otherwise you'll move far out of your optimal point
         # # # # # compare number of LSTM units
-        # # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[8],
-        # #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain,LR_start = 0.01),
-        # # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64],
-        # #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain,LR_start = 0.01),
-        # # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256],
-        # #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        # # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
-        # #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        # # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[512,512],
-        # #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain, LR_start=0.01),
+        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[8],
+                     overwriteSubnets=overwriteSubnets, forceTrain=forceTrain,LR_start = 0.01),
+        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64],
+                     overwriteSubnets=overwriteSubnets, forceTrain=forceTrain,LR_start = 0.01),
+        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256],
+                     overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
+                     overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[512,512],
+                     overwriteSubnets=overwriteSubnets, forceTrain=forceTrain, LR_start=0.01),
         #
         # # # # compare with conv
-        # # networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[8], overwriteSubnets=overwriteSubnets,
-        # #                forceTrain=forceTrain,LR_start = 0.01),
-        # # networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64], overwriteSubnets=overwriteSubnets,
-        # #                forceTrain=forceTrain,LR_start = 0.01),
-        # # networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets,
-        # #                forceTrain=forceTrain),
-        # networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], overwriteSubnets=overwriteSubnets,
-        #                forceTrain=forceTrain),
+        networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[8], overwriteSubnets=overwriteSubnets,
+                       forceTrain=forceTrain,LR_start = 0.01),
+        networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64], overwriteSubnets=overwriteSubnets,
+                       forceTrain=forceTrain,LR_start = 0.01),
+        networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets,
+                       forceTrain=forceTrain),
+        networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], overwriteSubnets=overwriteSubnets,
+                       forceTrain=forceTrain),
+        networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512, 512], overwriteSubnets=overwriteSubnets,
+                     forceTrain=forceTrain),
 
         # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[8,8], audio_dataset="TIMIT", test_dataset="TIMIT"),
         # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[32,32], audio_dataset="TIMIT", test_dataset="TIMIT"),
@@ -110,8 +112,7 @@ def main():
         # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256], audio_dataset="TIMIT", test_dataset="TIMIT"),
         # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512], audio_dataset="TIMIT", test_dataset="TIMIT"),
 
-        # networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512,512], overwriteSubnets=overwriteSubnets,
-        #                forceTrain=forceTrain),
+
         #
         #
         # # # ### AUDIO ###  -> see audioSR/RNN.py, there it can run in batch mode which is much faster
@@ -420,7 +421,7 @@ class networkToRun:
     def __init__(self,
                  AUDIO_LSTM_HIDDEN_LIST=[256, 256], audio_dataset="TCDTIMIT", nbMFCCs=39, audio_bidirectional=True,
                  CNN_NETWORK="google",
-                 cnn_features="dense",
+                 cnn_features="conv",
                  LIP_RNN_HIDDEN_LIST=[256, 256],
                  lipRNN_bidirectional = True, lipRNN_features = 'rawRNNfeatures',
                  DENSE_HIDDEN_LIST=[512,512,512],
@@ -690,68 +691,69 @@ def runNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features, lipRNN_bidirec
                             debug=False)
 
 
-    # get the name of the model we're training/evaluating
-    logger_combined.info(' Network built. \n\nTrying to load stored model: %s', runType)
-
-    # Try to load stored model
-    success = network.setNetworkParams(runType, overwriteSubnets=overwriteSubnets)
-
-    ##### COMPILING FUNCTIONS #####
-    logger_combined.info("\n\n* Compiling functions ...")
-    network.build_functions(runType=runType, train=True, debug=False,
-                            allowSubnetTraining=allowSubnetTraining)
-
-    # if runType model already exists (and loaded successfully), just TEST it.
-
-
-    if success and not forceTrain:
-        if ROUND_PARAMS: #safety for if we forget to set round_params to false when training
-            logger_combined.info("Loading Rounded Parameters...")
-            network.setNetworkParams(runType, roundParams=ROUND_PARAMS, overwriteSubnets=overwriteSubnets)
-
-        if withNoise:
-            noiseTypes = ['white', 'voices']
-            ratio_dBs = [0, -3, -5, -10]
-            for noiseType in noiseTypes:
-                for ratio_dB in ratio_dBs:
-                    testResults = network.finalNetworkEvaluation(save_name=model_save,
-                                                                 database_binaryDir=database_binaryDir,
-                                                                 processedDir=processedDir, runType=runType,
-                                                                 storeProcessed=storeProcessed,
-                                                                 testSpeakerFiles=testSpeakerFiles, withPreds=getConfusionMatrix,
-                                                                 withNoise = withNoise, noiseType = noiseType, ratio_dB = ratio_dB,
-                                                                 roundParams=ROUND_PARAMS)
-        else:
-            testResults = network.finalNetworkEvaluation(save_name=model_save,
-                                                         database_binaryDir=database_binaryDir, viseme=viseme,
-                                                         processedDir=processedDir, runType=runType,
-                                                         storeProcessed=storeProcessed,
-                                                         testSpeakerFiles=testSpeakerFiles, withPreds=getConfusionMatrix,
-                                                         withNoise=withNoise, noiseType=noiseType, ratio_dB=ratio_dB,
-                                                         roundParams=ROUND_PARAMS)
-
-    else: # network doesn't exist, we need to train it first. Or we forced training
-        # if we loaded an existing network and force training, make LRsmaller so we don't lose the benefits of our pretrained network
-        if forceTrain and success: LR_start = LR_start/10.0
-        ##### TRAINING #####
-        logger_combined.info("\n\n* Training ...")
-
-
-        testResults = network.train(datasetFiles, database_binaryDir=database_binaryDir, runType=runType,
-                      storeProcessed=True, processedDir=processedDir, viseme=viseme,
-                      num_epochs=max_num_epochs,
-                      batch_size=batch_size_audio, LR_start=LR_start, LR_decay=LR_decay,
-                      compute_confusion=False, debug=False,
-                      justTest=justTest, withNoise=withNoise, noiseType=noiseType, ratio_dB=ratio_dB,
-                      save_name=model_save)
-
-    logger_combined.info("\n\n* Done")
-    logger_combined.info('Total time: {:.3f}'.format(time.time() - program_start_time))
-
-    # close the log file handler to be able to log to new file
-    if logToFile:
-        fh.close()
-        logger_combined.removeHandler(fh)
+    # # get the name of the model we're training/evaluating
+    # logger_combined.info(' Network built. \n\nTrying to load stored model: %s', runType)
+    #
+    # # Try to load stored model
+    # success = network.setNetworkParams(runType, overwriteSubnets=overwriteSubnets)
+    #
+    # ##### COMPILING FUNCTIONS #####
+    # logger_combined.info("\n\n* Compiling functions ...")
+    # network.build_functions(runType=runType, train=True, debug=False,
+    #                         allowSubnetTraining=allowSubnetTraining)
+    #
+    # # if runType model already exists (and loaded successfully), just TEST it.
+    #
+    #
+    # if success and not forceTrain:
+    #     if ROUND_PARAMS: #safety for if we forget to set round_params to false when training
+    #         logger_combined.info("Loading Rounded Parameters...")
+    #         network.setNetworkParams(runType, roundParams=ROUND_PARAMS, overwriteSubnets=overwriteSubnets)
+    #
+    #     if withNoise:
+    #         noiseTypes = ['white', 'voices']
+    #         ratio_dBs = [0, -3, -5, -10]
+    #         for noiseType in noiseTypes:
+    #             for ratio_dB in ratio_dBs:
+    #                 testResults = network.finalNetworkEvaluation(save_name=model_save,
+    #                                                              database_binaryDir=database_binaryDir,
+    #                                                              processedDir=processedDir, runType=runType,
+    #                                                              storeProcessed=storeProcessed,
+    #                                                              testSpeakerFiles=testSpeakerFiles, withPreds=getConfusionMatrix,
+    #                                                              withNoise = withNoise, noiseType = noiseType, ratio_dB = ratio_dB,
+    #                                                              roundParams=ROUND_PARAMS)
+    #     else:
+    #         testResults = network.finalNetworkEvaluation(save_name=model_save,
+    #                                                      database_binaryDir=database_binaryDir, viseme=viseme,
+    #                                                      processedDir=processedDir, runType=runType,
+    #                                                      storeProcessed=storeProcessed,
+    #                                                      testSpeakerFiles=testSpeakerFiles, withPreds=getConfusionMatrix,
+    #                                                      withNoise=withNoise, noiseType=noiseType, ratio_dB=ratio_dB,
+    #                                                      roundParams=ROUND_PARAMS)
+    #
+    # else: # network doesn't exist, we need to train it first. Or we forced training
+    #     # if we loaded an existing network and force training, make LRsmaller so we don't lose the benefits of our pretrained network
+    #     if forceTrain and success: LR_start = LR_start/10.0
+    #     ##### TRAINING #####
+    #     logger_combined.info("\n\n* Training ...")
+    #
+    #
+    #     testResults = network.train(datasetFiles, database_binaryDir=database_binaryDir, runType=runType,
+    #                   storeProcessed=True, processedDir=processedDir, viseme=viseme,
+    #                   num_epochs=max_num_epochs,
+    #                   batch_size=batch_size_audio, LR_start=LR_start, LR_decay=LR_decay,
+    #                   compute_confusion=False, debug=False,
+    #                   justTest=justTest, withNoise=withNoise, noiseType=noiseType, ratio_dB=ratio_dB,
+    #                   save_name=model_save)
+    #
+    # logger_combined.info("\n\n* Done")
+    # logger_combined.info('Total time: {:.3f}'.format(time.time() - program_start_time))
+    #
+    # # close the log file handler to be able to log to new file
+    # if logToFile:
+    #     fh.close()
+    #     logger_combined.removeHandler(fh)
+    testResults = None
 
     return model_save, testResults #so you know which network has been trained
 

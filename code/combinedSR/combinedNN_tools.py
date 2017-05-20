@@ -150,6 +150,9 @@ class NeuralNetwork:
                     self.lipreading_lout_features = self.CNN_lout_features
                 self.lipreading_lout = self.CNN_lout
 
+                # logger_combinedtools.debug("lip features shape: %s", self.lipreading_lout_features.output_shape)
+                # import pdb;pdb.set_trace()
+
 
             ## COMBINED PART ##
             # batch size is number of valid frames in each video
@@ -661,8 +664,11 @@ class NeuralNetwork:
                                    nonlinearity=None)  # number output units = nbClasses (global variable)
         net['prob'] = NonlinearityLayer(net['fc1000'], nonlinearity=softmax)
 
-        return net, net['prob'], net['pool5']
+        # now we have output shape (nbValidFrames, 2048,1,1) -> Flatten it.
+        batch_size = net['input'].input_var.shape[0]
+        cnn_reshape = L.ReshapeLayer(net['pool5'], (batch_size, 2048))
 
+        return net, net['prob'], cnn_reshape
 
     def build_cifar10_CNN(self, input=None, activation=T.nnet.relu, alpha=0.1, epsilon=1e-4):
         input = self.CNN_input_var
@@ -779,6 +785,10 @@ class NeuralNetwork:
 
         # print(cnn.output_shape)
 
+        # now we have output shape (nbValidFrames, 512,15,15) -> Flatten it.
+        batch_size = cnn_in.input_var.shape[0]
+        cnn_reshape = L.ReshapeLayer(cnn, (batch_size, 115200))
+
         # # 1024FP-1024FP-10FP
         cnn = lasagne.layers.DenseLayer(
                 cnn,
@@ -808,9 +818,6 @@ class NeuralNetwork:
                 cnn,
                 nonlinearity=activation)
 
-        # now we have output shape (nbValidFrames, 512,7,7) -> Flatten it.
-        batch_size = cnn_in.input_var.shape[0]
-        cnn_reshape = L.ReshapeLayer(cnn, (batch_size, -1))
 
         cnn = lasagne.layers.DenseLayer(
                 cnn,
@@ -885,6 +892,14 @@ class NeuralNetwork:
         # we need to convert (batch_size, seq_length, num_features) to (batch_size * seq_length, num_features) because Dense networks can't deal with 2 unknown sizes
         net['l3_reshape'] = L.ReshapeLayer(net['l2_lstm'][-1], (-1, n_hidden_list[-1]))
 
+        # print(L.count_params(net['l1_in']))
+        # lstmParams = L.count_params(net['l2_lstm']) - L.count_params(net['l1_in'])
+        # print(lstmParams)
+        # if lstmParams > 6000000:
+        #     print([L.count_params(net['l2_lstm'][i]) - L.count_params(net['l2_lstm'][i - 1]) for i in range(1, len(net['l2_lstm']))])
+        #     print([L.count_params(net['l2_lstm'][i]) - L.count_params(net['l2_lstm'][i - 1]) for i in
+        #      range(1, len(net['l2_lstm']))])
+        #     import pdb;pdb.set_trace()
         if debug:
             self.print_RNN_network_structure(net)
         return net, net['l3_reshape']  #output shape: (nbFrames, nbHiddenLSTMunits)
@@ -1006,7 +1021,7 @@ class NeuralNetwork:
         nb_params['nb_total'] = nb_total
         nb_params['nb_audio_features'] = nb_audio_features
         nb_params['nb_lipreading_features'] = nb_lipreading_features
-        nb_params['nb_CNN_used'] = nb_lipreading
+        nb_params['nb_CNN_used'] = nb_CNN_used
         nb_params['nb_lipRNN'] = nb_lipRNN
         nb_params['nb_combining'] = nb_combining
 
@@ -1036,7 +1051,9 @@ class NeuralNetwork:
                 return False
             try:
                 if roundParams: lasagne.layers.set_all_param_values(lout, self.round_params(param_values))
-                else: lasagne.layers.set_all_param_values(lout, param_values)
+                else:
+                    print(len(param_values));import pdb;pdb.set_trace();
+                    lasagne.layers.set_all_param_values(lout, param_values)
             except:
                 try:
                     if roundParams: lasagne.layers.set_all_param_values(lout, self.round_params(*param_values))
