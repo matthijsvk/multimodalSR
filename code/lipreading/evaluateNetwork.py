@@ -2,6 +2,21 @@ from __future__ import print_function
 
 from lipreading import *
 from phoneme_set import phoneme_set_39, classToPhoneme39
+import argparse
+
+nbClassesPhonemes = 39
+nbClassesVisemes = 12
+
+def main():
+    parser = argparse.ArgumentParser(description="Getting top results for this image...")
+    add_arg = parser.add_argument
+    add_arg("-n", "--network_type", help="Type of network to be used", default='google')
+    add_arg("-p", "--output", help="Network outputting phonemes (1) or visemes (0)", default='phoneme')
+    # add_arg("-m", "--model-file", help="Model pickle file that contains trained network parameters")
+    args = parser.parse_args()
+
+    X_test, y_test = unpickle(os.path.expanduser("~/TCDTIMIT/lipreading/TCDTIMIT/binary/allLipspeakersTest.pkl"))
+    evaluateNetwork(X_test, y_test, phonemeViseme="phoneme", networkType=args.network_type)
 
 
 #  build the model structure, fill in the stored parameters from a trained network with this structure
@@ -28,16 +43,19 @@ def load_model(phonemeViseme, networkType, printNetwork=False):
             cnnDict, outputLayer = buildNetworks.build_network_google(activation, alpha, epsilon, inputs,
                                                                       nbClassesPhonemes)
             modelParameterFile = './results/Phoneme_trained/GoogleNet/allLipspeakers/allLipspeakers.npz'
+            modelParameterFile = '/home/matthijs/TCDTIMIT/lipreading/TCDTIMIT/results/CNN/lipspeakers_google_phoneme39.npz'
 
         elif networkType == 'resnet50':  # ResNet50
             cnnDict, outputLayer = buildNetworks.build_network_resnet50(inputs, nbClassesPhonemes)
+            modelParameterFile = '/home/matthijs/TCDTIMIT/lipreading/TCDTIMIT/results/CNN/lipspeakers_resnet50_phoneme39.npz'
+
             modelParameterFile = './results/Phoneme_trained/ResNet50/allLipspeakers/allLipspeakers.npz'
         else:
             raise Exception('ERROR: given network type unknown.')
 
     elif phonemeViseme == 'viseme':  # use viseme-trained network, only trained for Google Network
         cnnDict, outputLayer = buildNetworks.build_network_google(activation, alpha, epsilon, inputs,
-                                                                  39)  # nbClassesVisemes)
+                                                                  nbClassesVisemes)
         modelParameterFile = './results/Viseme_trained/GoogleNet/allLipspeakers.npz'
 
     else:
@@ -106,52 +124,69 @@ def getPhonemeNumberMap():
     z.update(classToPhoneme39)
     return
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Getting top results for this image...")
-    add_arg = parser.add_argument
-    add_arg("input_image", help="Input image to be evaluated")
-    add_arg("target_phoneme", help="Correct phoneme of input image")
-    add_arg("-n", "--network_type", help="Type of network to be used", default='google')
-    add_arg("-p", "--output", help="Network outputting phonemes (1) or visemes (0)", default='phoneme')
-    # add_arg("-m", "--model-file", help="Model pickle file that contains trained network parameters")
-    args = parser.parse_args()
-
-
+batch_size = 32
 def evaluateNetwork(X, y, phonemeViseme, networkType):
     phonemeToViseme = getPhonemeToVisemeMap()
     phonemeNumberMap = getPhonemeNumberMap()  # bidirectional map phoneme-number
 
     cnn = load_model(phonemeViseme, networkType)
 
-    for i in range(len(y)):
-        y[i] = phonemeToViseme{phonemeNumberMap{y[i]}}  # viseme of the phoneme belonging to the y-number
 
-        input = T.tensor4('inputs')
-        target = T.matrix('targets')
+    input = T.tensor4('inputs')
+    target = T.matrix('targets')
 
-        test_output = lasagne.layers.get_output(cnn, deterministic=True)
-        test_loss = T.mean(T.sqr(T.maximum(0., 1. - target * test_output)))
-        test_err = T.mean(T.neq(T.argmax(test_output, axis=1), T.argmax(target, axis=1)), dtype=theano.config.floatX)
-        test_loss = T.mean(T.sqr(T.maximum(0., 1. - target * test_output)))
-        test_err = T.mean(T.neq(T.argmax(test_output, axis=1), T.argmax(target, axis=1)), dtype=theano.config.floatX)
+    test_output = lasagne.layers.get_output(cnn, deterministic=True)
+    test_loss = T.mean(T.sqr(T.maximum(0., 1. - target * test_output)))
+    test_err = T.mean(T.neq(T.argmax(test_output, axis=1), T.argmax(target, axis=1)), dtype=theano.config.floatX)
 
-        val_fn = theano.function([input, target], [test_loss, test_err])
+    val_fn = theano.function([input, target], [test_loss, test_err])
 
-        # calculate validation error of whole dataset
-        err = 0
-        loss = 0
-        batches = len(X) / batch_size
+    # calculate validation error of whole dataset
+    val_err = 0
+    val_loss = 0
+    batches = len(X) / batch_size
 
-        for i in range(batches):
-            new_loss, new_err = val_fn(X[i * batch_size:(i + 1) * batch_size], y[i * batch_size:(i + 1) * batch_size])
-            err += new_err
-            loss += new_loss
+    for i in range(batches):
+        new_loss, new_err = val_fn(X[i * batch_size:(i + 1) * batch_size], y[i * batch_size:(i + 1) * batch_size])
+        val_err += new_err
+        val_loss += new_loss
 
-        val_err = err / batches * 100
-        val_loss /= batches
+    val_err = val_err / batches * 100
+    val_loss /= batches
 
-        print("  validation loss:               " + str(val_loss))
-        print("  validation error rate:         " + str(val_err) + "%")
-        print("  test loss:                     " + str(test_loss))
-        print("  test error rate:               " + str(test_err) + "%")
+    print("  validation loss:               " + str(val_loss))
+    print("  validation error rate:         " + str(val_err) + "%")
+    print("  test loss:                     " + str(test_loss))
+    print("  test error rate:               " + str(test_err) + "%")
+
+
+# ## Confusion matrix
+# import numpy as np
+#
+# import theano
+# from theano import tensor as T
+#
+# x = T.vector('x')
+# classes = T.scalar('n_classes')
+# onehot = T.eq(x.dimshuffle(0, 'x'), T.arange(classes).dimshuffle('x', 0))
+# oneHot = theano.function([x, classes], onehot)
+#
+# examples = T.scalar('n_examples')
+# y = T.matrix('y')
+# y_pred = T.matrix('y_pred')
+# confMat = T.dot(y.T, y_pred) / examples
+# confusionMatrix = theano.function(inputs=[y, y_pred, examples], outputs=confMat)
+#
+#
+# def confusion_matrix(targets, preds, n_class):
+#     assert len(targets) == len(preds)
+#     return confusionMatrix(oneHot(targets, n_class), oneHot(preds, n_class), len(targets))
+#
+#
+# y_true = [2, 0, 2, 2, 0, 1]
+# y_out = [0, 0, 2, 2, 0, 2]
+# print(confusion_matrix(y_true, y_out, 3))  # rows= true class. cols = predicted class
+
+
+if __name__ == "__main__":
+    main()

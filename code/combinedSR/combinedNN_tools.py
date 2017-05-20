@@ -130,7 +130,7 @@ class NeuralNetwork:
                                                                                                       lipRNN_hidden_list,
                                                                                                       bidirectional=lipRNN_bidirectional)
                 # For lipreading only: input to softmax FC layer now not from conv layer, but from LSTM features that are put on top of the CNNs
-                self.lipreading_lout = self.build_softmax(self.lipreading_lout_features)
+                self.lipreading_lout = self.build_softmax(inputLayer = self.lipreading_lout_features, nbClasses=self.num_output_units)
                 if lipRNN_features == 'dense':
                     self.lipreading_lout_features = self.lipreading_lout
 
@@ -173,7 +173,7 @@ class NeuralNetwork:
 
 
         else:
-            print("ERROR: Invalid argument: The valid architecture arguments are: 'RNN'")
+            print("ERROR: Invalid argument: The valid architecture arguments are: 'combined'")
         
         
     def build_audioRNN(self, n_hidden_list=(100,), bidirectional=False,
@@ -753,6 +753,9 @@ class NeuralNetwork:
             # The whole lipreading network (different if CNN-LSTM architecture, otherwise same as CNN-softmax)
             # for validation: disable dropout etc layers -> deterministic
             lipreading_test_network_output = L.get_output(self.lipreading_lout, deterministic=True)
+            lipreading_preds = T.argmax(lipreading_test_network_output, axis=1) #prediction with maximum probability
+            #self.lipreading_predictions_fn = theano.function([self.CNN_input_var], lipreading_preds)
+
             lipreading_test_acc = T.mean(T.eq(T.argmax(lipreading_test_network_output, axis=1), self.targets_var.flatten()),
                               dtype=theano.config.floatX)
             lipreading_test_loss = LO.categorical_crossentropy(lipreading_test_network_output, self.targets_var.flatten());
@@ -766,6 +769,11 @@ class NeuralNetwork:
             self.lipreading_val_fn = theano.function([self.CNN_input_var, self.targets_var], [lipreading_test_loss,
                                                                          lipreading_test_acc,
                                                                          lipreading_top3_acc])
+            self.lipreading_val_preds_fn = theano.function([self.CNN_input_var, self.targets_var],
+                                                           [lipreading_test_loss,
+                                                            lipreading_test_acc,
+                                                            lipreading_top3_acc,
+                                                            lipreading_preds])
 
             if debug:
                 CNN_test_loss, CNN_test_acc, CNN_top3_acc = self.CNN_val_fn(self.images, self.validLabels)
@@ -878,10 +886,14 @@ class NeuralNetwork:
             self.audio_val_fn = theano.function(
                     [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var, self.targets_var],
                     [audio_cost, audio_top1_acc, audio_top3_acc], name='validate_fn')
-            self.audio_cost_pointwise_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
-                                                            self.audio_valid_frames_var, self.targets_var],
-                                                           audio_cost_pointwise, name='cost_pointwise_fn')
+            self.audio_val_preds_fn = theano.function(
+                    [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var, self.targets_var],
+                    [audio_cost, audio_top1_acc, audio_top3_acc, audio_valid_predictions], name='validate_fn')
+
             if debug:
+                self.audio_cost_pointwise_fn = theano.function([self.audio_inputs_var, self.audio_masks_var,
+                                                                self.audio_valid_frames_var, self.targets_var],
+                                                               audio_cost_pointwise, name='cost_pointwise_fn')
                 # logger.debug('cost pointwise: %s',
                 #              self.audio_cost_pointwise_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels))
                 evaluate_cost = self.audio_val_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels)
@@ -949,7 +961,8 @@ class NeuralNetwork:
 
             # for validation: disable dropout etc layers -> deterministic
             combined_test_network_output = L.get_output(self.combined_lout, deterministic=True)
-            combined_test_acc = T.mean(T.eq(T.argmax(combined_test_network_output, axis=1), self.targets_var.flatten()),
+            combined_preds = T.argmax(combined_test_network_output, axis=1)
+            combined_test_acc = T.mean(T.eq(combined_preds, self.targets_var.flatten()),
                               dtype=theano.config.floatX)
             combined_test_loss = LO.categorical_crossentropy(combined_test_network_output, self.targets_var.flatten());
             combined_test_loss = combined_test_loss.mean()
@@ -967,6 +980,10 @@ class NeuralNetwork:
             self.combined_val_fn = theano.function([self.CNN_input_var, self.audio_inputs_var, self.audio_masks_var,
                                                     self.audio_valid_frames_var,
                                                     self.targets_var], [combined_test_loss, combined_test_acc, combined_top3_acc])
+            self.combined_val_preds_fn = theano.function([self.CNN_input_var, self.audio_inputs_var, self.audio_masks_var,
+                                                    self.audio_valid_frames_var,
+                                                    self.targets_var],
+                                                   [combined_test_loss, combined_test_acc, combined_top3_acc, combined_preds])
             if debug:
                 try:
                     comb_test_loss, comb_test_acc, comb_top3_acc = self.combined_val_fn(self.images,
@@ -998,7 +1015,10 @@ class NeuralNetwork:
         cost = 0;
         nb_batches = len(mfccs) / batch_size
 
-        for i in tqdm(range(nb_batches), total=nb_batches):
+        if "volunteers" in self.test_dataset:
+            loops = range(nb_batches)
+        else: loops = tqdm(range(nb_batches), total=nb_batches)
+        for i in loops:
             batch_images = images[i * batch_size:(i + 1) * batch_size][0]
             batch_mfccs = mfccs[i * batch_size:(i + 1) * batch_size]
             batch_validLabels = validLabels[i * batch_size:(i + 1) * batch_size]
@@ -1031,7 +1051,9 @@ class NeuralNetwork:
         top3_accuracy = 0
         nb_batches = len(mfccs) / batch_size
 
-        for i in tqdm(range(nb_batches), total=nb_batches):
+        if "volunteers" in self.test_dataset: loops = range(nb_batches)
+        else: loops = tqdm(range(nb_batches), total=nb_batches)
+        for i in loops:
             batch_images = images[i * batch_size:(i + 1) * batch_size][0]
             batch_mfccs = mfccs[i * batch_size:(i + 1) * batch_size]
             batch_validLabels = validLabels[i * batch_size:(i + 1) * batch_size]
@@ -1061,6 +1083,52 @@ class NeuralNetwork:
 
         return cost, accuracy, top3_accuracy, nb_batches
 
+    # This function trains the model a full epoch (on the whole dataset)
+    def val_epoch_withPreds(self, runType, images, mfccs, validLabels, valid_frames, batch_size=-1):
+        if batch_size == -1: batch_size = self.batch_size
+
+        cost = 0;
+        accuracy = 0
+        top3_accuracy = 0
+        nb_batches = len(mfccs) / batch_size
+        predictions = []
+
+        if "volunteers" in self.test_dataset:
+            loops = range(nb_batches)
+        else:
+            loops = tqdm(range(nb_batches), total=nb_batches)
+        for i in loops:
+            batch_images = images[i * batch_size:(i + 1) * batch_size][0]
+            batch_mfccs = mfccs[i * batch_size:(i + 1) * batch_size]
+            batch_validLabels = validLabels[i * batch_size:(i + 1) * batch_size]
+            batch_valid_frames = valid_frames[i * batch_size:(i + 1) * batch_size]
+            batch_masks = generate_masks(batch_mfccs, valid_frames=batch_valid_frames, batch_size=batch_size)
+
+            # now pad inputs and target to maxLen
+            batch_mfccs = pad_sequences_X(batch_mfccs)
+            batch_valid_frames = pad_sequences_y(batch_valid_frames)
+            batch_validLabels = pad_sequences_y(batch_validLabels)
+
+            # print("batch_mfccs.shape: ", batch_mfccs.shape)
+            # print("batch_validLabels.shape: ", batch_validLabels.shape)
+            # import pdb;    pdb.set_trace()
+
+            if runType == 'audio':
+                cst, acc, top3_acc, preds = self.audio_val_preds_fn(batch_mfccs, batch_masks, batch_valid_frames,
+                                                       batch_validLabels)  # training
+            elif runType == 'lipreading':
+                cst, acc, top3_acc, preds = self.lipreading_val_preds_fn(batch_images, batch_validLabels)
+            else:  # train combined
+                cst, acc, top3_acc, preds = self.combined_val_preds_fn(batch_images, batch_mfccs, batch_masks,
+                                                          batch_valid_frames,
+                                                          batch_validLabels)
+            cost += cst;
+            accuracy += acc
+            top3_accuracy += top3_acc
+            predictions.append(list(preds))
+
+        return cost, accuracy, top3_accuracy, nb_batches, predictions
+
     # evaluate many TRAINING speaker files -> train loss, val loss and val error. Load them in one by one (so they fit in memory)
     def evalTRAINING(self, trainingSpeakerFiles, LR, runType='audio', shuffleEnabled=True, sourceDataDir=None,
                      storeProcessed=False, processedDir=None,
@@ -1075,7 +1143,7 @@ class NeuralNetwork:
 
         # for each speaker, pass over the train set, then val set. (test is other files). save the results.
         for speakerFile in tqdm(trainingSpeakerFiles, total=len(trainingSpeakerFiles)):
-            logger.debug("processing %s", speakerFile)
+            if verbose: logger.debug("processing %s", speakerFile)
             train, val, test = preprocessingCombined.getOneSpeaker(
                     speakerFile=speakerFile, sourceDataDir=sourceDataDir,
                     trainFraction=0.8, validFraction=0.2,
@@ -1179,7 +1247,7 @@ class NeuralNetwork:
         return test_cost, test_acc, test_topk_acc
 
     def train(self, datasetFiles, database_binaryDir, runType='combined', storeProcessed=False, processedDir=None,
-              save_name='Best_model', datasetName='TCDTIMIT', nbPhonemes=39,
+              save_name='Best_model', datasetName='TCDTIMIT', nbPhonemes=39, viseme=False,
               num_epochs=40, batch_size=1, LR_start=1e-4, LR_decay=1,
               justTest=False, withNoise=False, noiseType = 'white', ratio_dB = -3,
               shuffleEnabled=True, compute_confusion=False, debug=False, logger=logger_combinedtools):
@@ -1200,20 +1268,24 @@ class NeuralNetwork:
 
 
         if not self.loadPerSpeaker:  #load all the lipspeakers in memory, then don't touch the files -> no reloading needed = faster training
-            allImages_train, allMfccs_train, allAudioLabels_train, allValidLabels_train, allValidAudioFrames_train = unpickle(
-                os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTrain.pkl"))
-            allImages_val, allMfccs_val, allAudioLabels_val, allValidLabels_val, allValidAudioFrames_val = unpickle(
-                    os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersVal.pkl"))
-            allImages_test, allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
-                    os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTest.pkl"))
+            trainPath = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTrain.pkl")
+            valPath = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersVal.pkl")
+            testPath = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTest.pkl")
+            if viseme: 
+                trainPath = trainPath.replace(".pkl","_viseme.pkl")
+                valPath = valPath.replace(".pkl", "_viseme.pkl")
+                testPath = testPath.replace(".pkl", "_viseme.pkl")
+            allImages_train, allMfccs_train, allAudioLabels_train, allValidLabels_train, allValidAudioFrames_train = unpickle(trainPath)
+            allImages_val, allMfccs_val, allAudioLabels_val, allValidLabels_val, allValidAudioFrames_val = unpickle(valPath)
+            allImages_test, allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(testPath)
 
             # if you wish to train with noise, you need to replace the audio data with noisy audio from audioSR/firDataset/audioToPkl_perVideo.py,
             # like so (but also for train and val)
             if withNoise:
-                testDataPath = os.path.expanduser(
+                testPath = os.path.expanduser(
                     "~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep \
                                + 'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl'
-                allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(testDataPath)
+                allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(testPath)
 
 
             test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
@@ -1426,7 +1498,13 @@ class NeuralNetwork:
     # Lipreading        -> evaluate lipreading
     def finalNetworkEvaluation(self, save_name, database_binaryDir, processedDir, runType, testSpeakerFiles,
                                withNoise=False, noiseType='white', ratio_dB=-3,  datasetName='TCDTIMIT', roundParams=False,
-                               storeProcessed=False,  nbPhonemes=39, logger=logger_combinedtools):
+                               storeProcessed=False,  nbPhonemes=39, viseme=False, withPreds=False, logger=logger_combinedtools):
+        if "volunteers" in self.test_dataset :
+            loadPerSpeaker = True
+        else: loadPerSpeaker = self.loadPerSpeaker #load default value
+        # else, load data that is given (True -> volunteers, False -> lipspeakers)
+        if viseme: nbPhonemes = 12
+
         # print what kind of network we're running
         if runType == 'lipreading': networkType = "lipreading " + self.lipreadingType
         else: networkType = runType
@@ -1436,15 +1514,18 @@ class NeuralNetwork:
         store_path = save_name + '_trainInfo.pkl'  #dictionary with lists that contain training info for each epoch (train/val/test accuracy, cost etc)
         self.network_train_info = unpickle(store_path)
         # for the lipspeaker files that are all loaded in memory at once, we still need to get the data
-        if not self.loadPerSpeaker:  # load all the lipspeakers in memory, then don't touch the files -> no reloading needed = faster
+        if not loadPerSpeaker:  # load all the lipspeakers in memory, then don't touch the files -> no reloading needed = faster
+            testPath = os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTest.pkl")
+            if viseme:
+                testPath = testPath.replace(".pkl", "_viseme.pkl")
             allImages_test, allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(
-                    os.path.expanduser("~/TCDTIMIT/combinedSR/TCDTIMIT/binaryLipspeakers/allLipspeakersTest.pkl"))
+                testPath)
             if withNoise:
-                testDataPath= os.path.expanduser("~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep \
+                testPath= os.path.expanduser("~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep \
                               + 'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl'
-                allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(testDataPath)
+                allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(testPath)
 
-        if self.loadPerSpeaker:
+        if loadPerSpeaker:
             test_cost, test_acc, test_topk_acc = self.evalTEST(testSpeakerFiles, runType=runType,
                                                                sourceDataDir=database_binaryDir,
                                                                storeProcessed=storeProcessed,
@@ -1452,12 +1533,22 @@ class NeuralNetwork:
                                                                withNoise=withNoise, noiseType=noiseType,
                                                                ratio_dB=ratio_dB)
         else:
-            test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
-                                                                                 images=allImages_test,
-                                                                                 mfccs=allMfccs_test,
-                                                                                 validLabels=allValidLabels_test,
-                                                                                 valid_frames=allValidAudioFrames_test,
-                                                                                 batch_size=1)
+            if withPreds:
+                test_cost, test_acc, test_topk_acc, nb_test_batches, predictions = self.val_epoch_withPreds(runType=runType,
+                                                                                     images=allImages_test,
+                                                                                     mfccs=allMfccs_test,
+                                                                                     validLabels=allValidLabels_test,
+                                                                                     valid_frames=allValidAudioFrames_test,
+                                                                                     batch_size=1)
+                confMatrix = self.getConfusionMatrix(allValidLabels_test, predictions, nbPhonemes)
+                saveToPkl(save_name + "_confusionMatrix.pkl", confMatrix)
+            else:
+                test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
+                                                                                    images=allImages_test,
+                                                                                    mfccs=allMfccs_test,
+                                                                                    validLabels=allValidLabels_test,
+                                                                                    valid_frames=allValidAudioFrames_test,
+                                                                                    batch_size=1)
             test_cost /= nb_test_batches
             test_acc = test_acc / nb_test_batches * 100
             test_topk_acc = test_topk_acc / nb_test_batches * 100
@@ -1474,6 +1565,7 @@ class NeuralNetwork:
             testType = ""
         if roundParams:
             testType = "_roundParams" + testType
+
 
         if runType != 'lipreading' and withNoise:
             print(noiseType + "_" + "ratio" + str(ratio_dB) + testType)
@@ -1493,6 +1585,31 @@ class NeuralNetwork:
         saveToPkl(store_path, self.network_train_info)
 
         return test_cost, test_acc, test_topk_acc
+
+    def getConfusionMatrix(self,y_test, maxprob, nbClasses):
+        import theano
+        from theano import tensor as T
+        x = T.ivector('x')
+        classes = T.scalar('n_classes')
+        onehot = T.eq(x.dimshuffle(0, 'x'), T.arange(classes).dimshuffle('x', 0))
+        oneHot = theano.function([x, classes], onehot)
+        examples = T.scalar('n_examples')
+        y = T.imatrix('y')
+        y_pred = T.imatrix('y_pred')
+        confMat = T.dot(y.T, y_pred) / examples
+        confusionMatrix = theano.function(inputs=[y, y_pred, examples], outputs=confMat)
+
+        def confusion_matrix(targets, preds, n_class):
+            try:assert len(targets) >= len(preds)
+            except: import pdb;pdb.set_trace()
+            targets = targets[:len(preds)]
+            targetsFlat = []; predsFlat = []
+            for i in range(len(targets)):
+                targetsFlat += list(targets[i])
+                predsFlat += list(preds[i])
+            return confusionMatrix(oneHot(targetsFlat, n_class), oneHot(predsFlat, n_class), len(targetsFlat))
+
+        return confusion_matrix(y_test, maxprob, nbClasses)
 
     def updateLR(self, LR, LR_decay, logger=logger_combinedtools):
         this_acc = self.network_train_info['val_acc'][-1]

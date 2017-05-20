@@ -6,6 +6,32 @@ import logging
 logger_phonemeSet = logging.getLogger('phonemeSet')
 logger_phonemeSet.setLevel(logging.ERROR)
 
+############  VISEMES  ##############
+viseme_set_list = ['A', 'B', 'C', 'D', 'E', 'F', 'G','H','I','J','K','S']
+values = [i for i in range(0, len(viseme_set_list))]
+viseme_set = dict(zip(viseme_set_list, values))
+classToViseme = dict((v, k) for k, v in viseme_set.iteritems())
+
+
+# for training on visemes
+phonemeToViseme = {
+        'f':   'A', 'v': 'A',
+        'er':  'B', 'ow': 'B', 'r': 'B', 'q': 'B', 'w': 'B', 'uh': 'B', 'uw': 'B', 'axr': 'B', 'ux': 'B',
+        'b':   'C', 'p': 'C', 'm': 'C', 'em': 'C',
+        'aw':  'D',
+        ' dh': 'E', 'th': 'E',
+        'ch':  'F', 'jh': 'F', 'sh': 'F', 'zh': 'F',
+        'oy':  'G', 'ao': 'G',
+        's':   'H', 'z': 'H',
+        'aa':  'I', 'ae': 'I', 'ah': 'I', 'ay': 'I', 'ey': 'I', 'ih': 'I', 'iy': 'I', 'y': 'I', 'eh': 'I', 'ax-h': 'I',
+        'ax':  'I', 'ix': 'I',
+        'd':   'J', 'l': 'J', 'n': 'J', 't': 'J', 'el': 'J', 'nx': 'J', 'en': 'J', 'dx': 'J',
+        'g':   'K', 'k': 'K', 'ng': 'K', 'eng': 'K',
+        'sil': 'S', 'pcl': 'S', 'tcl': 'S', 'kcl': 'S', 'bcl': 'S', 'dcl': 'S', 'gcl': 'S', 'h#': 'S', '#h': 'S',
+        'pau': 'S', 'epi': 'S'
+    }
+
+###########  PHONMEMES   ##############
 phoneme_set_61_39 = {
     'ao':   'aa',  # 1
     'ax':   'ah',  # 2
@@ -54,52 +80,6 @@ phoneme_set_61_list = [
 ]
 values = [i for i in range(0, len(phoneme_set_61_list))]
 phoneme_set_61 = dict(zip(phoneme_set_61_list, values))
-
-
-# # Visemes
-# viseme_set_list = ['V1', 'V2', 'V3','V4','A','B','C','D','E','F','G','H','S']
-# values = [i for i in range(0, len(viseme_set_list))]
-# viseme_set = dict(zip(viseme_set_list, values))
-# classToViseme = dict((v, k) for k, v in viseme_set.iteritems())
-# phonemeToViseme = {
-#     'ao':'V1','ah': 'V1', 'aa':'V1', 'oy': 'V1','aw': 'V1', 'hh':'V1',
-#     'uh': 'V2', 'uw': 'V2', 'ow': 'V2',
-#     'ae': 'V3', 'ey': 'V3', 'eh': 'V3', 'ay':'V3',
-#     'ih': 'V4', 'iy': 'V4', 'ax': 'V4',
-#     'el': 'A', 'l': 'A', 'r': 'A', 'y':'A',
-#     's': 'B', 'z': 'B',
-#     't': 'C', 'd': 'C', 'n': 'C', 'en': 'C',
-#     'sh': 'D', 'zh': 'D','ch': 'D', 'jh': 'D',
-#     'b': 'E', 'p': 'E', 'm': 'E',
-#     'dh': 'F', 'th': 'F',
-#     'f': 'G', 'v': 'G',
-#     'ng': 'H','g': 'H', 'k': 'H', 'w':'H',
-#     'sil':'S','sp':'S'
-# }
-
-############  VISEMES  ##############
-viseme_set_list = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'S']
-values = [i for i in range(0, len(viseme_set_list))]
-viseme_set = dict(zip(viseme_set_list, values))
-classToViseme = dict((v, k) for k, v in viseme_set.iteritems())
-
-# for training on visemes
-phonemeToViseme = {
-    'f':   'A', 'v': 'A',
-    'er':  'B', 'ow': 'B', 'r': 'B', 'q': 'B', 'w': 'B', 'uh': 'B', 'uw': 'B', 'axr': 'B', 'ux': 'B',
-    'b':   'C', 'p': 'C', 'm': 'C', 'em': 'C',
-    'aw':  'D',
-    'dh':  'E', 'th': 'E',
-    'ch':  'F', 'jh': 'F', 'sh': 'F', 'zh': 'F',
-    'oy':  'G', 'ao': 'G',
-    's':   'H', 'z': 'H',
-    'aa':  'I', 'ae': 'I', 'ah': 'I', 'hh':'I', 'ay': 'I', 'ey': 'I', 'ih': 'I', 'iy': 'I', 'y': 'I', 'eh': 'I', 'ax-h': 'I',
-    'ax':  'I', 'ix': 'I',
-    'd':   'J', 'l': 'J', 'n': 'J', 't': 'J', 'el': 'J', 'nx': 'J', 'en': 'J', 'dx': 'J',
-    'g':   'K', 'k': 'K', 'ng': 'K', 'eng': 'K',
-    'sil': 'S', 'pcl': 'S', 'tcl': 'S', 'kcl': 'S', 'bcl': 'S', 'dcl': 'S', 'gcl': 'S', 'h#': 'S', '#h': 'S',
-    'pau': 'S', 'epi': 'S'
-}
 
 
 def convertPredictions(predictions, phoneme_list=classToPhoneme39, valid_frames=None, outputType="phonemes"):

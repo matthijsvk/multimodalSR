@@ -19,7 +19,7 @@ phonemeToViseme = {
         'er':  'B', 'ow': 'B', 'r': 'B', 'q': 'B', 'w': 'B', 'uh': 'B', 'uw': 'B', 'axr': 'B', 'ux': 'B',
         'b':   'C', 'p': 'C', 'm': 'C', 'em': 'C',
         'aw':  'D',
-        ' dh': 'E', 'th': 'E',
+        'dh': 'E', 'th': 'E',
         'ch':  'F', 'jh': 'F', 'sh': 'F', 'zh': 'F',
         'oy':  'G', 'ao': 'G',
         's':   'H', 'z': 'H',

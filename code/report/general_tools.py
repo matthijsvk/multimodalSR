@@ -1,12 +1,11 @@
 import logging
 import sys, os
-import re
 
 import numpy as np
 from six.moves import cPickle
 
-logger_GeneralTools = logging.getLogger('combined.generalTools')
-logger_GeneralTools.setLevel(logging.DEBUG)
+logger_GeneralTools = logging.getLogger('RNN.generalTools')
+logger_GeneralTools.setLevel(logging.ERROR)
 
 
 def path_reader(filename):
@@ -61,16 +60,16 @@ def pad_sequences_X(sequences, maxlen=None, padding='post', truncating='post', v
 
     # try-except to distinguish between X and y
     datatype = type(sequences[0][0][0]);
-    #logger_GeneralTools.debug('X data: %s, %s, %s', type(sequences[0][0]), sequences[0][0].shape, sequences[0][0])
+    logger_GeneralTools.debug('X data: %s, %s, %s', type(sequences[0][0]), sequences[0][0].shape, sequences[0][0])
 
     xSize = nb_samples;
     ySize = maxlen;
     zSize = sequences[0].shape[1];
     # sequences = [[np.reshape(subsequence, (subsequence.shape[0], 1)) for subsequence in sequence] for sequence in sequences]
 
-    #logger_GeneralTools.debug('new dimensions: %s, %s, %s', xSize, ySize, zSize)
-    #logger_GeneralTools.debug('intermediate matrix, estimated_size: %s',
-     #                         xSize * ySize * zSize * np.dtype(datatype).itemsize)
+    logger_GeneralTools.debug('new dimensions: %s, %s, %s', xSize, ySize, zSize)
+    logger_GeneralTools.debug('intermediate matrix, estimated_size: %s',
+                              xSize * ySize * zSize * np.dtype(datatype).itemsize)
 
     x = (np.ones((xSize, ySize, zSize)) * value).astype(datatype)
 
@@ -107,14 +106,14 @@ def pad_sequences_y(sequences, maxlen=None, padding='post', truncating='post', v
     if maxlen is None:      maxlen = np.max(lengths)
 
     datatype = type(sequences[0][0]);
-    #logger_GeneralTools.debug('Y data: %s, %s, %s', type(sequences[0]), sequences[0].shape, sequences[0])
+    logger_GeneralTools.debug('Y data: %s, %s, %s', type(sequences[0]), sequences[0].shape, sequences[0])
 
     xSize = nb_samples;
     ySize = maxlen;
     # sequences = [np.reshape(sequence, (sequence.shape[0], 1)) for sequence in sequences]
 
-    #logger_GeneralTools.debug('new dimensions: %s, %s', xSize, ySize)
-    #logger_GeneralTools.debug('intermediate matrix, estimated_size: %s', xSize * ySize * np.dtype(datatype).itemsize)
+    logger_GeneralTools.debug('new dimensions: %s, %s', xSize, ySize)
+    logger_GeneralTools.debug('intermediate matrix, estimated_size: %s', xSize * ySize * np.dtype(datatype).itemsize)
 
     y = (np.ones((xSize, ySize)) * value).astype(datatype)
 
@@ -136,26 +135,24 @@ def pad_sequences_y(sequences, maxlen=None, padding='post', truncating='post', v
     return y
 
 
-def generate_masks(inputs, valid_frames=None, batch_size=1, logger=logger_GeneralTools, debug=False):  # inputs = X. valid_frames = list of frames when we need to extract the phoneme
+def generate_masks(inputs, valid_frames=None, batch_size=1, logger=logger_GeneralTools):  # inputs = X. valid_frames = list of frames when we need to extract the phoneme
     ## all recurrent layers in lasagne accept a separate mask input which has shape
     # (batch_size, n_time_steps), which is populated such that mask[i, j] = 1 when j <= (length of sequence i) and mask[i, j] = 0 when j > (length
     # of sequence i). When no mask is provided, it is assumed that all sequences in the minibatch are of length n_time_steps.
-    if debug:
-        logger.debug("* Data information")
-        logger.debug('%s %s', type(inputs), len(inputs))
-        logger.debug('%s %s', type(inputs[0]), inputs[0].shape)
-        logger.debug('%s %s', type(inputs[0][0]), inputs[0][0].shape)
-        logger.debug('%s', type(inputs[0][0][0]))
+    logger.debug("* Data information")
+    logger.debug('%s %s', type(inputs), len(inputs))
+    logger.debug('%s %s', type(inputs[0]), inputs[0].shape)
+    logger.debug('%s %s', type(inputs[0][0]), inputs[0][0].shape)
+    logger.debug('%s', type(inputs[0][0][0]))
 
     max_input_length = max([len(inputs[i]) for i in range(len(inputs))])
     input_dim = len(inputs[0][0])
 
-    if debug:
-        logger.debug("max_seq_len: %d", max_input_length)
-        logger.debug("input_dim: %d", input_dim)
+    logger.debug("max_seq_len: %d", max_input_length)
+    logger.debug("input_dim: %d", input_dim)
 
     # X = np.zeros((batch_size, max_input_length, input_dim))
-    input_mask = np.zeros((batch_size, max_input_length), dtype='float32')
+    input_mask = np.zeros((batch_size, max_input_length), dtype='int32')
 
     for example_id in range(len(inputs)):
         try:
@@ -219,67 +216,7 @@ def saveToPkl(target_path, dataList):
         os.makedirs(os.path.dirname(target_path))
     with open(target_path, 'wb') as cPickle_file:
         cPickle.dump(
-                dataList,
-                cPickle_file,
-                protocol=cPickle.HIGHEST_PROTOCOL)
+            dataList,
+            cPickle_file,
+            protocol=cPickle.HIGHEST_PROTOCOL)
     return 0
-
-
-def depth(path):
-    return path.count(os.sep)
-
-
-# stuff for getting relative paths between two directories
-def pathsplit(p, rest=[]):
-    (h, t) = os.path.split(p)
-    if len(h) < 1: return [t] + rest
-    if len(t) < 1: return [h] + rest
-    return pathsplit(h, [t] + rest)
-
-
-def commonpath(l1, l2, common=[]):
-    if len(l1) < 1: return (common, l1, l2)
-    if len(l2) < 1: return (common, l1, l2)
-    if l1[0] != l2[0]: return (common, l1, l2)
-    return commonpath(l1[1:], l2[1:], common + [l1[0]])
-
-
-# p1 = main path, p2= the one you want to get the relative path of
-def relpath(p1, p2):
-    (common, l1, l2) = commonpath(pathsplit(p1), pathsplit(p2))
-    p = []
-    if len(l1) > 0:
-        p = ['../' * len(l1)]
-    p = p + l2
-    return os.path.join(*p)
-
-
-# need this to traverse directories, find depth
-def directories(root):
-    dirList = []
-    for path, folders, files in os.walk(root):
-        for name in folders:
-            dirList.append(os.path.join(path, name))
-    return dirList
-
-
-def tryint(s):
-    try:
-        return int(s)
-    except ValueError:
-        return s
-
-
-def alphanum_key(s):
-    return [tryint(c) for c in re.split('([0-9]+)', s)]
-
-
-def sort_nicely(l):
-    return sorted(l, key=alphanum_key)
-
-def set_type(X, type):
-    for i in range(len(X)):
-        X[i] = X[i].astype(type)
-    return X
-
-
