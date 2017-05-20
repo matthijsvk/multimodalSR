@@ -29,10 +29,11 @@ import time
 program_start_time = time.time()
 
 print("\n * Importing libraries...")
-from combinedNN_tools import *
+# from combinedNN_tools import *
 from general_tools import *
 from trackMemory import *
 import preprocessingCombined
+import traceback
 
 #############################################################
 resultsPath = os.path.expanduser('~/TCDTIMIT/combinedSR/TCDTIMIT/results/allEvalResults.pkl')
@@ -41,15 +42,15 @@ logToFile = True; overwriteResults = False
 
 # if you wish to force retrain of networks, set justTest to False, forceTrain in main() to True, and overwriteSubnets to True.
 # if True, and justTest=False, even if a network exists it will continue training. If False, it will just be evaluated
-forceTrain = True
+forceTrain = False
 
 # use when you want to train a combined network or lipreading-LSTM when you've created a better subnetwork.
 # You can load the new subnet (eg lipreading CNN or audio network) in the combined network, and retrain it. You dont' have to redo everything.
-overwriteSubnets = True
+overwriteSubnets = False
 
 # JustTest: If True, mainGetResults just runs over the trained networks. If a network doesn't exist, it's skipped
 #           If False, ask user to train networks, then start training networks that don't exist.
-justTest=False
+justTest=True
 
 # use this for testing with reduced precision. It converts the network weights to float16, then back to float32 for execution.
 # This amounts to rounding. Performance should hardly be impacted.
@@ -67,168 +68,173 @@ ratio_dBs = [0,-3,-5,-10]
 
 def main():
     networkList = [
-        # # # # # # # ### LIPREADING ###
-        # # # # # # # # # # CNN
-        networkToRun(runType="lipreading", CNN_NETWORK="google",LIP_RNN_HIDDEN_LIST=None, forceTrain=False),
-        networkToRun(runType="lipreading", CNN_NETWORK="resnet50",LIP_RNN_HIDDEN_LIST=None, forceTrain=False),
-        networkToRun(runType="lipreading", CNN_NETWORK="cifar10", LIP_RNN_HIDDEN_LIST=None, forceTrain=False),
-
-
-        # # # # # # # #
-        # # # # # # # # # CNN-LSTM -> by default only the LSTM part is trained (line 713 in build_functions in combinedNN_tools.py
-        # # # # # # # # #          -> you can train everything (also CNN parameters), but only do this after the CNN-LSTM has trained with fixed CNN parameters, otherwise you'll move far out of your optimal point
-        # # # compare number of LSTM units
-        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[8],
-                     overwriteSubnets=overwriteSubnets, forceTrain=forceTrain,LR_start = 0.01),
-        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64],
-                     overwriteSubnets=overwriteSubnets, forceTrain=forceTrain,LR_start = 0.01),
-        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256],
-                     overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
-                     overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[512,512],
-                     overwriteSubnets=overwriteSubnets, forceTrain=forceTrain, LR_start=0.01),
-
-        # # compare with conv
-        networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[8], overwriteSubnets=overwriteSubnets,
-                       forceTrain=forceTrain,LR_start = 0.01),
-        networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64], overwriteSubnets=overwriteSubnets,
-                       forceTrain=forceTrain,LR_start = 0.01),
-        networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets,
-                       forceTrain=forceTrain),
-        networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], overwriteSubnets=overwriteSubnets,
-                       forceTrain=forceTrain),
-        networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512,512], overwriteSubnets=overwriteSubnets,
-                       forceTrain=forceTrain),
+        # # # # # # # # ### LIPREADING ###
+        # # # # # # # # # # # CNN
+        # networkToRun(runType="lipreading", CNN_NETWORK="google",LIP_RNN_HIDDEN_LIST=None, forceTrain=False),
+        # networkToRun(runType="lipreading", CNN_NETWORK="resnet50",LIP_RNN_HIDDEN_LIST=None, forceTrain=False),
+        # networkToRun(runType="lipreading", CNN_NETWORK="cifar10", LIP_RNN_HIDDEN_LIST=None, forceTrain=False),
+        #
+        #
+        # # # # # # # # #
+        # # # # # # # # # # CNN-LSTM -> by default only the LSTM part is trained (line 713 in build_functions in combinedNN_tools.py
+        # # # # # # # # # #          -> you can train everything (also CNN parameters), but only do this after the CNN-LSTM has trained with fixed CNN parameters, otherwise you'll move far out of your optimal point
+        # # # # compare number of LSTM units
+        # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[8],
+        #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain,LR_start = 0.01),
+        # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64],
+        #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain,LR_start = 0.01),
+        # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256],
+        #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[512,512],
+        #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain, LR_start=0.01),
+        #
+        # # # compare with conv
+        # networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[8], overwriteSubnets=overwriteSubnets,
+        #                forceTrain=forceTrain,LR_start = 0.01),
+        # networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[64], overwriteSubnets=overwriteSubnets,
+        #                forceTrain=forceTrain,LR_start = 0.01),
+        # networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets,
+        #                forceTrain=forceTrain),
+        # networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], overwriteSubnets=overwriteSubnets,
+        #                forceTrain=forceTrain),
+        # networkToRun(runType="lipreading", cnn_features="conv", LIP_RNN_HIDDEN_LIST=[512,512], overwriteSubnets=overwriteSubnets,
+        #                forceTrain=forceTrain),
 
 
         # # ### AUDIO ###  -> see audioSR/RNN.py, there it can run in batch mode which is much faster
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64,64],
-                       audio_dataset="TCDTIMIT", test_dataset="TCDTIMIT"),#,forceTrain=True),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256],
-                     audio_dataset="combined", test_dataset="TCDTIMIT"),#, forceTrain=True)
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256],
-                     audio_dataset="TCDTIMIT", test_dataset="TCDTIMIT"),  # , forceTrain=True)
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512,512],
-                       audio_dataset="TCDTIMIT", test_dataset="TCDTIMIT"),#,forceTrain=True),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64,64],
+        #                audio_dataset="TCDTIMIT", test_dataset="TCDTIMIT"),#,forceTrain=True),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256],
+        #              audio_dataset="combined", test_dataset="TCDTIMIT"),#, forceTrain=True)
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256],
+        #              audio_dataset="TCDTIMIT", test_dataset="TCDTIMIT"),  # , forceTrain=True)
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512,512],
+        #                audio_dataset="TCDTIMIT", test_dataset="TCDTIMIT"),#,forceTrain=True),
+        #
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64,64],
+        #                audio_dataset="combined", test_dataset="TCDTIMIT"),  # ,forceTrain=True),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256],
+        #                audio_dataset="combined", test_dataset="TCDTIMIT"),  # ,forceTrain=True),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #                audio_dataset="combined", test_dataset="TCDTIMIT"),  # ,forceTrain=True),
 
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64,64],
-                       audio_dataset="combined", test_dataset="TCDTIMIT"),  # ,forceTrain=True),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256],
-                       audio_dataset="combined", test_dataset="TCDTIMIT"),  # ,forceTrain=True),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512],
-                       audio_dataset="combined", test_dataset="TCDTIMIT"),  # ,forceTrain=True),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[8], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[32], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512], audio_dataset="TIMIT", test_dataset="TIMIT"),
 
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[8], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[32], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[8,8], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[32,32], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64,64], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512], audio_dataset="TIMIT", test_dataset="TIMIT"),
 
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[8,8], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[32,32], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64,64], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[8,8,8,8], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[32,32,32,32], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64,64,64,64], audio_dataset="TIMIT", test_dataset="TIMIT"),
 
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[8,8,8,8], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[32,32,32,32], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64,64,64,64], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256,256,256], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512,512,512], audio_dataset="TIMIT", test_dataset="TIMIT"),
 
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256,256,256], audio_dataset="TIMIT", test_dataset="TIMIT"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512,512,512], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256,256,256, 256], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512,512,512, 512], audio_dataset="TIMIT", test_dataset="TIMIT"),
+
+        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[1024], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[1024,1024], audio_dataset="TIMIT", test_dataset="TIMIT"),
+        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[1024,1024,1024,1024], audio_dataset="TIMIT",test_dataset="TIMIT"),
 
         #get the MFCCS
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64, 64], audio_dataset="TIMIT", test_dataset="TIMIT",nbMFCCs=13),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64, 64], audio_dataset="TIMIT", test_dataset="TIMIT",nbMFCCs=26),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64, 64], audio_dataset="TIMIT", test_dataset="TIMIT", nbMFCCs=39),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64, 64], audio_dataset="TIMIT", test_dataset="TIMIT",nbMFCCs=120),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64, 64], audio_dataset="TIMIT", test_dataset="TIMIT",nbMFCCs=13),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64, 64], audio_dataset="TIMIT", test_dataset="TIMIT",nbMFCCs=26),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64, 64], audio_dataset="TIMIT", test_dataset="TIMIT", nbMFCCs=39),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64, 64], audio_dataset="TIMIT", test_dataset="TIMIT",nbMFCCs=120),
 
-        # # ### COMBINED ###
-        # # # lipspeakers
-        # different number of FC softmax dense for DENSE
-        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
-                       DENSE_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
-                       DENSE_HIDDEN_LIST=[256,256],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
-                        DENSE_HIDDEN_LIST=[256,256,256],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
-                       DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        # different number of FC softmax dense for CONV
-        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
-                     DENSE_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
-                     DENSE_HIDDEN_LIST=[256, 256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
-                     DENSE_HIDDEN_LIST=[256, 256, 256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
-                     DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-
-        # impact of small audio network
-        networkToRun(AUDIO_LSTM_HIDDEN_LIST=[32,32],
-                       cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
-                       DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-
-        # lipRNN features as output
-        networkToRun(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
-                     cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
-                     DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
-                     cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
-                     DENSE_HIDDEN_LIST=[256, 256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
-                     cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
-                     DENSE_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-
-
-        # not lipRNNfeatures, but 39 phoneme probabilities instaed of lipRNN as outputs. Also see if DENSE_HIDDEN_LIST has influece (Should as we give more easily interpretable results as output (phonen probs instead of RNN features)
-        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
-                     DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
-                     DENSE_HIDDEN_LIST=[512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        # with dense cnn features
-        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
-                     DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
-                     DENSE_HIDDEN_LIST=[512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-
-
-        # with subNetTraining
-        networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
-                     DENSE_HIDDEN_LIST=[512, 512, 512], allowSubnetTraining=True, overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
-
-
+        # # # ### COMBINED ###
+        # # # # lipspeakers
+        # # different number of FC softmax dense for DENSE
+        # networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
+        #                DENSE_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
+        #                DENSE_HIDDEN_LIST=[256,256],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
+        #                 DENSE_HIDDEN_LIST=[256,256,256],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None,
+        #                DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # # different number of FC softmax dense for CONV
+        # networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
+        #              DENSE_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
+        #              DENSE_HIDDEN_LIST=[256, 256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
+        #              DENSE_HIDDEN_LIST=[256, 256, 256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=None,
+        #              DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        #
+        # # impact of small audio network
+        # networkToRun(AUDIO_LSTM_HIDDEN_LIST=[32,32],
+        #                cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #                DENSE_HIDDEN_LIST=[512, 512, 512],overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        #
+        # # lipRNN features as output
+        # networkToRun(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #              cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #              DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #              cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #              DENSE_HIDDEN_LIST=[256, 256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(AUDIO_LSTM_HIDDEN_LIST=[512, 512],
+        #              cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #              DENSE_HIDDEN_LIST=[256], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        #
+        #
+        # # not lipRNNfeatures, but 39 phoneme probabilities instaed of lipRNN as outputs. Also see if DENSE_HIDDEN_LIST has influece (Should as we give more easily interpretable results as output (phonen probs instead of RNN features)
+        # networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
+        #              DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
+        #              DENSE_HIDDEN_LIST=[512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # # with dense cnn features
+        # networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
+        #              DENSE_HIDDEN_LIST=[512, 512, 512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
+        #              DENSE_HIDDEN_LIST=[512], overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        #
+        #
+        # # with subNetTraining
+        # networkToRun(cnn_features="conv", LIP_RNN_HIDDEN_LIST=[256, 256], lipRNN_features="dense",
+        #              DENSE_HIDDEN_LIST=[512, 512, 512], allowSubnetTraining=True, overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
 
 
 
         # volunteers
         ## lipreading
-        networkToRun(runType="lipreading", LIP_RNN_HIDDEN_LIST=None,
-                       datasetType="volunteers"),
-        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64],
-                       datasetType="volunteers", overwriteSubnets=True, forceTrain=True),
-        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
-                       datasetType="volunteers", overwriteSubnets=True, forceTrain=True),
-        networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[512,512],
-                       datasetType="volunteers", overwriteSubnets=True, forceTrain=True),
-
-        # #audio -> RNN.py
-        # #test on volunteers
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64], datasetType="volunteers"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256], datasetType="volunteers"),
-        networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512], datasetType="volunteers"),
-
-        # # Combined
-        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 512],
-                       datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
-        networkToRun(cnn_features="conv",  LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 512],
-                       datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
-
-        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64], DENSE_HIDDEN_LIST=[512, 512, 512],
-                       datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
-        networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256], DENSE_HIDDEN_LIST=[512, 512, 512],
-                       datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
+        # networkToRun(runType="lipreading", LIP_RNN_HIDDEN_LIST=None,
+        #                datasetType="volunteers"),
+        # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64],
+        #                datasetType="volunteers", overwriteSubnets=True, forceTrain=True),
+        # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #                datasetType="volunteers", overwriteSubnets=True, forceTrain=True),
+        # networkToRun(runType="lipreading", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[512,512],
+        #                datasetType="volunteers", overwriteSubnets=True, forceTrain=True),
+        #
+        # # #audio -> RNN.py
+        # # #test on volunteers
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[64], datasetType="volunteers"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[256, 256], datasetType="volunteers"),
+        # networkToRun(runType="audio", AUDIO_LSTM_HIDDEN_LIST=[512, 512], datasetType="volunteers"),
+        #
+        # # # Combined
+        # networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
+        # networkToRun(cnn_features="conv",  LIP_RNN_HIDDEN_LIST=None, DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
+        #
+        # networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[64], DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
+        # networkToRun(cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256,256], DENSE_HIDDEN_LIST=[512, 512, 512],
+        #                datasetType="volunteers",overwriteSubnets=True, forceTrain=True),
     ]
 
     if withNoise:
@@ -237,6 +243,8 @@ def main():
             for ratio_dB in ratio_dBs:
                 results, resultsPath = mainGetResults(networkList, withNoise, noiseType, ratio_dB)
                 allResults.append(results)
+                # print(allResults)
+                # import pdb;pdb.set_trace()
 
         allNoisePath = os.path.expanduser('~/TCDTIMIT/everything.pkl')
         exportResultsToExcelManyNoise(allResults, allNoisePath)
@@ -340,14 +348,12 @@ def exportResultsToExcelManyNoise(resultsList, path):
     worksheetLipreading = workbook.add_worksheet('lipreading'); lipreadingRow = 0
     worksheetCombined = workbook.add_worksheet('combined'); combinedRow = 0
 
-
     for r in range(len(resultsList)):
         results = resultsList[r]
         noiseType = results['resultsType']
 
         for runType in results.keys()[1:]:
-            print(runType)
-            if len(results[runType]) == 0: break
+            if len(results[runType]) == 0: continue
             if runType == 'audio': worksheet = worksheetAudio; row = audioRow
             if runType == 'lipreading': worksheet = worksheetLipreading; row = lipreadingRow
             if runType == 'combined': worksheet = worksheetCombined; row = combinedRow
@@ -392,7 +398,6 @@ def exportResultsToExcelManyNoise(resultsList, path):
     workbook.close()
 
     logger_combined.info("Excel file stored in %s", storePath)
-
 
 
 class networkToRun:
@@ -567,6 +572,7 @@ def runManyNetworks(networks, withNoise=False,noiseType='white',ratio_dB=0):
                                                   overwriteSubnets       = network.overwriteSubnets,
                                                   audio_dataset=network.audio_dataset,
                                                   withNoise=withNoise,noiseType=noiseType,ratio_dB=ratio_dB)
+            print(model_save)
             name = model_save + ("_Noise" +noiseType+"_"+str(ratio_dB) if withNoise else "")
             results[name] = test_results #should be test_cost, test_acc, test_topk_acc
 
@@ -794,9 +800,15 @@ def getModelPaths(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, DENSE_HIDDEN_LIST, LIP_RN
     network_type = CNN_NETWORK
     lip_CNN_model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme") + str(nbPhonemes)
     model_paths['CNN'] = os.path.join(lip_model_dir, lip_CNN_model_name + ".npz")
+    # for binary CNN networks
+    if "binary" in CNN_NETWORK:
+        lip_model_dir += "_binaryNet"
+        lip_CNN_model_name = datasetType + "_" + network_type + "_" + ("viseme" if viseme else "phoneme") + str(nbPhonemes) + "_binary"
+        model_paths['CNN'] = os.path.join(lip_model_dir, lip_CNN_model_name +".npz")
+
     # for CNN-LSTM networks
-    if LIP_RNN_HIDDEN_LIST != None:
-        lip_model_dir = os.path.join(os.path.expanduser('~/TCDTIMIT/lipreading/' + dataset + "/results/CNN_LSTM"))
+    elif LIP_RNN_HIDDEN_LIST != None:
+        lip_model_dir += "_LSTM"
         lip_CNN_LSTM_model_name = lip_CNN_model_name + "_LSTM" + (
         "_bidirectional" if lipRNN_bidirectional else "_unidirectional") \
                                   + "_" + '_'.join([str(layer) for layer in LIP_RNN_HIDDEN_LIST]) + "_" + cnn_features

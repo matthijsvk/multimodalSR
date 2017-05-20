@@ -111,7 +111,9 @@ class NeuralNetwork:
             ## LIPREADING PART ##
             self.CNN_input_var = T.tensor4('cnn_input')
             # batch size is number of valid frames in each video
-            self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_CNN()
+            if "google" in cnn_network:
+                if "binary" in cnn_network: self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_google_CNN()
+                else: self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_binaryGoogle_CNN()
             # CNN_lout_features output shape = (nbValidFrames, 512x7x7)
 
             self.cnn_features = cnn_features
@@ -316,7 +318,7 @@ class NeuralNetwork:
         return net, net['l7_out_valid'], net['l7_out_valid_flattened'], net['l4_features']
 
     # network from Oxford & Google BBC paper
-    def build_CNN(self, input=None, activation=T.nnet.relu, alpha=0.1, epsilon=1e-4):
+    def build_google_CNN(self, input=None, activation=T.nnet.relu, alpha=0.1, epsilon=1e-4):
         input = self.CNN_input_var
         nbClasses = self.num_output_units
 
@@ -447,6 +449,16 @@ class NeuralNetwork:
         #       alpha=alpha)
 
         return cnnDict, cnnDict['l7_out'], cnnDict['l6_reshape']
+
+    def build_google_binary_CNN(self, input=None, activation=T.nnet.relu, alpha=0.1, epsilon=1e-4):
+        alpha = .1
+        epsilon = 1e-4
+        activation = binary_net.binary_tanh_unit
+        binary = True
+        stochastic = False
+        H = 1.
+        W_LR_scale = "Glorot"
+
 
     def build_lipreadingRNN(self, input, n_hidden_list=(100,), bidirectional=False, debug=False, logger=logger_combinedtools):
         net = {}

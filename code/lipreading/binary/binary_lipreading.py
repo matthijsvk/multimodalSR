@@ -68,7 +68,7 @@ def main():
     dataType = 'TCDTIMIT'
 
     model_name = os.path.expanduser('~/TCDTIMIT/lipreading/TCDTIMIT/results/CNN_binaryNet/lipspeakers_') \
-                 + networkType + "_phoneme39_binary" + "_" + dataType
+                 + networkType + "_phoneme39_binary"
     model_path = model_name + ".npz"
     if not os.path.exists(os.path.dirname(model_path)): os.makedirs(os.path.dirname(model_path))
 
@@ -246,13 +246,13 @@ def buildCNN(networkType, dataType, input, epsilon, alpha, activation, binary, s
                 stochastic=stochastic,
                 H=H,
                 W_LR_scale=W_LR_scale,
-                nonlinearity=lasagne.nonlinearities.identity,
+                nonlinearity=lasagne.nonlinearities.identity,  #TODO was identity
                 num_units=nbClasses)
 
-        cnn = lasagne.layers.BatchNormLayer(
-                cnn,
-                epsilon=epsilon,
-                alpha=alpha)
+        # cnn = lasagne.layers.BatchNormLayer(
+        #         cnn,
+        #         epsilon=epsilon,
+        #         alpha=alpha)
     else:  # cifar10
         # 128C3-128C3-P2
         cnn = binary_net.Conv2DLayer(
@@ -443,7 +443,7 @@ import general_tools
 def loadDataset(type):
     if type == 'TCDTIMIT':
         nbClasses = 39
-        oneHot = True
+        oneHot = False
         # get the database
         # If it's small (lipspeakers) -> generate X_train, y_train etc here
         # otherwise we need to load and generate each speaker seperately in the training loop

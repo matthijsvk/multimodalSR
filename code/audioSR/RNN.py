@@ -43,7 +43,7 @@ nbPhonemes = 39  # number output neurons
 
 # for each dataset type as key this dictionary contains as value a list of all the network architectures that need to be trained for this dataset
 MANY_N_HIDDEN_LISTS = {}
-MANY_N_HIDDEN_LISTS['TIMIT'] = [[1024,1024]]#[[8], [8, 8], [8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
+MANY_N_HIDDEN_LISTS['TIMIT'] = [[8,8,8],[32,32,32],[64,64,64],[256,256,256,256],[512,512,512,512]] #[[8], [8, 8], [8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
                       # [32],[32,32],[32,32,32,32],
                       #  [64], [64,64],[64,64,64,64],
                       #  [256],[256,256],[256,256,256],
@@ -51,7 +51,7 @@ MANY_N_HIDDEN_LISTS['TIMIT'] = [[1024,1024]]#[[8], [8, 8], [8, 8, 8, 8], [8, 8, 
 
 MANY_N_HIDDEN_LISTS['TCDTIMIT'] = [[32,32],[64,64],[256,256],[512,512]]
 # combined is TIMIT and TCDTIMIT put together
-MANY_N_HIDDEN_LISTS['combined'] = [[32, 32], [64, 64], [256, 256], [512, 512]]
+MANY_N_HIDDEN_LISTS['combined'] = [[256,256]]#[32, 32], [64, 64], [256, 256], [512, 512]]
 
 
 #TODO: train these networks properly
@@ -84,7 +84,7 @@ def main():
     test_datasets['combined'] = ["TIMIT", "TCDTIMIT"]
 
     ROUND_PARAMS = False
-    withNoise = True
+    withNoise = False
     noiseTypes = ['white', 'voices']
     ratio_dBs = [0, -3, -5, -10]
 
