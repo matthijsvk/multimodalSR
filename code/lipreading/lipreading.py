@@ -49,12 +49,8 @@ import lasagne.layers as L
 import lasagne.objectives as LO
 
 
-batch_sizes = [8]
-networks = ["google"]
-justTest = True
-roundParams = False
-
-
+batch_sizes = [32]
+networks = ["cifar10_v2", "cifar10"]
 def main():
 
     for batch_size, network_type in zip(batch_sizes, networks):
@@ -183,7 +179,9 @@ def main():
         if network_type == "google":
             cnnDict, l_out = buildNetworks.build_network_google(activation, alpha, epsilon, inputs, nbClasses)  # 7.176.231 params
         elif network_type == "cifar10":
-            cnn, l_out = buildNetworks.build_network_cifar10_v2(inputs, nbClasses) #activation, alpha, epsilon, inputs, nbClasses) # 9.074.087 params,    # with 2x FC1024: 23.634.855
+            cnn, l_out = buildNetworks.build_network_cifar10(input=inputs, nbClasses=nbClasses, activation=activation, alpha=alpha, epsilon=epsilon)
+        elif network_type == "cifar10_v2":
+            cnn, l_out = buildNetworks.build_network_cifar10_v2(input=inputs,nbClasses=nbClasses)
         elif network_type == "resnet50":
             cnn, l_out = buildNetworks.build_network_resnet50(inputs, nbClasses)
 

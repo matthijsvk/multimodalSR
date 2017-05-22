@@ -42,15 +42,15 @@ logToFile = True; overwriteResults = False
 
 # if you wish to force retrain of networks, set justTest to False, forceTrain in main() to True, and overwriteSubnets to True.
 # if True, and justTest=False, even if a network exists it will continue training. If False, it will just be evaluated
-forceTrain = False
+forceTrain = True
 
 # use when you want to train a combined network or lipreading-LSTM when you've created a better subnetwork.
 # You can load the new subnet (eg lipreading CNN or audio network) in the combined network, and retrain it. You dont' have to redo everything.
-overwriteSubnets = False
+overwriteSubnets = True
 
 # JustTest: If True, mainGetResults just runs over the trained networks. If a network doesn't exist, it's skipped
 #           If False, ask user to train networks, then start training networks that don't exist.
-justTest=True
+justTest=False
 
 
 
@@ -77,8 +77,13 @@ def main():
         # # # # # # # # # # # CNN
         # networkToRun(runType="lipreading", CNN_NETWORK="google",LIP_RNN_HIDDEN_LIST=None, forceTrain=forceTrain),
         #networkToRun(runType="lipreading", CNN_NETWORK="resnet50",LIP_RNN_HIDDEN_LIST=None, forceTrain=forceTrain),
-        networkToRun(runType="lipreading", CNN_NETWORK="cifar10", LIP_RNN_HIDDEN_LIST=None, forceTrain=forceTrain),
-        #
+        networkToRun(runType="lipreading", CNN_NETWORK="cifar10_v2", LIP_RNN_HIDDEN_LIST=None, forceTrain=forceTrain),
+
+        # networkToRun(runType="lipreading", CNN_NETWORK="resnet50", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+        # networkToRun(runType="lipreading", CNN_NETWORK="cifar10", cnn_features="dense", LIP_RNN_HIDDEN_LIST=[256, 256],
+        #              overwriteSubnets=overwriteSubnets, forceTrain=forceTrain),
+
         # # # # # # # # # #
         # # # # # # # # # # # CNN-LSTM -> by default only the LSTM part is trained (line 713 in build_functions in combinedNN_tools.py
         # # # # # # # # # # #          -> you can train everything (also CNN parameters), but only do this after the CNN-LSTM has trained with fixed CNN parameters, otherwise you'll move far out of your optimal point
@@ -274,7 +279,7 @@ def main():
 
 
     # # # use this if you want to force run the network on train sets.
-    #runManyNetworks(networkList)
+    # runManyNetworks(networkList)
 
 # this loads the specified results from networks in networkList
 def mainGetResults(networkList, withNoise=False, noiseType='white', ratio_dB=0):
@@ -700,7 +705,7 @@ def runNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features, lipRNN_bidirec
 
     ##### COMPILING FUNCTIONS #####
     logger_combined.info("\n\n* Compiling functions ...")
-    network.build_functions(runType=runType, train=True, debug=debugFunctions,
+    network.build_functions(runType=runType, train=True, debug=False,
                             allowSubnetTraining=allowSubnetTraining)
 
     # if runType model already exists (and loaded successfully), just TEST it.
@@ -710,6 +715,8 @@ def runNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features, lipRNN_bidirec
         if ROUND_PARAMS: #safety for if we forget to set round_params to false when training
             logger_combined.info("Loading Rounded Parameters...")
             network.setNetworkParams(runType, roundParams=ROUND_PARAMS, overwriteSubnets=overwriteSubnets)
+
+        logger_combined.info("\n\n* Evaluating Test set ...")
 
         if withNoise:
             noiseTypes = ['white', 'voices']
@@ -754,7 +761,6 @@ def runNetwork(AUDIO_LSTM_HIDDEN_LIST, CNN_NETWORK, cnn_features, lipRNN_bidirec
     if logToFile:
         fh.close()
         logger_combined.removeHandler(fh)
-    testResults = None
 
     return model_save, testResults #so you know which network has been trained
 

@@ -422,21 +422,6 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
 
     # print(cnn.output_shape)
 
-    # # 1024FP-1024FP-10FP
-    cnn = lasagne.layers.DenseLayer(
-            cnn,
-            nonlinearity=lasagne.nonlinearities.identity,
-            num_units=1024)
-
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
     cnn = lasagne.layers.DenseLayer(
             cnn,
             nonlinearity=lasagne.nonlinearities.identity,

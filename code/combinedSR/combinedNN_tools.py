@@ -120,8 +120,10 @@ class NeuralNetwork:
                     self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_google_CNN()
             elif "resnet50" in cnn_network:
                 self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_resnet50_CNN()
+            elif "cifar10_v2" in cnn_network:
+                self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_cifar10_CNN_v2()
             elif "cifar10" in cnn_network:
-                self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_cifar10_CNN()
+                self.CNN_dict, self.CNN_lout, self.CNN_lout_features = self.build_cifar10_CNN_v2()
 
             # CNN_lout_features output shape = (nbValidFrames, 512x7x7)
 
@@ -152,6 +154,7 @@ class NeuralNetwork:
                     self.lipreading_lout_features = self.CNN_lout_features
                 self.lipreading_lout = self.CNN_lout
 
+                # # You can use this to get the shape of the raw features (before FC layers), which needs to be hard-coded in the build_<networkName>() function
                 # logger_combinedtools.debug("lip features shape: %s", self.lipreading_lout_features.output_shape)
                 # import pdb;pdb.set_trace()
 
@@ -672,6 +675,78 @@ class NeuralNetwork:
 
         return net, net['prob'], cnn_reshape
 
+    def build_cifar10_CNN_v2(self, input=None, nbClasses=39):
+        from lasagne.layers import BatchNormLayer, Conv2DLayer as ConvLayer, DenseLayer, ElemwiseSumLayer, InputLayer, \
+            NonlinearityLayer, Pool2DLayer as PoolLayer, DropoutLayer
+        from lasagne.nonlinearities import rectify, softmax
+
+        input = self.CNN_input_var
+        nbClasses = self.num_output_units
+
+        net = {}
+        net['input'] = InputLayer((None, 1, 120, 120), input_var=input)
+        net['conv1'] = ConvLayer(net['input'],
+                                 num_filters=192,
+                                 filter_size=5,
+                                 pad=2,
+                                 flip_filters=False)
+        net['cccp1'] = ConvLayer(
+                net['conv1'], num_filters=160, filter_size=1, flip_filters=False)
+        net['cccp2'] = ConvLayer(
+                net['cccp1'], num_filters=96, filter_size=1, flip_filters=False)
+        net['pool1'] = PoolLayer(net['cccp2'],
+                                 pool_size=3,
+                                 stride=2,
+                                 mode='max',
+                                 ignore_border=False)
+        net['drop3'] = DropoutLayer(net['pool1'], p=0.5)
+        net['conv2'] = ConvLayer(net['drop3'],
+                                 num_filters=192,
+                                 filter_size=5,
+                                 pad=2,
+                                 flip_filters=False)
+        net['cccp3'] = ConvLayer(
+                net['conv2'], num_filters=192, filter_size=1, flip_filters=False)
+        net['cccp4'] = ConvLayer(
+                net['cccp3'], num_filters=192, filter_size=1, flip_filters=False)
+        net['pool2'] = PoolLayer(net['cccp4'],
+                                 pool_size=3,
+                                 stride=2,
+                                 mode='average_exc_pad',
+                                 ignore_border=False)
+        net['drop6'] = DropoutLayer(net['pool2'], p=0.5)
+        net['conv3'] = ConvLayer(net['drop6'],
+                                 num_filters=192,
+                                 filter_size=3,
+                                 pad=1,
+                                 flip_filters=False)
+        net['cccp5'] = ConvLayer(
+                net['conv3'], num_filters=192, filter_size=1, flip_filters=False)
+        net['cccp6'] = ConvLayer(
+                net['cccp5'], num_filters=10, filter_size=1, flip_filters=False)
+        net['pool3'] = PoolLayer(net['cccp6'],
+                                 pool_size=8,
+                                 mode='average_exc_pad',
+                                 ignore_border=False)
+        # net['output'] = FlattenLayer(net['pool3'])
+
+        # now we have output shape (nbValidFrames, 10,4,4) -> Flatten it.
+        batch_size = net['input'].input_var.shape[0]
+        cnn_reshape = L.ReshapeLayer(net['pool3'], (batch_size, 160))
+
+
+        net['dense1'] = lasagne.layers.DenseLayer(
+                net['pool3'],
+                nonlinearity=lasagne.nonlinearities.identity,
+                num_units=1024)
+
+        net['output'] = lasagne.layers.DenseLayer(
+                net['dense1'],
+                nonlinearity=lasagne.nonlinearities.softmax,
+                num_units=nbClasses)
+
+        return net, net['output'], cnn_reshape
+
     def build_cifar10_CNN(self, input=None, activation=T.nnet.relu, alpha=0.1, epsilon=1e-4):
         input = self.CNN_input_var
         nbClasses = self.num_output_units
@@ -786,25 +861,9 @@ class NeuralNetwork:
                 nonlinearity=activation)
 
         # print(cnn.output_shape)
-
         # now we have output shape (nbValidFrames, 512,15,15) -> Flatten it.
         batch_size = cnn_in.input_var.shape[0]
         cnn_reshape = L.ReshapeLayer(cnn, (batch_size, 115200))
-
-        # # 1024FP-1024FP-10FP
-        cnn = lasagne.layers.DenseLayer(
-                cnn,
-                nonlinearity=lasagne.nonlinearities.identity,
-                num_units=1024)
-
-        cnn = lasagne.layers.BatchNormLayer(
-                cnn,
-                epsilon=epsilon,
-                alpha=alpha)
-
-        cnn = lasagne.layers.NonlinearityLayer(
-                cnn,
-                nonlinearity=activation)
 
         cnn = lasagne.layers.DenseLayer(
                 cnn,
@@ -820,13 +879,11 @@ class NeuralNetwork:
                 cnn,
                 nonlinearity=activation)
 
-
         cnn = lasagne.layers.DenseLayer(
                 cnn,
                 nonlinearity=lasagne.nonlinearities.softmax,
                 num_units=nbClasses)
 
-        #cnnDict, cnnDict['l7_out'], cnnDict['l6_reshape']
         return {}, cnn, cnn_reshape
 
 
@@ -1055,6 +1112,7 @@ class NeuralNetwork:
                 else:
                     #print(len(param_values));import pdb;pdb.set_trace();
                     lasagne.layers.set_all_param_values(lout, param_values)
+
             except:
                 try:
                     if roundParams: lasagne.layers.set_all_param_values(lout, self.round_params(*param_values))
