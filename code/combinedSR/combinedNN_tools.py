@@ -35,7 +35,7 @@ class NeuralNetwork:
                  batch_size=1, num_features=39, num_output_units=39,
                  lstm_hidden_list=(100,), bidirectional=True,
                  cnn_network="google", cnn_features='dense', lipRNN_hidden_list=None, lipRNN_bidirectional=True, lipRNN_features="rawRNNfeatures",
-                 dense_hidden_list=(512,), save_name=None,
+                 dense_hidden_list=(512,), save_name=None, audioNet_features='lstm',
                  seed=int(time.time()), model_paths={}, debug=False, verbose=False, logger=logger_combinedtools):
 
         self.dataset= dataset
@@ -106,6 +106,8 @@ class NeuralNetwork:
                 self.build_audioRNN(n_hidden_list=lstm_hidden_list, bidirectional=bidirectional,
                                     seed=seed, debug=debug, logger=logger)
             # audioNet_lout_flattened output shape: (nbValidFrames, 39)
+            # pass on 39 phoneme predictions instead of nbLSTMunits features
+            if audioNet_features: self.audioNet_lout_features = self.audioNet_lout
 
 
             ## LIPREADING PART ##
@@ -1027,7 +1029,6 @@ class NeuralNetwork:
 
         return nb_params
 
-
     # return True if successful load, false otherwise
     def load_model(self, model_type, roundParams=False, logger=logger_combinedtools):
         if not os.path.exists(self.model_paths[model_type]):
@@ -1052,7 +1053,7 @@ class NeuralNetwork:
             try:
                 if roundParams: lasagne.layers.set_all_param_values(lout, self.round_params(param_values))
                 else:
-                    print(len(param_values));import pdb;pdb.set_trace();
+                    #print(len(param_values));import pdb;pdb.set_trace();
                     lasagne.layers.set_all_param_values(lout, param_values)
             except:
                 try:
@@ -1112,7 +1113,6 @@ class NeuralNetwork:
                         self.model_paths['audio'])
             success = self.load_model(model_type='audio', roundParams=roundParams)
         return success
-
 
     def save_model(self, model_name, logger=logger_combinedtools):
         if not os.path.exists(os.path.dirname(model_name)):
@@ -1216,15 +1216,15 @@ class NeuralNetwork:
             self.audio_valid_network_output_fn = theano.function(
                     [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var], audio_valid_network_output)
 
-            audio_valid_predictions = T.argmax(audio_valid_network_output, axis=2)
-            self.audio_predictions_fn = theano.function(
-                    [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var],
-                    audio_valid_predictions, name='valid_predictions_fn')
-
             audio_valid_network_output_flattened = L.get_output(self.audioNet_lout_flattened)
             self.audio_network_output_flattened_fn = theano.function(
                     [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var],
                     audio_valid_network_output_flattened)
+
+            audio_valid_predictions = T.argmax(audio_valid_network_output_flattened, axis=1)  # TODO axis 1 or 2?
+            self.audio_predictions_fn = theano.function(
+                    [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var],
+                    audio_valid_predictions, name='valid_predictions_fn')
 
             # top k accuracy
             audio_top1_acc = T.mean(lasagne.objectives.categorical_accuracy(
@@ -1237,35 +1237,34 @@ class NeuralNetwork:
             self.audio_top3_acc_fn = theano.function(
                     [self.audio_inputs_var, self.audio_masks_var, self.audio_valid_frames_var,
                      self.targets_var], audio_top3_acc)
-            # if debug:
-            #     try:
-            #         valid_out = self.audio_valid_network_output_fn(self.mfccs, self.masks, self.validAudioFrames)
-            #         logger.debug('valid_out.shape:        %s', valid_out.shape)
-            #         # logger.debug('valid_out, value: \n%s', valid_out)
-            #
-            #         valid_out_flattened = self.audio_network_output_flattened_fn(self.mfccs, self.masks,
-            #                                                                      self.validAudioFrames)
-            #         logger.debug('valid_out_flat.shape:   %s', valid_out_flattened.shape)
-            #         # logger.debug('valid_out_flat, value: \n%s', valid_out_flattened)
-            #
-            #         valid_preds2 = self.audio_predictions_fn(self.mfccs, self.masks, self.validAudioFrames)
-            #         logger.debug('valid_preds2.shape:     %s', valid_preds2.shape)
-            #         # logger.debug('valid_preds2, value: \n%s', valid_preds2)
-            #
-            #         logger.debug('validAudioFrames.shape: %s', self.validAudioFrames.shape)
-            #         logger.debug('valid_targets.shape:    %s', self.validLabels.shape)
-            #         logger.debug('valid_targets, value:   %s', self.validLabels)
-            #
-            #         top1 = self.audio_top1_acc_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels)
-            #         logger.debug("top 1 accuracy:   %s", top1 * 100.0)
-            #
-            #         top3 = self.audio_top3_acc_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels)
-            #         logger.debug("top 3 accuracy:   %s", top3 * 100.0)
-            #
-            #     except Exception as error:
-            #         print('caught this error: ' + traceback.format_exc());
-            #         import pdb;
-            #         pdb.set_trace()
+            if debug:
+                try:
+                    valid_out = self.audio_valid_network_output_fn(self.mfccs, self.masks, self.validAudioFrames)
+                    logger.debug('valid_out.shape:        %s', valid_out.shape)
+                    # logger.debug('valid_out, value: \n%s', valid_out)
+
+                    valid_out_flattened = self.audio_network_output_flattened_fn(self.mfccs, self.masks,
+                                                                                 self.validAudioFrames)
+                    logger.debug('valid_out_flat.shape:   %s', valid_out_flattened.shape)
+                    # logger.debug('valid_out_flat, value: \n%s', valid_out_flattened)
+
+                    valid_preds2 = self.audio_predictions_fn(self.mfccs, self.masks, self.validAudioFrames)
+                    logger.debug('valid_preds2.shape:     %s', valid_preds2.shape)
+                    # logger.debug('valid_preds2, value: \n%s', valid_preds2)
+
+                    logger.debug('validAudioFrames.shape: %s', self.validAudioFrames.shape)
+                    logger.debug('valid_targets.shape:    %s', self.validLabels.shape)
+                    logger.debug('valid_targets, value:   %s', self.validLabels)
+
+                    top1 = self.audio_top1_acc_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels)
+                    logger.debug("top 1 accuracy:   %s", top1 * 100.0)
+
+                    top3 = self.audio_top3_acc_fn(self.mfccs, self.masks, self.validAudioFrames, self.validLabels)
+                    logger.debug("top 3 accuracy:   %s", top3 * 100.0)
+
+                except Exception as error:
+                    print('caught this error: ' + traceback.format_exc());
+                    import pdb;                    pdb.set_trace()
 
             # with Lasagne SliceLayer outputs:
             audio_cost_pointwise = lasagne.objectives.categorical_crossentropy(audio_valid_network_output_flattened,

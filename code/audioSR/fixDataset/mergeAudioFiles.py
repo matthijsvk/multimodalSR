@@ -56,21 +56,6 @@ def mergeAudioFiles(wav1_path, wav2_path, out_path, ratio_dB):
 
     combined.export(out_path, format='wav')
 
-#
-# def addWhiteNoise(wav_path, noise_path, out_path, ratio_dB):
-#     sound1 = AudioSegment.from_file(wav_path); loud1 = sound1.dBFS
-#     sound2 = AudioSegment.from_file(noise_path); loud2 = sound2.dBFS
-#
-#     # bring them to approx equal volume + ratio_dB
-#     min_acc = 0.5
-#     while sound2.dBFS < loud1 + ratio_dB - min_acc:
-#         sound2 += min_acc/2.0
-#     while sound2.dBFS > loud1 + ratio_dB + min_acc:
-#         sound2 -= min_acc/2.0
-#
-#     combined = sound1.overlay(sound2, loop=True)
-#     combined.export(out_path, format='wav')
-
 
 def generateBadAudio(outType, srcDir, dstDir, ratio_dB):
     # copy phoneme files

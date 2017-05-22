@@ -246,7 +246,7 @@ def buildCNN(networkType, dataType, input, epsilon, alpha, activation, binary, s
                 stochastic=stochastic,
                 H=H,
                 W_LR_scale=W_LR_scale,
-                nonlinearity=lasagne.nonlinearities.identity,  #TODO was identity
+                nonlinearity=lasagne.nonlinearities.identityare ,  #TODO was identity
                 num_units=nbClasses)
 
         # cnn = lasagne.layers.BatchNormLayer(

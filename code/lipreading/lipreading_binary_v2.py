@@ -54,6 +54,8 @@ import lasagne.objectives as LO
 debug = True
 binary = True
 
+justTest = True
+
 def main():
     # BN parameters
     batch_size = 100
@@ -105,7 +107,6 @@ def main():
     else:
         nbClasses = 39
 
-    justTest = False
 
     # get the database
     # If it's small (lipspeakers) -> generate X_train, y_train etc here
@@ -208,7 +209,8 @@ def main():
     # get the network structure
     l_out = buildNetworks.build_network_google_binary(activation, alpha, epsilon, inputs, binary, stochastic, H,
                                                                       W_LR_scale)  # 7176231 params
-
+    for layer in L.get_all_layers(l_out):
+        print(layer)
 
     # print het amount of network parameters
     logger_lip.info("Using the %s network", network_type)
@@ -288,6 +290,7 @@ def load_model(model_path, network_output_layer, logger=logger_lip):
         # restore network weights
         with np.load(model_path) as f:
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+            import pdb;pdb.set_trace()
             try:
                 lasagne.layers.set_all_param_values(network_output_layer, param_values)
             except:

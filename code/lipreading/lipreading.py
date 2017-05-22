@@ -49,8 +49,12 @@ import lasagne.layers as L
 import lasagne.objectives as LO
 
 
-batch_sizes = [32]
-networks = ["cifar10"]
+batch_sizes = [8]
+networks = ["google"]
+justTest = True
+roundParams = False
+
+
 def main():
 
     for batch_size, network_type in zip(batch_sizes, networks):
@@ -93,7 +97,6 @@ def main():
         if viseme:   nbClasses = 12
         else:        nbClasses = 39
 
-        justTest =False
 
         # get the database
         # If it's small (lipspeakers) -> generate X_train, y_train etc here
@@ -268,9 +271,12 @@ def load_model(model_path, network_output_layer, logger=logger_lip):
         # restore network weights
         with np.load(model_path) as f:
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-            try:lasagne.layers.set_all_param_values(network_output_layer, param_values)
+            try:
+                if roundParams: lasagne.layers.set_all_param_values(network_output_layer, round_params(param_values))
+                else: lasagne.layers.set_all_param_values(network_output_layer, param_values)
             except:
-                lasagne.layers.set_all_param_values(network_output_layer, *param_values)
+                if roundParams: lasagne.layers.set_all_param_values(network_output_layer, round_params(*param_values))
+                else: lasagne.layers.set_all_param_values(network_output_layer, *param_values)
 
         logger.info("Loading parameters successful.")
         return 0
@@ -280,6 +286,13 @@ def load_model(model_path, network_output_layer, logger=logger_lip):
         logger.info('Model: %s not found. No weights loaded', model_path)
         return -1
 
+def round_params(param_values):
+    print("ROUND_PARAMS")
+    for i in range(len(param_values)):
+        param_values[i] = param_values[i].astype(np.float16)
+        param_values[i] = param_values[i].astype(np.float32)
+
+    return param_values
 
 if __name__ == "__main__":
     main()
