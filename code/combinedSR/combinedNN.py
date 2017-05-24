@@ -740,8 +740,8 @@ def runNetwork(AUDIO_LSTM_HIDDEN_LIST, audio_features, audio_bidirectional, CNN_
     # you can just run this program and it will generate the files the first time it encounters them, or generate them manually with datasetToPkl.py
 
     # some data for debugging
-    getDebugData = False; debugData=None
-    if getDebugData:
+    debugFunctions = False; debugData = None
+    if debugFunctions:
         debugData, datasetFiles, testSpeakerFiles = getData(database_binaryDir, datasetType, processedDir, getDebugData=True)
     else:
         datasetFiles, testSpeakerFiles = getData(database_binaryDir, datasetType, processedDir, getDebugData=False)

@@ -280,7 +280,8 @@ def load_model(model_path, network_output_layer, logger=logger_lip):
                     print(layer)
                 #import pdb;                pdb.set_trace();
             except:
-                lasagne.layers.set_all_param_values(network_output_layer, *param_values)
+                if roundParams: lasagne.layers.set_all_param_values(network_output_layer, round_params(*param_values))
+                else: lasagne.layers.set_all_param_values(network_output_layer, *param_values)
 
         logger.info("Loading parameters successful.")
         return 0
@@ -290,6 +291,13 @@ def load_model(model_path, network_output_layer, logger=logger_lip):
         logger.info('Model: %s not found. No weights loaded', model_path)
         return -1
 
+def round_params(param_values):
+    print("ROUND_PARAMS")
+    for i in range(len(param_values)):
+        param_values[i] = param_values[i].astype(np.float16)
+        param_values[i] = param_values[i].astype(np.float32)
+
+    return param_values
 
 if __name__ == "__main__":
     main()
