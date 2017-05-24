@@ -6,10 +6,9 @@
 # Download pretrained weights from:
 # https://s3.amazonaws.com/lasagne/recipes/pretrained/imagenet/resnet50.pkl
 
-from lasagne.layers import BatchNormLayer, Conv2DLayer as ConvLayer, DenseLayer, ElemwiseSumLayer, InputLayer, \
-    NonlinearityLayer, Pool2DLayer as PoolLayer
+from lasagne.layers import BatchNormLayer, Conv2DLayer as ConvLayer, DenseLayer, ElemwiseSumLayer, NonlinearityLayer
 from lasagne.nonlinearities import rectify, softmax
-
+import lasagne
 
 def build_simple_block(incoming_layer, names,
                        num_filters, filter_size, stride, pad,
@@ -451,9 +450,10 @@ def build_network_cifar10(activation, alpha, epsilon, input, nbClasses):
 
 # default network for cifar10
 
-from lasagne.layers import InputLayer, DropoutLayer, FlattenLayer
+from lasagne.layers import InputLayer, DropoutLayer
 from lasagne.layers.dnn import Conv2DDNNLayer as ConvLayer
 from lasagne.layers import Pool2DLayer as PoolLayer
+
 
 def build_network_cifar10_v2(input, nbClasses):
     net = {}
@@ -503,7 +503,7 @@ def build_network_cifar10_v2(input, nbClasses):
                              ignore_border=False)
     # net['output'] = FlattenLayer(net['pool3'])
 
-    net['dense1'] = lasagne.layers.DenseLayer(
+    net['dense1'] = DenseLayer(
             net['pool3'],
             nonlinearity=lasagne.nonlinearities.identity,
             num_units=1024)
@@ -515,314 +515,305 @@ def build_network_cifar10_v2(input, nbClasses):
 
     return net, net['output']
 
-################## BINARY NETWORKS ###################
-
-import numpy as np
-
-import theano
-import theano.tensor as T
-
-import lasagne
-from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
-from theano.scalar.basic import UnaryScalarOp, same_out_nocomplex
-from theano.tensor.elemwise import Elemwise
-
-
-# Our own rounding function, that does not set the gradient to 0 like Theano's
-import binary_net
-
-
-def build_network_google_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale):
-    # input
-    cnn = lasagne.layers.InputLayer(
-            shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
-            input_var=input)
-
-    # conv 1
-    cnn = binary_net.Conv2DLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            num_filters=128,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
-    # conv 2
-    cnn = binary_net.Conv2DLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            num_filters=256,
-            filter_size=(3, 3),
-            stride=(2, 2),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
-    # conv3
-    cnn = binary_net.Conv2DLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            num_filters=512,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
-    # conv 4
-    cnn = binary_net.Conv2DLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            num_filters=512,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
-    # conv 5
-    cnn = binary_net.Conv2DLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            num_filters=512,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
-    # FC layer
-    cnn = binary_net.DenseLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            nonlinearity=lasagne.nonlinearities.identity,
-            num_units=39)
-
-    return cnn
-
-
-def build_network_cifar10_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale):
-    cnn = lasagne.layers.InputLayer(
-            shape=(None, 1, 120, 120),
-            input_var=input)
-
-    # 128C3-128C3-P2
-    cnn = binary_net.Conv2DLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            num_filters=128,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
-    cnn = binary_net.Conv2DLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            num_filters=128,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
-    # 256C3-256C3-P2
-    cnn = binary_net.Conv2DLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            num_filters=256,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
-    cnn = binary_net.Conv2DLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            num_filters=256,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
-    # 512C3-512C3-P2
-    cnn = binary_net.Conv2DLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            num_filters=512,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
-    cnn = binary_net.Conv2DLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            num_filters=512,
-            filter_size=(3, 3),
-            pad=1,
-            nonlinearity=lasagne.nonlinearities.identity)
-
-    cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
-
-    cnn = lasagne.layers.BatchNormLayer(
-            cnn,
-            epsilon=epsilon,
-            alpha=alpha)
-
-    cnn = lasagne.layers.NonlinearityLayer(
-            cnn,
-            nonlinearity=activation)
-
-    # print(cnn.output_shape)
-
-    # # 1024FP-1024FP-10FP
-    # cnn = binary_net.DenseLayer(
-    #         cnn,
-    #        binary=binary,
-    #       stochastic=stochastic,
-    #        H=H,
-    #       W_LR_scale=W_LR_scale,
-    #         nonlinearity=lasagne.nonlinearities.identity,
-    #         num_units=1024)
-    #
-    # cnn = lasagne.layers.BatchNormLayer(
-    #         cnn,
-    #         epsilon=epsilon,
-    #         alpha=alpha)
-    #
-    # cnn = lasagne.layers.NonlinearityLayer(
-    #         cnn,
-    #         nonlinearity=activation)
-
-    # cnn = binary_net.DenseLayer(
-    #        cnn,
-    #        binary=binary,
-    #        stochastic=stochastic,
-    #        H=H,
-    #        W_LR_scale=W_LR_scale,
-    #         nonlinearity=lasagne.nonlinearities.identity,
-    #         num_units=1024)
-    #
-    # cnn = lasagne.layers.BatchNormLayer(
-    #         cnn,
-    #         epsilon=epsilon,
-    #         alpha=alpha)
-    #
-    # cnn = lasagne.layers.NonlinearityLayer(
-    #         cnn,
-    #         nonlinearity=activation)
-
-    cnn = binary_net.DenseLayer(
-            cnn,
-            binary=binary,
-            stochastic=stochastic,
-            H=H,
-            W_LR_scale=W_LR_scale,
-            nonlinearity=lasagne.nonlinearities.identity,
-            num_units=39)
-
-    # cnn = lasagne.layers.BatchNormLayer(
-    #         cnn,
-    #         epsilon=epsilon,
-    #         alpha=alpha)
-
-    return cnn
+# ################## BINARY NETWORKS ###################
+#
+# import lasagne
+#
+# # Our own rounding function, that does not set the gradient to 0 like Theano's
+# from code.lipreading.binary.old import binary_net
+#
+#
+# def build_network_google_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale):
+#     # input
+#     cnn = lasagne.layers.InputLayer(
+#             shape=(None, 1, 120, 120),  # 5,120,120 (5 = #frames)
+#             input_var=input)
+#
+#     # conv 1
+#     cnn = binary_net.Conv2DLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             num_filters=128,
+#             filter_size=(3, 3),
+#             pad=1,
+#             nonlinearity=lasagne.nonlinearities.identity)
+#     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
+#     cnn = lasagne.layers.BatchNormLayer(
+#             cnn,
+#             epsilon=epsilon,
+#             alpha=alpha)
+#     cnn = lasagne.layers.NonlinearityLayer(
+#             cnn,
+#             nonlinearity=activation)
+#
+#     # conv 2
+#     cnn = binary_net.Conv2DLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             num_filters=256,
+#             filter_size=(3, 3),
+#             stride=(2, 2),
+#             pad=1,
+#             nonlinearity=lasagne.nonlinearities.identity)
+#     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
+#     cnn = lasagne.layers.BatchNormLayer(
+#             cnn,
+#             epsilon=epsilon,
+#             alpha=alpha)
+#     cnn = lasagne.layers.NonlinearityLayer(
+#             cnn,
+#             nonlinearity=activation)
+#
+#     # conv3
+#     cnn = binary_net.Conv2DLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             num_filters=512,
+#             filter_size=(3, 3),
+#             pad=1,
+#             nonlinearity=lasagne.nonlinearities.identity)
+#     cnn = lasagne.layers.NonlinearityLayer(
+#             cnn,
+#             nonlinearity=activation)
+#
+#     # conv 4
+#     cnn = binary_net.Conv2DLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             num_filters=512,
+#             filter_size=(3, 3),
+#             pad=1,
+#             nonlinearity=lasagne.nonlinearities.identity)
+#     cnn = lasagne.layers.NonlinearityLayer(
+#             cnn,
+#             nonlinearity=activation)
+#
+#     # conv 5
+#     cnn = binary_net.Conv2DLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             num_filters=512,
+#             filter_size=(3, 3),
+#             pad=1,
+#             nonlinearity=lasagne.nonlinearities.identity)
+#     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
+#     cnn = lasagne.layers.NonlinearityLayer(
+#             cnn,
+#             nonlinearity=activation)
+#
+#     # FC layer
+#     cnn = binary_net.DenseLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             nonlinearity=lasagne.nonlinearities.identity,
+#             num_units=39)
+#
+#     return cnn
+#
+#
+# def build_network_cifar10_binary(activation, alpha, epsilon, input, binary, stochastic, H, W_LR_scale):
+#     cnn = lasagne.layers.InputLayer(
+#             shape=(None, 1, 120, 120),
+#             input_var=input)
+#
+#     # 128C3-128C3-P2
+#     cnn = binary_net.Conv2DLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             num_filters=128,
+#             filter_size=(3, 3),
+#             pad=1,
+#             nonlinearity=lasagne.nonlinearities.identity)
+#
+#     cnn = lasagne.layers.BatchNormLayer(
+#             cnn,
+#             epsilon=epsilon,
+#             alpha=alpha)
+#
+#     cnn = lasagne.layers.NonlinearityLayer(
+#             cnn,
+#             nonlinearity=activation)
+#
+#     cnn = binary_net.Conv2DLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             num_filters=128,
+#             filter_size=(3, 3),
+#             pad=1,
+#             nonlinearity=lasagne.nonlinearities.identity)
+#
+#     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
+#
+#     cnn = lasagne.layers.BatchNormLayer(
+#             cnn,
+#             epsilon=epsilon,
+#             alpha=alpha)
+#
+#     cnn = lasagne.layers.NonlinearityLayer(
+#             cnn,
+#             nonlinearity=activation)
+#
+#     # 256C3-256C3-P2
+#     cnn = binary_net.Conv2DLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             num_filters=256,
+#             filter_size=(3, 3),
+#             pad=1,
+#             nonlinearity=lasagne.nonlinearities.identity)
+#
+#     cnn = lasagne.layers.BatchNormLayer(
+#             cnn,
+#             epsilon=epsilon,
+#             alpha=alpha)
+#
+#     cnn = lasagne.layers.NonlinearityLayer(
+#             cnn,
+#             nonlinearity=activation)
+#
+#     cnn = binary_net.Conv2DLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             num_filters=256,
+#             filter_size=(3, 3),
+#             pad=1,
+#             nonlinearity=lasagne.nonlinearities.identity)
+#
+#     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
+#
+#     cnn = lasagne.layers.BatchNormLayer(
+#             cnn,
+#             epsilon=epsilon,
+#             alpha=alpha)
+#
+#     cnn = lasagne.layers.NonlinearityLayer(
+#             cnn,
+#             nonlinearity=activation)
+#
+#     # 512C3-512C3-P2
+#     cnn = binary_net.Conv2DLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             num_filters=512,
+#             filter_size=(3, 3),
+#             pad=1,
+#             nonlinearity=lasagne.nonlinearities.identity)
+#
+#     cnn = lasagne.layers.BatchNormLayer(
+#             cnn,
+#             epsilon=epsilon,
+#             alpha=alpha)
+#
+#     cnn = lasagne.layers.NonlinearityLayer(
+#             cnn,
+#             nonlinearity=activation)
+#
+#     cnn = binary_net.Conv2DLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             num_filters=512,
+#             filter_size=(3, 3),
+#             pad=1,
+#             nonlinearity=lasagne.nonlinearities.identity)
+#
+#     cnn = lasagne.layers.MaxPool2DLayer(cnn, pool_size=(2, 2))
+#
+#     cnn = lasagne.layers.BatchNormLayer(
+#             cnn,
+#             epsilon=epsilon,
+#             alpha=alpha)
+#
+#     cnn = lasagne.layers.NonlinearityLayer(
+#             cnn,
+#             nonlinearity=activation)
+#
+#     # print(cnn.output_shape)
+#
+#     # # 1024FP-1024FP-10FP
+#     # cnn = binary_net.DenseLayer(
+#     #         cnn,
+#     #        binary=binary,
+#     #       stochastic=stochastic,
+#     #        H=H,
+#     #       W_LR_scale=W_LR_scale,
+#     #         nonlinearity=lasagne.nonlinearities.identity,
+#     #         num_units=1024)
+#     #
+#     # cnn = lasagne.layers.BatchNormLayer(
+#     #         cnn,
+#     #         epsilon=epsilon,
+#     #         alpha=alpha)
+#     #
+#     # cnn = lasagne.layers.NonlinearityLayer(
+#     #         cnn,
+#     #         nonlinearity=activation)
+#
+#     # cnn = binary_net.DenseLayer(
+#     #        cnn,
+#     #        binary=binary,
+#     #        stochastic=stochastic,
+#     #        H=H,
+#     #        W_LR_scale=W_LR_scale,
+#     #         nonlinearity=lasagne.nonlinearities.identity,
+#     #         num_units=1024)
+#     #
+#     # cnn = lasagne.layers.BatchNormLayer(
+#     #         cnn,
+#     #         epsilon=epsilon,
+#     #         alpha=alpha)
+#     #
+#     # cnn = lasagne.layers.NonlinearityLayer(
+#     #         cnn,
+#     #         nonlinearity=activation)
+#
+#     cnn = binary_net.DenseLayer(
+#             cnn,
+#             binary=binary,
+#             stochastic=stochastic,
+#             H=H,
+#             W_LR_scale=W_LR_scale,
+#             nonlinearity=lasagne.nonlinearities.identity,
+#             num_units=39)
+#
+#     # cnn = lasagne.layers.BatchNormLayer(
+#     #         cnn,
+#     #         epsilon=epsilon,
+#     #         alpha=alpha)
+#
+#     return cnn

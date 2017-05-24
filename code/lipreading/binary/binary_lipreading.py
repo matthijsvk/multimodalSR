@@ -18,10 +18,11 @@ from pylearn2.datasets.cifar10 import CIFAR10
 
 from collections import OrderedDict
 
+# if something doesn't work, run 'theano cache-clear' from terminal
+justTest= False
+
 def main():
     # BN parameters
-    batch_size = 80
-    print("batch_size = " + str(batch_size))
     # alpha is the exponential moving average factor
     alpha = .1
     print("alpha = " + str(alpha))
@@ -43,18 +44,22 @@ def main():
     # H = "Glorot"
     H = 1.
     print("H = " + str(H))
-    # W_LR_scale = 1.    
-    W_LR_scale = "Glorot"  # "Glorot" means we are using the coefficients from Glorot's paper
+    W_LR_scale = 1.
+    #W_LR_scale = "Glorot"  # "Glorot" means we are using the coefficients from Glorot's paper
     print("W_LR_scale = " + str(W_LR_scale))
 
     # Training parameters
-    num_epochs = 20
+    num_epochs = 50
     print("num_epochs = " + str(num_epochs))
 
-    # Decaying LR 
-    LR_start = 1e-5
+    # Decaying LR
+    LR_start = 0.01
     print("LR_start = " + str(LR_start))
-    LR_fin = 1e-8
+    LR_fin = 0.000003
+
+    # LR_start = 0.01
+    # print("LR_start = " + str(LR_start))
+    # LR_fin = 1e-6
     print("LR_fin = " + str(LR_fin))
     LR_decay = (LR_fin / LR_start) ** (1. / num_epochs)
     print("LR_decay = " + str(LR_decay))
@@ -67,8 +72,18 @@ def main():
     networkType = 'google'
     dataType = 'TCDTIMIT'
 
+    #networkType='cifar10'
+    #dataType='cifar10'
+
+    # these batch sizes work for a GTX 1060 (6GB)
+    if dataType=='TCDTIMIT':
+        if networkType == 'google': batch_size = 100
+        else: batch_size = 24
+    elif dataType=='cifar10' and networkType =='cifar10': batch_size = 400
+    elif dataType=='cifar10' and networkType=='google': batch_size = 1000
+
     model_name = os.path.expanduser('~/TCDTIMIT/lipreading/TCDTIMIT/results/CNN_binaryNet/lipspeakers_') \
-                 + networkType + "_phoneme39_binary"
+                 + networkType + "_phoneme39_binary" + "_" + dataType
     model_path = model_name + ".npz"
     if not os.path.exists(os.path.dirname(model_path)): os.makedirs(os.path.dirname(model_path))
 
@@ -90,7 +105,7 @@ def main():
                 lasagne.layers.set_all_param_values(cnn, *param_values)
             except:
                 lasagne.layers.set_all_param_values(cnn, param_values)
-            print("\t Loaded model " + model_path)
+            print("\n\n\t Loaded model " + model_path)
 
 
     print('Loading ' + dataType + ' dataset...')
@@ -137,15 +152,22 @@ def main():
             X_val, y_val,
             X_test, y_test,
             save_name=model_name,
-            shuffle_parts=shuffle_parts)
+            shuffle_parts=shuffle_parts, justTest=justTest)
 
-def buildCNN(networkType, dataType, input, epsilon, alpha, activation, binary, stochastic, H, W_LR_scale):
+def buildCNN(networkType, dataType, input, epsilon, alpha, activation, binary, stochastic, H, W_LR_scale, oneHot=True):
+    if oneHot:
+        print("identity")
+        denseOut = lasagne.nonlinearities.identity
+    else:
+        print("softmax")
+        denseOut = lasagne.nonlinearities.softmax
+
     if dataType =='TCDTIMIT':
         nbClasses = 39
         cnn = lasagne.layers.InputLayer(
                 shape=(None, 1, 120,120),
                 input_var=input)
-    else:
+    elif dataType =='cifar10':
         nbClasses = 10
         cnn = lasagne.layers.InputLayer(
                 shape=(None, 3, 32, 32),
@@ -246,14 +268,16 @@ def buildCNN(networkType, dataType, input, epsilon, alpha, activation, binary, s
                 stochastic=stochastic,
                 H=H,
                 W_LR_scale=W_LR_scale,
-                nonlinearity=lasagne.nonlinearities.identity,  #TODO was identity
+                nonlinearity=denseOut,  #TODO was identity
                 num_units=nbClasses)
+        cnn = lasagne.layers.BatchNormLayer(
+                cnn,
+                epsilon=epsilon,
+                alpha=alpha)
 
-        # cnn = lasagne.layers.BatchNormLayer(
-        #         cnn,
-        #         epsilon=epsilon,
-        #         alpha=alpha)
-    else:  # cifar10
+    elif networkType == 'cifar10':
+        # 128C3-128C3-P2
+
         # 128C3-128C3-P2
         cnn = binary_net.Conv2DLayer(
                 cnn,
@@ -428,9 +452,8 @@ def buildCNN(networkType, dataType, input, epsilon, alpha, activation, binary, s
                 stochastic=stochastic,
                 H=H,
                 W_LR_scale=W_LR_scale,
-                nonlinearity=lasagne.nonlinearities.identity,
+                nonlinearity=denseOut,
                 num_units=nbClasses)
-
         cnn = lasagne.layers.BatchNormLayer(
                 cnn,
                 epsilon=epsilon,
@@ -440,10 +463,9 @@ def buildCNN(networkType, dataType, input, epsilon, alpha, activation, binary, s
 import os
 import preprocessLipreading
 import general_tools
-def loadDataset(type):
+def loadDataset(type, oneHot=True):
     if type == 'TCDTIMIT':
         nbClasses = 39
-        oneHot = False
         # get the database
         # If it's small (lipspeakers) -> generate X_train, y_train etc here
         # otherwise we need to load and generate each speaker seperately in the training loop
@@ -471,13 +493,27 @@ def loadDataset(type):
                                                  nbClasses=nbClasses, onehot=oneHot, type=datasetType, verbose=True)
             X_train, y_train, X_val, y_val, X_test, y_test = general_tools.unpickle(pkl_path)
             dtypeX = 'float32'
-            dtypeY = 'float32'
+            dtypeY = 'int32'
             X_train = X_train.astype(dtypeX);
             y_train = y_train.astype(dtypeY);
             X_val = X_val.astype(dtypeX);
             y_val = y_val.astype(dtypeY);
             X_test = X_test.astype(dtypeX);
             y_test = y_test.astype(dtypeY);
+
+            #import pdb;pdb.set_trace()
+            if oneHot:
+                #  Onehot the targets
+                y_train = np.float32(np.eye(nbClasses)[y_train])
+                y_val = np.float32(np.eye(nbClasses)[y_val])
+                y_test = np.float32(np.eye(nbClasses)[y_test])
+
+                # for hinge loss
+                y_train = 2 * y_train - 1.
+                y_val = 2 * y_val - 1.
+                y_test = 2 * y_test - 1.
+
+            #import pdb;pdb.set_trace()
 
     else: # cifar10
         nbClasses = 10

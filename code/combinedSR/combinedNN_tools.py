@@ -20,6 +20,69 @@ import numpy as np
 import preprocessingCombined
 
 
+class AttentionLayer(lasagne.layers.Layer):
+    '''
+    A layer which computes a weighted average across the second dimension of
+    its input, where the weights are computed according to the third dimension.
+    This results in the second dimension being flattened.  This is an attention
+    mechanism - which "steps" (in the second dimension) are attended to is
+    determined by a learned transform of the features.
+
+    Parameters
+    ----------
+    incoming : a :class:`Layer` instance or a tuple
+        The layer feeding into this layer, or the expected input shape
+
+    W : Theano shared variable, numpy array or callable
+        An initializer for the weights of the layer. If a shared variable or a
+        numpy array is provided the shape should  be (num_inputs,).
+
+    b : Theano shared variable, numpy array, callable or None
+        An initializer for the biases of the layer. If a shared variable or a
+        numpy array is provided the shape should be () (it is a scalar).
+        If None is provided the layer will have no biases.
+
+    nonlinearity : callable or None
+        The nonlinearity that is applied to the layer activations. If None
+        is provided, the layer will be linear.
+    '''
+
+    def __init__(self, incoming, W=lasagne.init.Normal(),
+                 b=lasagne.init.Constant(0.),
+                 nonlinearity=lasagne.nonlinearities.tanh,
+                 **kwargs):
+        super(AttentionLayer, self).__init__(incoming, **kwargs)
+        # Use identity nonlinearity if provided nonlinearity is None
+        self.nonlinearity = (lasagne.nonlinearities.identity
+                             if nonlinearity is None else nonlinearity)
+
+        # Add weight vector parameter
+        self.W = self.add_param(W, (self.input_shape[2],), name="W")
+        if b is None:
+            self.b = None
+        else:
+            # Add bias scalar parameter
+            self.b = self.add_param(b, (), name="b", regularizable=False)
+
+    def get_output_shape_for(self, input_shape):
+        return (input_shape[0], input_shape[-1])
+
+    def get_output_for(self, input, **kwargs):
+        # Dot with W to get raw weights, shape=(n_batch, n_steps)
+        activation = T.dot(input, self.W)
+        # Add bias
+        if self.b is not None:
+            activation = activation + self.b
+        # Apply nonlinearity
+        activation = self.nonlinearity(activation)
+        # Perform softmax
+        activation = T.exp(activation)
+        activation /= activation.sum(axis=1).dimshuffle(0, 'x')
+        # Weight steps
+        weighted_input = input * activation.dimshuffle(0, 1, 'x')
+        # Compute weighted average (summing because softmax is normed)
+        return weighted_input.sum(axis=1)
+
 class NeuralNetwork:
     network = None
     training_fn = None
@@ -33,9 +96,9 @@ class NeuralNetwork:
 
     def __init__(self, architecture, data=None, loadPerSpeaker = True, dataset="TCDTIMIT", test_dataset="TCDTIMIT",
                  batch_size=1, num_features=39, num_output_units=39,
-                 lstm_hidden_list=(100,), bidirectional=True,
+                 lstm_hidden_list=(100,), bidirectional=True, audio_features='conv',
                  cnn_network="google", cnn_features='dense', lipRNN_hidden_list=None, lipRNN_bidirectional=True, lipRNN_features="rawRNNfeatures",
-                 dense_hidden_list=(512,), save_name=None,
+                 dense_hidden_list=(512,), combinationType='FC',save_name=None,
                  seed=int(time.time()), model_paths={}, debug=False, verbose=False, logger=logger_combinedtools):
 
         self.dataset= dataset
@@ -48,6 +111,7 @@ class NeuralNetwork:
         self.batch_size = batch_size
         self.epochsNotImproved = 0  # keep track, to know when to stop training
 
+        self.combinationType = combinationType
 
         # for storage of training info
         self.network_train_info = {
@@ -105,7 +169,9 @@ class NeuralNetwork:
             self.audioNet_dict, self.audioNet_lout, self.audioNet_lout_flattened, self.audioNet_lout_features = \
                 self.build_audioRNN(n_hidden_list=lstm_hidden_list, bidirectional=bidirectional,
                                     seed=seed, debug=debug, logger=logger)
-            # audioNet_lout_flattened output shape: (nbValidFrames, 39)
+            if audio_features == 'dense':  # audioNet_lout_flattened output shape: (nbValidFrames, 39 phonemes)
+                self.audioNet_lout_features = self.audioNet_lout_flattened
+            # else: audioNet_lout_flattened output shape: (nbValidFrames, nbLSTMunits)
 
 
             ## LIPREADING PART ##
@@ -161,7 +227,10 @@ class NeuralNetwork:
             # batch size is number of valid frames in each video
             self.combined_dict, self.combined_lout = self.build_combined(lipreading_lout=self.lipreading_lout_features,
                                                                         audio_lout=self.audioNet_lout_features,
-                                                                        dense_hidden_list=dense_hidden_list)
+                                                                        dense_hidden_list=dense_hidden_list,
+                                                                         combinationType=combinationType)
+            logger_combinedtools.debug("output shape: %s", self.combined_lout.output_shape)
+            #import pdb;pdb.set_trace()
 
             self.loadPreviousResults(save_name)
             nb_params = self.getParamsInfo()
@@ -184,7 +253,7 @@ class NeuralNetwork:
             # for layer in allLayers:
             #     logger_combinedtools.debug("layer : %s \t %s", layer, layer.output_shape)
             # [layer.output_shape for layer in allLayers[-5:-1]]
-            #import pdb;pdb.set_trace()
+            # import pdb;pdb.set_trace()
 
 
         else:
@@ -473,7 +542,6 @@ class NeuralNetwork:
         W_LR_scale = "Glorot"
 
 # Resnet stuff
-
 
     def build_resnet50_CNN(self, input=None, activation=T.nnet.relu, alpha=0.1, epsilon=1e-4):
         input = self.CNN_input_var
@@ -971,42 +1039,95 @@ class NeuralNetwork:
         return softmaxLayer
 
 
-    def build_combined(self, lipreading_lout, audio_lout, dense_hidden_list, debug=False):
+    def build_combined(self, lipreading_lout, audio_lout, dense_hidden_list, combinationType ='FF', debug=False):
 
         # (we process one video at a time)
         # CNN_lout and RNN_lout should be shaped (batch_size, nbFeatures) with batch_size = nb_valid_frames in this video
         # for CNN_lout: nbFeatures = 512x7x7 = 25.088
         # for RNN_lout: nbFeatures = nbUnits(last LSTM layer)
         combinedNet = {}
-        combinedNet['l_concat'] = L.ConcatLayer([lipreading_lout, audio_lout], axis=1)
+        if combinationType == 'attention':
+            # using attention network from https://github.com/craffel/ff-attention/b
+            HIDDEN_SIZE = 256 #by default
 
-        if debug:
-            logger_combinedtools.debug("CNN output shape: %s", lipreading_lout.output_shape)
-            logger_combinedtools.debug("RNN output shape: %s", audio_lout.output_shape)
-            import pdb;pdb.set_trace()
+            lip_n_features = lipreading_lout.output_shape[-1]
+            audio_n_features = audio_lout.output_shape[-1]
+            assert lip_n_features == audio_n_features  #reshaping a few lines below only works with different seq lengths if we have the same feature size...
 
-        combinedNet['l_dense'] = []
-        for i in range(len(dense_hidden_list)):
-            n_hidden = dense_hidden_list[i]
+            lip_reshaped = L.ReshapeLayer(lipreading_lout, (-1, 1, lip_n_features))
+            audio_reshaped = L.ReshapeLayer(audio_lout, (-1, 1, audio_n_features))
+            combinedNet['l_concat'] = L.ConcatLayer([lip_reshaped, audio_reshaped], axis=2)
+            combinedNet['l_concat'] = L.ReshapeLayer(combinedNet['l_concat'],(-1,2,lip_n_features))
+            print(combinedNet['l_concat'].output_shape)
+            # shape: (nb_seq, 2, nb_features)
 
-            if i == 0:
-                input = combinedNet['l_concat']
+            # Construct network
+            time_step, input_mode, n_features = combinedNet['l_concat'].output_shape
+            # Store a dictionary which conveniently maps names to layers we will need to access later
+            print(time_step, input_mode, n_features)
+            # Add dense input layer -> reshape to number of features of input layer
+            layer = lasagne.layers.ReshapeLayer(
+                    combinedNet['l_concat'], (-1, n_features), name='Reshape 1')
+            layer = lasagne.layers.DenseLayer(
+                    layer, HIDDEN_SIZE, W=lasagne.init.HeNormal(), name='Input dense',
+                    nonlinearity=lasagne.nonlinearities.leaky_rectify)
+            layer = lasagne.layers.ReshapeLayer(
+                    layer, (-1, input_mode, HIDDEN_SIZE), name='Reshape 2')
+
+            print("attention input: ", layer.output_shape)
+            # Add the ATTENTION layer to aggregate over the different input modes (lipreading and audio)
+            #  A layer which computes a weighted average across the second dimension of
+            # its input, where the weights are computed according to the third dimension.
+            # This results in the second dimension being flattened.  This is an attention
+            # mechanism - which "steps" (in the second dimension) are attended to is
+            # determined by a learned transform of the features.
+            layer = AttentionLayer(
+                    layer,
+                    W=lasagne.init.Normal(1. / np.sqrt(layer.output_shape[-1])),
+                    name='Attention')
+            print("attention output: ", layer.output_shape)
+
+            # Add dense hidden layer
+            layer = lasagne.layers.DenseLayer(
+                    layer, HIDDEN_SIZE, W=lasagne.init.HeNormal(), name='Out dense 1',
+                    nonlinearity=lasagne.nonlinearities.leaky_rectify)
+            # Add final dense layer, whose bias is initialized to the target mean
+            layer = lasagne.layers.DenseLayer(
+                    layer, num_units=self.num_output_units, W=lasagne.init.HeNormal(), name='Out dense 2',
+                    nonlinearity=lasagne.nonlinearities.softmax)
+            # Keep track of the final layer
+            combinedNet['l_out'] = layer
+
+        else:  #simple dense combination
+            combinedNet['l_concat'] = L.ConcatLayer([lipreading_lout, audio_lout], axis=1)
+
+            if debug:
+                logger_combinedtools.debug("CNN output shape: %s", lipreading_lout.output_shape)
+                logger_combinedtools.debug("RNN output shape: %s", audio_lout.output_shape)
+                import pdb;pdb.set_trace()
+
+            combinedNet['l_dense'] = []
+            for i in range(len(dense_hidden_list)):
+                n_hidden = dense_hidden_list[i]
+
+                if i == 0:
+                    input = combinedNet['l_concat']
+                else:
+                    input = combinedNet['l_dense'][i - 1]
+
+                nextDenseLayer = L.DenseLayer(input,
+                                              nonlinearity=lasagne.nonlinearities.rectify,
+                                              num_units=n_hidden)
+                #nextDenseLayer = L.DropoutLayer(nextDenseLayer, p=0.3)# TODO does dropout work?
+                combinedNet['l_dense'].append(nextDenseLayer)
+
+            # final softmax layer
+            if len(combinedNet['l_dense']) == 0:  #if no hidden layers
+                combinedNet['l_out'] = L.DenseLayer(combinedNet['l_concat'], num_units=self.num_output_units,
+                                                nonlinearity=lasagne.nonlinearities.softmax)
             else:
-                input = combinedNet['l_dense'][i - 1]
-
-            nextDenseLayer = L.DenseLayer(input,
-                                          nonlinearity=lasagne.nonlinearities.rectify,
-                                          num_units=n_hidden)
-            #nextDenseLayer = L.DropoutLayer(nextDenseLayer, p=0.3)# TODO does dropout work?
-            combinedNet['l_dense'].append(nextDenseLayer)
-
-        # final softmax layer
-        if len(combinedNet['l_dense']) == 0:  #if no hidden layers
-            combinedNet['l_out'] = L.DenseLayer(combinedNet['l_concat'], num_units=self.num_output_units,
-                                            nonlinearity=lasagne.nonlinearities.softmax)
-        else:
-            combinedNet['l_out'] = L.DenseLayer(combinedNet['l_dense'][-1], num_units=self.num_output_units,
-                                            nonlinearity=lasagne.nonlinearities.softmax)
+                combinedNet['l_out'] = L.DenseLayer(combinedNet['l_dense'][-1], num_units=self.num_output_units,
+                                                nonlinearity=lasagne.nonlinearities.softmax)
 
         return combinedNet, combinedNet['l_out']
 
@@ -1088,7 +1209,7 @@ class NeuralNetwork:
     # return True if successful load, false otherwise
     def load_model(self, model_type, roundParams=False, logger=logger_combinedtools):
         if not os.path.exists(self.model_paths[model_type]):
-            logger.warning("WARNING: Loading %s Failed. \n path: %s", model_type, self.model_paths[model_type])
+            #logger.warning("WARNING: Loading %s Failed. \n path: %s", model_type, self.model_paths[model_type])
             return False
 
         # restore network weights
@@ -1112,12 +1233,8 @@ class NeuralNetwork:
                     lasagne.layers.set_all_param_values(lout, param_values)
 
             except:
-                try:
-                    if roundParams: lasagne.layers.set_all_param_values(lout, self.round_params(*param_values))
-                    else: lasagne.layers.set_all_param_values(lout, *param_values)
-                except:
-                    logger.warning('Warning: %s', traceback.format_exc())  # , model_path)
-                    import pdb;pdb.set_trace()
+                logger.warning('Warning: %s', traceback.format_exc())  # , model_path)
+                import pdb;pdb.set_trace()
 
         logger.info("Loading %s parameters successful.", model_type)
         return True
@@ -1137,7 +1254,8 @@ class NeuralNetwork:
 
             success = self.load_model(model_type='combined', roundParams=roundParams)
             if (not success) or overwriteSubnets:
-                logger.warning("No complete combined network found, loading parts...")
+                if not success: logger.warning("No complete combined network found, loading parts...")
+                else: logger.warning("Overwrite subnets = True, overwriting...")
 
                 logger.info("CNN : %s", self.model_paths['CNN'])
                 self.load_model(model_type='CNN', roundParams=roundParams)
@@ -1456,7 +1574,7 @@ class NeuralNetwork:
         return shuffled
 
     # This function trains the model a full epoch (on the whole dataset)
-    def train_epoch(self, runType, images, mfccs, validLabels, valid_frames, LR, batch_size=-1):
+    def train_epoch(self, runType, images, mfccs, validLabels, valid_frames, LR, batch_size=-1, dataLength=-1):
         if batch_size == -1: batch_size = self.batch_size  # always 1
 
         cost = 0;
@@ -1466,7 +1584,16 @@ class NeuralNetwork:
             loops = range(nb_batches)
         else: loops = tqdm(range(nb_batches), total=nb_batches)
         for i in loops:
-            batch_images = images[i * batch_size:(i + 1) * batch_size][0]
+            # optimization if same images are reused for multiple audio files (eg if noise is added)
+            if dataLength == -1: batch_images = images[i * batch_size:(i + 1) * batch_size][0]
+            else:
+                try:
+                    if (i+1) * batch_size >= dataLength:
+                        # get till end, then wrap back to first images
+                        batch_images = images[i * batch_size % dataLength:] + images[:(i+1) * batch_size % dataLength]
+                        batch_images = batch_images[0]
+                    else: batch_images = images[i * batch_size % dataLength:(i + 1) * batch_size % dataLength][0]
+                except: import pdb;pdb.set_trace()
             batch_mfccs = mfccs[i * batch_size:(i + 1) * batch_size]
             batch_validLabels = validLabels[i * batch_size:(i + 1) * batch_size]
             batch_valid_frames = valid_frames[i * batch_size:(i + 1) * batch_size]
@@ -1490,7 +1617,7 @@ class NeuralNetwork:
         return cost, nb_batches
 
     # This function trains the model a full epoch (on the whole dataset)
-    def val_epoch(self, runType, images, mfccs, validLabels, valid_frames, batch_size=-1):
+    def val_epoch(self, runType, images, mfccs, validLabels, valid_frames, batch_size=-1, dataLength=-1):
         if batch_size == -1: batch_size = self.batch_size
 
         cost = 0;
@@ -1501,7 +1628,10 @@ class NeuralNetwork:
         if "volunteers" in self.test_dataset: loops = range(nb_batches)
         else: loops = tqdm(range(nb_batches), total=nb_batches)
         for i in loops:
-            batch_images = images[i * batch_size:(i + 1) * batch_size][0]
+            if dataLength == -1: batch_images = images[i * batch_size:(i + 1) * batch_size][0]
+            else:
+                try: batch_images = images[i * batch_size % dataLength:(i + 1) * batch_size % dataLength][0] #optimization if same images are reused for multiple audio files (eg if noise is added)
+                except: import pdb;pdb.set_trace()
             batch_mfccs = mfccs[i * batch_size:(i + 1) * batch_size]
             batch_validLabels = validLabels[i * batch_size:(i + 1) * batch_size]
             batch_valid_frames = valid_frames[i * batch_size:(i + 1) * batch_size]
@@ -1696,7 +1826,7 @@ class NeuralNetwork:
     def train(self, datasetFiles, database_binaryDir, runType='combined', storeProcessed=False, processedDir=None,
               save_name='Best_model', datasetName='TCDTIMIT', nbPhonemes=39, viseme=False,
               num_epochs=40, batch_size=1, LR_start=1e-4, LR_decay=1,
-              justTest=False, withNoise=False, noiseType = 'white', ratio_dB = -3,
+              justTest=False, withNoise=False, addNoisyAudio=False, noiseType = 'white', ratio_dB = -3,
               shuffleEnabled=True, compute_confusion=False, debug=False, logger=logger_combinedtools):
 
         trainingSpeakerFiles, testSpeakerFiles = datasetFiles
@@ -1728,12 +1858,41 @@ class NeuralNetwork:
 
             # if you wish to train with noise, you need to replace the audio data with noisy audio from audioSR/firDataset/audioToPkl_perVideo.py,
             # like so (but also for train and val)
-            if withNoise:
+            if withNoise and not addNoisyAudio:  #TODO ugly hack, but we still want performance results on clean audio when training with noisy data addded
+                # replace clean audio by noisy audio
                 testPath = os.path.expanduser(
-                    "~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep \
-                               + 'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl'
+                        "~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep \
+                           + 'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl'
                 allMfccs_test, allAudioLabels_test, allValidLabels_test, allValidAudioFrames_test = unpickle(testPath)
 
+            nbTrainVideos = len(allImages_train)
+            if addNoisyAudio: # don't overwrite the clean audio but add noisy data to TRAIN set: same images but with noisy audio
+                    if type(noiseType)!=list:  noiseType = [noiseType]
+                    for noiseTypeVal in noiseType:
+                        logger_combinedtools.info(" appending %s audio data...", noiseTypeVal)
+                        if type(ratio_dB) != list: ratio_dB = [ratio_dB]
+                        for ratio in ratio_dB:
+                            logger_combinedtools.info("     of lvl %s", ratio)
+                            trainPath = os.path.expanduser(
+                                    "~/TCDTIMIT/combinedSR/") + datasetName + "/binaryLipspeakers" + os.sep \
+                                       + 'allLipspeakersTrain' + "_" + noiseTypeVal + "_" + "ratio" + str(ratio) + '.pkl'
+                            allMfccs_trainAdd, allAudioLabels_trainAdd, allValidLabels_trainAdd, allValidAudioFrames_trainAdd = unpickle(
+                                    trainPath)
+                            allMfccs_train += allMfccs_trainAdd
+                            allAudioLabels_train += allAudioLabels_trainAdd
+                            allValidLabels_train += allValidLabels_trainAdd
+                            allValidAudioFrames_train += allValidAudioFrames_trainAdd
+            logger_combinedtools.debug("data loading complete, evaluating...")
+
+            dataLength = nbTrainVideos; i = 788; images = allImages_train
+            try:
+                if (i + 1) * batch_size >= dataLength:
+                    # get till end, then wrap back to first images
+                    batch_images = images[i * batch_size % dataLength:] + images[:(i + 1) * batch_size % dataLength]
+                else:
+                    batch_images = images[i * batch_size % dataLength:(i + 1) * batch_size % dataLength][0]
+            except:
+                import pdb;pdb.set_trace()
 
             test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
                                                                 images=allImages_test,
@@ -1782,7 +1941,7 @@ class NeuralNetwork:
                                                                  mfccs=allMfccs_train,
                                                                  validLabels=allValidLabels_train,
                                                                  valid_frames=allValidAudioFrames_train,
-                                                                 LR=LR)
+                                                                 LR=LR, dataLength=nbTrainVideos)
                 train_cost /= nb_train_batches
 
                 val_cost, val_acc, val_topk_acc, nb_val_batches = self.val_epoch(runType=runType,

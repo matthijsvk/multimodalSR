@@ -1,6 +1,7 @@
 from __future__ import print_function
 
-import os, sys
+import os
+
 import numpy as np
 
 np.random.seed(1234)  # for reproducibility?
@@ -27,12 +28,12 @@ import theano.tensor as T
 import numpy as np
 
 import logging
-import formatting
+import code.lipreading.formatting
 
 logger_lip = logging.getLogger('lipreading')
 logger_lip.setLevel(logging.DEBUG)
 FORMAT = '[$BOLD%(filename)s$RESET:%(lineno)d][%(levelname)-5s]: %(message)s '
-formatter = logging.Formatter(formatting.formatter_message(FORMAT, False))
+formatter = logging.Formatter(code.lipreading.formatting.formatter_message(FORMAT, False))
 
 # create console handler with a higher log level
 ch = logging.StreamHandler()
@@ -41,15 +42,9 @@ ch.setFormatter(formatter)
 logger_lip.addHandler(ch)
 
 # User - created files
-import train_lipreading  # load training functions
-import buildNetworks
 import binary_net
-import preprocessLipreading
-import general_tools
 
 import lasagne.layers as L
-import lasagne.objectives as LO
-
 
 debug = True
 binary = True
@@ -132,10 +127,10 @@ def main():
             pkl_path = processedDir + os.sep + datasetType + "_oneHot" + ".pkl"
         if not os.path.exists(pkl_path):
             logger_lip.info("dataset not yet processed. Processing...")
-            preprocessLipreading.prepLip_all(data_path=database_binaryDir, store_path=pkl_path, trainFraction=0.7, validFraction=0.1,
+            code.lipreading.preprocessLipreading.prepLip_all(data_path=database_binaryDir, store_path=pkl_path, trainFraction=0.7, validFraction=0.1,
                                                              testFraction=0.2,
                                                              nbClasses=nbClasses, onehot=oneHot, type=datasetType, verbose=True)
-        datasetFiles = general_tools.unpickle(pkl_path)
+        datasetFiles = code.lipreading.general_tools.unpickle(pkl_path)
         X_train, y_train, X_val, y_val, X_test, y_test = datasetFiles
         dtypeX = 'float32'
         dtypeY = 'float32'
@@ -206,7 +201,7 @@ def main():
     LR = T.scalar('LR', dtype=theano.config.floatX)
 
     # get the network structure
-    l_out = buildNetworks.build_network_google_binary(activation, alpha, epsilon, inputs, binary, stochastic, H,
+    l_out = code.lipreading.buildNetworks.build_network_google_binary(activation, alpha, epsilon, inputs, binary, stochastic, H,
                                                                       W_LR_scale)  # 7176231 params
 
 
@@ -258,8 +253,8 @@ def main():
     train_fn = theano.function([inputs, targets, LR], loss, updates=updates)
 
     logger_lip.info('Training...')
-    import train_lipreading
-    train_lipreading.train(
+    import code.lipreading.train_lipreading
+    code.lipreading.train_lipreading.train(
             train_fn=train_fn, val_fn=val_fn, out_fn=out_fn, topk_acc_fn=topk_acc_fn, k=k,
             network_output_layer=l_out,
             batch_size=batch_size,

@@ -32,7 +32,6 @@ from RNN_tools_lstm import *
 
 ##### SCRIPT META VARIABLES #####
 VERBOSE = True
-compute_confusion = False  # TODO: ATM this is not implemented
 
 # batch sizes: see just above training loop
 num_epochs = 20
@@ -43,19 +42,23 @@ nbPhonemes = 39  # number output neurons
 
 # for each dataset type as key this dictionary contains as value a list of all the network architectures that need to be trained for this dataset
 MANY_N_HIDDEN_LISTS = {}
-MANY_N_HIDDEN_LISTS['TIMIT'] = [[8,8,8],[32,32,32],[64,64,64],[256,256,256,256],[512,512,512,512]] #[[8], [8, 8], [8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
-                      # [32],[32,32],[32,32,32,32],
-                      #  [64], [64,64],[64,64,64,64],
-                      #  [256],[256,256],[256,256,256],
-                      #  [512],[512,512],[512,512,512]]
+MANY_N_HIDDEN_LISTS['TIMIT'] = [[512,512,512,512]]
+    # [8, 8], [8, 8, 8], [8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
+    #  [32, 32], [32, 32, 32], [32, 32, 32, 32],
+    #  [64, 64], [64, 64, 64], [64, 64, 64, 64],
+    #  [256, 256], [256, 256, 256], [256, 256, 256, 256],
+    #  [512, 512], [512, 512, 512], [512, 512, 512, 512]]
+# [
+#                         [8], [8, 8], [8,8,8],[8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
+#                         [32],[32,32],[32,32,32],[32,32,32,32],
+#                         [64], [64,64],[64,64,64],[64,64,64,64],
+#                         [256],[256,256],[256,256,256], [256, 256, 256, 256],
+#                         [512],[512,512],[512,512,512], [512, 512, 512, 512]]
 
-MANY_N_HIDDEN_LISTS['TCDTIMIT'] = [[32,32],[64,64],[256,256],[512,512]]
+MANY_N_HIDDEN_LISTS['TCDTIMIT'] = [[256,256]]#[32,32],[64,64],[256,256]]#,[512,512]]
 # combined is TIMIT and TCDTIMIT put together
-MANY_N_HIDDEN_LISTS['combined'] = [[256,256]]#[32, 32], [64, 64], [256, 256], [512, 512]]
+MANY_N_HIDDEN_LISTS['combined'] = [[256,256]]#[32, 32], [64, 64], [256, 256]]#, [512, 512]]
 
-
-#TODO: train these networks properly
-# MANY_N_HIDDEN_LISTS = [[1024,1024], [512,512,512,512]]
 
 ## for nbMFCC, uni vs bidirectional etc comparison:
 MANY_N_HIDDEN_LISTS['default'] = [[256, 256]]
@@ -68,22 +71,26 @@ MANY_N_HIDDEN_LISTS['default'] = [[256, 256]]
 BIDIRECTIONAL = True
 ADD_DENSE_LAYERS = False
 
-justTest = True
+justTest =  False
 
-MANY_N_HIDDEN_LISTS['combined'] = MANY_N_HIDDEN_LISTS['default']
 # this sets up parameters for training/evaluation of networks.
 # it has lots of nested for loops so that you can train lots of different networks automatically.
 # Just set the parameters
 def main():
     #global  justTest, withNoise, noiseTypes, ratio_dBs
 
-    datasets = ["TIMIT"]#,"TCDTIMIT","combined"]  # combined"
+    # Choose which datasets to run
+    datasets = ["TIMIT"]  #"TCDTIMIT", combined"
+
+    # choose which data to use as test set
     test_datasets = {}
     test_datasets['TIMIT'] = ["TIMIT"]
     test_datasets['TCDTIMIT'] = ["TCDTIMIT"]
     test_datasets['combined'] = ["TIMIT", "TCDTIMIT"]
 
     ROUND_PARAMS = False
+
+    # use noise for the test set
     withNoise = False
     noiseTypes = ['white', 'voices']
     ratio_dBs = [0, -3, -5, -10]
@@ -93,7 +100,8 @@ def main():
         for N_HIDDEN_LIST in MANY_N_HIDDEN_LISTS[dataset]:
             ##### BUIDING MODEL #####
             if N_HIDDEN_LIST[0] > 128:      batch_sizes = [64, 32, 16, 8, 4]
-            else:                           batch_sizes = [128, 64, 32, 16, 8, 4]
+            elif N_HIDDEN_LIST[0] > 64:     batch_sizes = [128, 64, 32, 16, 8, 4]
+            else:                           batch_sizes = [256, 128, 64, 32, 16, 8, 4]
 
             if justTest:
                 for test_dataset in test_datasets[dataset]:
@@ -251,7 +259,7 @@ def setupNetwork(dataset, test_dataset, N_HIDDEN_LIST, batch_size, ROUND_PARAMS=
 # this takes the prepared data, built network and some parameters, and trains/evaluates the network
 def trainNetwork(network, loadParamsSuccess, model_save, batch_size, datasetFiles, withNoise=False, noiseType='white', ratio_dB=0, fh=None):
     # Decaying LR
-    LR_start = 0.01
+    LR_start = 0.015
     if loadParamsSuccess == 0: LR_start = LR_start / 10.0
     logger_RNN.info("LR_start = %s", str(LR_start))
     LR_fin = 0.0000001

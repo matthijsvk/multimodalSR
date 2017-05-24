@@ -50,7 +50,12 @@ import lasagne.objectives as LO
 
 
 batch_sizes = [32]
-networks = ["cifar10_v2", "cifar10"]
+networks = ["cifar10"]
+
+justTest = False
+viseme = False
+
+
 def main():
 
     for batch_size, network_type in zip(batch_sizes, networks):
@@ -88,12 +93,11 @@ def main():
 
         ##############################################
         # network_type = "google" #"resnet50"
-        viseme = False  # will set nbClasses and store path   vis: 6.498.828   phn: 7.176.231
 
         if viseme:   nbClasses = 12
         else:        nbClasses = 39
 
-        justTest =False
+
 
         # get the database
         # If it's small (lipspeakers) -> generate X_train, y_train etc here
@@ -218,7 +222,6 @@ def main():
         val_fn = theano.function([inputs, targets], [test_loss, test_acc, topk_acc])
 
 
-
         # For training, use nondeterministic output
         network_output = L.get_output(l_out, deterministic=False)
         out_fn = theano.function([inputs], network_output)
@@ -275,8 +278,7 @@ def load_model(model_path, network_output_layer, logger=logger_lip):
                 print(len(param_values));
                 for layer in lasagne.layers.get_all_layers(network_output_layer):
                     print(layer)
-                import pdb;
-                pdb.set_trace();
+                #import pdb;                pdb.set_trace();
             except:
                 lasagne.layers.set_all_param_values(network_output_layer, *param_values)
 

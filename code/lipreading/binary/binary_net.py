@@ -210,7 +210,7 @@ def train(train_fn, val_fn,
           X_val, y_val,
           X_test, y_test,
           save_name=None,
-          shuffle_parts=1):
+          shuffle_parts=1, justTest=False):
     # A function which shuffles a dataset
     def shuffle(X, y):
 
@@ -278,8 +278,9 @@ def train(train_fn, val_fn,
 
         return err, loss
 
-    if save_name == None: save_name = "./bestModel_binary.pkl"
-    else:       save_path = save_name + ".npz"
+    if save_name == None:
+        save_name = "./bestModel_binary"
+    save_path = save_name + ".npz"
 
     # shuffle the train set
     X_train, y_train = shuffle(X_train, y_train)
@@ -298,6 +299,8 @@ def train(train_fn, val_fn,
     print("  test loss:                     " + str(test_loss))
     print("  test error rate:               " + str(test_err) + "%")
 
+    if justTest: return 0
+
     # load old train info
     import general_tools
     if os.path.exists(save_name + ".npz") and os.path.exists(save_name + "_trainInfo.pkl"):
@@ -307,6 +310,7 @@ def train(train_fn, val_fn,
         test_cost = min(old_train_info['test_cost'])
         test_err = 1 - max(old_train_info['test_acc'])
         network_train_info = old_train_info
+
 
     # We iterate over epochs:
     for epoch in tqdm(range(num_epochs)):
@@ -318,24 +322,33 @@ def train(train_fn, val_fn,
 
         val_err, val_loss = val_epoch(X_val, y_val)
 
+        print("  previous best validation error rate:    " + str(best_val_err) + "%")
+        print("  LR:                            " + str(LR))
+        print("  training loss:                 " + str(train_loss))
+        print("  validation loss:               " + str(val_loss))
+        print("  validation error rate:         " + str(val_err) + "%")
+        print(" \n best epoch:                    " + str(best_epoch))
+
         # test if validation error went down
         if val_err <= best_val_err:
-
+            print("Best ever validation score; evaluating test...")
             best_val_err = val_err
             best_epoch = epoch + 1
 
             test_err, test_loss = val_epoch(X_test, y_test)
+            print("  test loss:                     " + str(test_loss))
+            print("  test error rate:               " + str(test_err) + "%")
 
             np.savez(save_name, lasagne.layers.get_all_param_values(model))
-        else:
-            print(save_path)
-            if os.path.exists(save_path):
-                with np.load(save_path) as f:
-                    param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-                    try: lasagne.layers.set_all_param_values(model, *param_values)
-                    except:
-                        lasagne.layers.set_all_param_values(model, param_values)
-                    print("Not improved, load best model " + save_path)
+        # else:
+        #     print(save_path)
+        #     if os.path.exists(save_path):
+        #         with np.load(save_path) as f:
+        #             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+        #             try: lasagne.layers.set_all_param_values(model, *param_values)
+        #             except:
+        #                 lasagne.layers.set_all_param_values(model, param_values)
+        #             print("Not improved, load best model " + save_path)
 
         epoch_duration = time.time() - start_time
 
@@ -350,15 +363,9 @@ def train(train_fn, val_fn,
         general_tools.saveToPkl(save_name + '_trainInfo.pkl', network_train_info)
 
         # Then we print the results for this epoch:
-        print("Epoch " + str(epoch + 1) + " of " + str(num_epochs) + " took " + str(epoch_duration) + "s")
-        print("  LR:                            " + str(LR))
-        print("  training loss:                 " + str(train_loss))
-        print("  validation loss:               " + str(val_loss))
-        print("  validation error rate:         " + str(val_err) + "%")
-        print("  best epoch:                    " + str(best_epoch))
-        print("  best validation error rate:    " + str(best_val_err) + "%")
-        print("  test loss:                     " + str(test_loss))
-        print("  test error rate:               " + str(test_err) + "%")
+        print("Epoch " + str(epoch + 1) + " of " + str(num_epochs) + " took " + str(epoch_duration) + "s" + "\n\n")
+
+
 
         # decay the LR
         LR *= LR_decay

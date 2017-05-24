@@ -600,7 +600,6 @@ class NeuralNetwork:
         self.network_train_info['nb_params'] = lasagne.layers.count_params(self.network_lout_batch)
         if justTest:
             if os.path.exists(save_name+".npz"):
-                self.loadPreviousResults(save_name)
                 self.saveFinalResults(logger, noiseType, ratio_dB, roundParams, save_name, test_acc, test_cost,
                                       test_topk_acc, withNoise)
                 return 0
@@ -616,7 +615,7 @@ class NeuralNetwork:
         for epoch in range(num_epochs):
             self.curr_epoch += 1
             epoch_time = time.time()
-            logger.info("CURRENT EPOCH: %s", self.curr_epoch)
+            logger.info("\n\nCURRENT EPOCH: %s", self.curr_epoch)
 
 
             logger.info("Pass over Training Set")

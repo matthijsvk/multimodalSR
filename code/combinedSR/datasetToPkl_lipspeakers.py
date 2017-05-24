@@ -18,7 +18,7 @@ validFraction = 0.1
 
 runType = 'normal'; viseme = True
 
-#runType = 'noisyAudio'  #just get the noisy audio
+runType = 'noisyAudio'  #just get the noisy audio
 
 noiseTypes = ['white','voices']
 ratio_dBs = [0,-3, -5, -10]
@@ -95,32 +95,65 @@ elif runType == 'noisyAudio':
     for noiseType in noiseTypes:
         for ratio_dB in ratio_dBs:
             # set the lists to empty
+
+            allMfccs_train = [];
+            allAudioLabels_train = [];
+            allValidLabels_train = [];
+            allValidAudioFrames_train = []
+
+            allMfccs_val = [];
+            allAudioLabels_val = [];
+            allValidLabels_val = [];
+            allValidAudioFrames_val = []
+
             allMfccs_test = [];
             allAudioLabels_test = [];
             allValidLabels_test = [];
             allValidAudioFrames_test = []
+
             for lipspeaker in lipspeakers:
 
                 # get all audio of this lipspeaker
-                mfccs_test, audioLabels_test, validLabels_test, validAudioFrames_test = unpickle(
+                mfccs, audioLabels, validLabels, validAudioFrames = unpickle(
                     os.path.expanduser("~/TCDTIMIT/combinedSR/") + dataset + "/binaryAudio" + str(nbPhonemes) \
                     + "_" + noiseType + os.sep + "ratio" + str(ratio_dB) + os.sep + lipspeaker)
 
                 # only take the test parts
-                thisN = len(mfccs_test)
+                thisN = len(mfccs)
                 thisTrain = int(trainFraction * thisN)
                 thisValid = int(validFraction * thisN)
                 thisTest = thisN - thisTrain - thisValid
-
+                
                 # add it to the combined list
-                allMfccs_test += mfccs_test[thisTrain + thisValid:thisN]
-                allAudioLabels_test += audioLabels_test[thisTrain + thisValid:thisN]
-                allValidLabels_test += validLabels_test[thisTrain + thisValid:thisN]
-                allValidAudioFrames_test += validAudioFrames_test[thisTrain + thisValid:thisN]
+                allMfccs_train += mfccs[:thisTrain ]
+                allAudioLabels_train += audioLabels[:thisTrain]
+                allValidLabels_train += validLabels[:thisTrain]
+                allValidAudioFrames_train += validAudioFrames[:thisTrain]
+                
+                allMfccs_val += mfccs[thisTrain:thisTrain + thisValid]
+                allAudioLabels_val += audioLabels[thisTrain:thisTrain + thisValid]
+                allValidLabels_val += validLabels[thisTrain:thisTrain + thisValid]
+                allValidAudioFrames_val += validAudioFrames[thisTrain:thisTrain + thisValid]
+                
+                allMfccs_test += mfccs[thisTrain + thisValid:thisN]
+                allAudioLabels_test += audioLabels[thisTrain + thisValid:thisN]
+                allValidLabels_test += validLabels[thisTrain + thisValid:thisN]
+                allValidAudioFrames_test += validAudioFrames[thisTrain + thisValid:thisN]
+
+            storePath = store_dir + os.sep + 'allLipspeakersTrain' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl'
+            saveToPkl(storePath, [allMfccs_train,
+                                  allAudioLabels_train,
+                                  allValidLabels_train,
+                                  allValidAudioFrames_train])
+
+            storePath = store_dir + os.sep + 'allLipspeakersVal' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl'
+            saveToPkl(storePath, [allMfccs_val,
+                                  allAudioLabels_val,
+                                  allValidLabels_val,
+                                  allValidAudioFrames_val])
 
             storePath = store_dir + os.sep + 'allLipspeakersTest' + "_" + noiseType + "_" + "ratio" + str(ratio_dB) + '.pkl'
             saveToPkl(storePath, [allMfccs_test,
                                   allAudioLabels_test,
                                   allValidLabels_test,
                                   allValidAudioFrames_test])
-
