@@ -50,9 +50,9 @@ import lasagne.objectives as LO
 
 
 batch_sizes = [32]
-networks = ["cifar10"]
+networks = ["resnet50"]
 
-justTest = False
+justTest = True
 viseme = False
 
 
@@ -92,11 +92,9 @@ def main():
         oneHot = False
 
         ##############################################
-        # network_type = "google" #"resnet50"
 
         if viseme:   nbClasses = 12
         else:        nbClasses = 39
-
 
 
         # get the database
@@ -275,9 +273,9 @@ def load_model(model_path, network_output_layer, logger=logger_lip):
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
             try:
                 lasagne.layers.set_all_param_values(network_output_layer, param_values)
-                print(len(param_values));
-                for layer in lasagne.layers.get_all_layers(network_output_layer):
-                    print(layer)
+                # print(len(param_values));
+                # for layer in lasagne.layers.get_all_layers(network_output_layer):
+                #     print(layer)
                 #import pdb;                pdb.set_trace();
             except:
                 if roundParams: lasagne.layers.set_all_param_values(network_output_layer, round_params(*param_values))

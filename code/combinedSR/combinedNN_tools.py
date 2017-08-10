@@ -324,10 +324,12 @@ class NeuralNetwork:
         for i in range(len(n_hidden_list)):
             n_hidden = n_hidden_list[i]
 
+            print("One layer, ", n_hidden)
+
             if i == 0:
                 input = net['l1_in']
             else:
-                input = net['l2_lstm'][i - 1]
+                input = net['l2_lstm'][i-1] #TODO should be -1
 
             nextForwardLSTMLayer = L.recurrent.LSTMLayer(
                     input, n_hidden,
@@ -1087,6 +1089,7 @@ class NeuralNetwork:
                     name='Attention')
             print("attention output: ", layer.output_shape)
 
+            # TODO: add more dense layers after attention networkm-> better performance?  (512,512,512)
             # Add dense hidden layer
             layer = lasagne.layers.DenseLayer(
                     layer, HIDDEN_SIZE, W=lasagne.init.HeNormal(), name='Out dense 1',
@@ -2106,6 +2109,8 @@ class NeuralNetwork:
         if "volunteers" in self.test_dataset :
             loadPerSpeaker = True
         else: loadPerSpeaker = self.loadPerSpeaker #load default value
+
+        print(loadPerSpeaker)
         # else, load data that is given (True -> volunteers, False -> lipspeakers)
         if viseme: nbPhonemes = 12
 
@@ -2146,6 +2151,7 @@ class NeuralNetwork:
                                                                                      batch_size=1)
                 confMatrix = self.getConfusionMatrix(allValidLabels_test, predictions, nbPhonemes)
                 saveToPkl(save_name + "_confusionMatrix.pkl", confMatrix)
+                logger.info("saved confusion matrix to: %s_confusionMatrix.pkl", save_name)
             else:
                 test_cost, test_acc, test_topk_acc, nb_test_batches = self.val_epoch(runType=runType,
                                                                                     images=allImages_test,

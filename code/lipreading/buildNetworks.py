@@ -181,6 +181,8 @@ def build_network_resnet50(input, nbClasses):
                                                               ix='4%s' % c)
         net.update(sub_net)
 
+    #import pdb;pdb.set_trace()
+    print("Parameters before abc: ", lasagne.layers.count_params(net[parent_layer_name]))
     block_size = list('abc')
     for c in block_size:
         if c == 'a':
@@ -190,8 +192,14 @@ def build_network_resnet50(input, nbClasses):
             sub_net, parent_layer_name = build_residual_block(net[parent_layer_name], 1.0 / 4, 1, False, 4,
                                                               ix='5%s' % c)
         net.update(sub_net)
+
+    print("Parameters before pool5: ", lasagne.layers.count_params(net[parent_layer_name]))
+
     net['pool5'] = PoolLayer(net[parent_layer_name], pool_size=7, stride=1, pad=0,
                              mode='average_exc_pad', ignore_border=False)
+
+    print("Parameters before FC: ", lasagne.layers.count_params(net['pool5']))
+
     net['fc1000'] = DenseLayer(net['pool5'], num_units=nbClasses,
                                nonlinearity=None)  # number output units = nbClasses (global variable)
     net['prob'] = NonlinearityLayer(net['fc1000'], nonlinearity=softmax)

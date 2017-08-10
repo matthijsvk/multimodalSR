@@ -4,23 +4,21 @@ from matplotlib.pyplot import figure
 import matplotlib
 matplotlib.rcParams.update({'font.size': 22})
 
-
-
 from general_tools import *
 from phoneme_set import *
-
-import theano
-from theano import tensor as T
-x = T.vector('x')
-classes = T.scalar('n_classes')
-onehot = T.eq(x.dimshuffle(0, 'x'), T.arange(classes).dimshuffle('x', 0))
-oneHot = theano.function([x, classes], onehot)
-
-examples = T.scalar('n_examples')
-y = T.matrix('y')
-y_pred = T.matrix('y_pred')
-confMat = T.dot(y.T, y_pred) / examples
-confusionMatrix = theano.function(inputs=[y, y_pred, examples], outputs=confMat)
+#
+# import theano
+# from theano import tensor as T
+# x = T.vector('x')
+# classes = T.scalar('n_classes')
+# onehot = T.eq(x.dimshuffle(0, 'x'), T.arange(classes).dimshuffle('x', 0))
+# oneHot = theano.function([x, classes], onehot)
+#
+# examples = T.scalar('n_examples')
+# y = T.matrix('y')
+# y_pred = T.matrix('y_pred')
+# confMat = T.dot(y.T, y_pred) / examples
+# confusionMatrix = theano.function(inputs=[y, y_pred, examples], outputs=confMat)
 
 
 def confusion_matrix(targets, preds, n_class):
@@ -81,18 +79,18 @@ titles = []
 viseme=False
 
 #phoneme CNN
-confMatrices.append(unpickle(CNN_path + 'lipspeakers_google_phoneme39_confusionMatrix.pkl'))
-titles.append("Lipreading, phoneme CNN")
-# phoneme CNN + LSTM
-confMatrices.append( unpickle(CNN_LSTM_path + 'lipspeakers_google_phoneme39_LSTM_bidirectional_256_256_conv_confusionMatrix.pkl'))
-titles.append("Lipreading, phoneme CNN + LSTM")
-#phoneme combined audio+CNN+LSTM
-confMatrices.append(unpickle(combined_CNN_LSTM_path + \
-    'lipspeakers/RNN__2_LSTMLayer256_256_nbMFCC39_bidirectional__CNN_google_dense_lipRNN_256_256_RNNfeaturesDense__FC_512_512_512__TCDTIMIT_lipspeakers_confusionMatrix.pkl'))
-titles.append("Multimodal SR, phoneme CNN + LSTM, audio LSTM")
-
-for confMatrix, title in zip(confMatrices, titles):
-    plotConfusionMatrix(confMatrix, title, viseme=viseme)
+# confMatrices.append(unpickle(CNN_path + 'lipspeakers_google_phoneme39_confusionMatrix.pkl'))
+# titles.append("Lipreading, phoneme CNN")
+# # phoneme CNN + LSTM
+# confMatrices.append( unpickle(CNN_LSTM_path + 'lipspeakers_google_phoneme39_LSTM_bidirectional_256_256_conv_confusionMatrix.pkl'))
+# titles.append("Lipreading, phoneme CNN + LSTM")
+# #phoneme combined audio+CNN+LSTM
+# confMatrices.append(unpickle(combined_CNN_LSTM_path + \
+#     'lipspeakers/RNN__2_LSTMLayer256_256_nbMFCC39_bidirectional__CNN_google_dense_lipRNN_256_256_RNNfeaturesDense__FC_512_512_512__TCDTIMIT_lipspeakers_confusionMatrix.pkl'))
+# titles.append("Multimodal SR, phoneme CNN + LSTM, audio LSTM")
+#
+# for confMatrix, title in zip(confMatrices, titles):
+#     plotConfusionMatrix(confMatrix, title, viseme=viseme)
 
 #### VISEMES ###
 # confMatrices = []
@@ -111,11 +109,10 @@ confMatrices = []
 titles = []
 viseme = False
 
-confMatrices.append(unpickle(audio_path + 'combined/results/2_LSTMLayer256_256_nbMFCC39_bidirectional_combined_confusionMatrix.pkl'))
-titles.append("combined Audio SR, 256 / 2 LSTM")
+# confMatrices.append(unpickle(audio_path + 'combined/results/2_LSTMLayer256_256_nbMFCC39_bidirectional_combined_confusionMatrix.pkl'))
+# titles.append("combined Audio SR, 256 / 2 LSTM")
 
-confMatrices.append(
-    unpickle(audio_path + 'TCDTIMIT/results/2_LSTMLayer256_256_nbMFCC39_bidirectional_TCDTIMIT_confusionMatrix.pkl'))
+confMatrices.append(unpickle(audio_path + 'TCDTIMIT/results/2_LSTMLayer256_256_nbMFCC39_bidirectional_TCDTIMIT_confusionMatrix.pkl'))
 titles.append("TCDTIMIT Audio SR, 256 / 2 LSTM")
 
 for confMatrix, title in zip(confMatrices, titles):

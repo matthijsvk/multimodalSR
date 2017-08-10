@@ -42,36 +42,24 @@ nbPhonemes = 39  # number output neurons
 
 # for each dataset type as key this dictionary contains as value a list of all the network architectures that need to be trained for this dataset
 MANY_N_HIDDEN_LISTS = {}
-MANY_N_HIDDEN_LISTS['TIMIT'] = [[512,512,512,512]]
+MANY_N_HIDDEN_LISTS['TIMIT'] = [[256,256]]
     # [8, 8], [8, 8, 8], [8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
     #  [32, 32], [32, 32, 32], [32, 32, 32, 32],
     #  [64, 64], [64, 64, 64], [64, 64, 64, 64],
     #  [256, 256], [256, 256, 256], [256, 256, 256, 256],
     #  [512, 512], [512, 512, 512], [512, 512, 512, 512]]
-# [
-#                         [8], [8, 8], [8,8,8],[8, 8, 8, 8], [8, 8, 8, 8, 8, 8, 8, 8],
-#                         [32],[32,32],[32,32,32],[32,32,32,32],
-#                         [64], [64,64],[64,64,64],[64,64,64,64],
-#                         [256],[256,256],[256,256,256], [256, 256, 256, 256],
-#                         [512],[512,512],[512,512,512], [512, 512, 512, 512]]
+
 
 MANY_N_HIDDEN_LISTS['TCDTIMIT'] = [[256,256]]#[32,32],[64,64],[256,256]]#,[512,512]]
 # combined is TIMIT and TCDTIMIT put together
 MANY_N_HIDDEN_LISTS['combined'] = [[256,256]]#[32, 32], [64, 64], [256, 256]]#, [512, 512]]
-
-
-## for nbMFCC, uni vs bidirectional etc comparison:
-MANY_N_HIDDEN_LISTS['default'] = [[256, 256]]
-
-## for nbMFCC, uni vs bidirectional etc comparison:
-# MANY_N_HIDDEN_LISTS = [[64,64]]
 
 #######################
 
 BIDIRECTIONAL = True
 ADD_DENSE_LAYERS = False
 
-justTest =  False
+justTest =  True
 
 # this sets up parameters for training/evaluation of networks.
 # it has lots of nested for loops so that you can train lots of different networks automatically.
@@ -80,7 +68,7 @@ def main():
     #global  justTest, withNoise, noiseTypes, ratio_dBs
 
     # Choose which datasets to run
-    datasets = ["TIMIT"]  #"TCDTIMIT", combined"
+    datasets = ["combined"]  #"TCDTIMIT", combined"
 
     # choose which data to use as test set
     test_datasets = {}
@@ -272,7 +260,7 @@ def trainNetwork(network, loadParamsSuccess, model_save, batch_size, datasetFile
     logger_RNN.info("\n* Training ...")
     network.train(datasetFiles, model_save, num_epochs=num_epochs,
                       batch_size=batch_size, LR_start=LR_start, LR_decay=LR_decay,
-                      compute_confusion=False, justTest=justTest, debug=False,
+                      compute_confusion=True, justTest=justTest, debug=False,
                   withNoise=withNoise, noiseType=noiseType, ratio_dB=ratio_dB)
 
     fh.close()

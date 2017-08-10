@@ -112,7 +112,7 @@ def getOneSpeaker(speakerFile=None, trainFraction=0.70, validFraction=0.10,
                 [images_val, mfccs_val, audioLabels_val, validLabels_val, validAudioFrames_val],
                 [images_test, mfccs_test, audioLabels_test, validLabels_test, validAudioFrames_test]]
 
-    import pdb;pdb.set_trace()
+    #import pdb;pdb.set_trace()
     if store_path != None and storeProcessed: saveToPkl(store_path, dataList)
 
     return dataList
