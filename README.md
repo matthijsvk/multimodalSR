@@ -10,7 +10,7 @@ ___
 The CNN-LSTM networks for lipreading are combined with LSTM networks for audio recognition through an attention mechanism.   
 These networks achieve state-of-the-art phoneme recognition performance on the publicly available audio-visual dataset [TCD-TIMIT](https://sigmedia.tcd.ie/TCDTIMIT/).
 Systems that rely only audio suffer greatly when audio quality is lowered by noise, as is often the case in real-life situations.  
-This work shows that this can be greatly mitigated by adding visual information.  
+This performance loss can be greatly mitigated by adding visual information.  
 The CNN-LSTM neural networks acieve 68.46% correctness compared to the 57.85% baseline.  
 Audio-only neural networks achieve 67.03% compared to 65.47% in the baseline.  
 Lipreading-audio combination networks achieve 75.70% accuracy for clean audio, and 58.55% for audio with an SNR of 0dB. The baseline multimodal network achieved 59% and 44% for clean and noisy audio, respectively.
