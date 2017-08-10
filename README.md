@@ -5,20 +5,6 @@ Supervisor: Bert Moons
 Promotor: Marian Verhelst  
 
 
-```
-@Copyright KU Leuven  
-
-Without written permission of the thesis supervisor and the author it is forbidden
-to reproduce or adapt in any form or by any means any part of this publication.
-Requests for obtaining the right to reproduce or utilize parts of this publication should
-be addressed to ESAT, Kasteelpark Arenberg 10 postbus 2440, B-3001 Heverlee,
-+32-16-321130 or by email info@esat.kuleuven.be.  
-A written permission of the thesis supervisor is also required to use the methods,
-products, schematics and programs described in this work for industrial or commercial
-use, and for submitting this publication in scientific contests.
-```
-
-
 The CNN-LSTM networks for lipreading are combined with LSTM networks for audio recognition through an attention mechanism.   
 These networks achieve state-of-the-art phoneme recognition performance on the publicly available audio-visual dataset [TCD-TIMIT](https://sigmedia.tcd.ie/TCDTIMIT/).
 Systems that rely only audio suffer greatly when audio quality is lowered by noise, as is often the case in real-life situations.  
