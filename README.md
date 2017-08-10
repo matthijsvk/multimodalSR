@@ -1,8 +1,10 @@
+
 This is the repository containing most of the code for my thesis 'Design, Implementation and Analysis of a Deep Convolutional-Recurrent Neural Network for Speech Recognition throuth Audiovisual Sensor Fusion' at the ESAT (Electrical Engineering) Department of KU Leuven (2016-2017).  
 
 Author: Matthijs Van keirsbilck  
 Supervisor: Bert Moons  
 Promotor: Marian Verhelst  
+___
 
 
 The CNN-LSTM networks for lipreading are combined with LSTM networks for audio recognition through an attention mechanism.   
@@ -13,6 +15,7 @@ The CNN-LSTM neural networks acieve 68.46% correctness compared to the 57.85% ba
 Audio-only neural networks achieve 67.03% compared to 65.47% in the baseline.  
 Lipreading-audio combination networks achieve 75.70% accuracy for clean audio, and 58.55% for audio with an SNR of 0dB. The baseline multimodal network achieved 59% and 44% for clean and noisy audio, respectively.
 
+___
 
 The networks are implemented using [Lasagne](https://github.com/Lasagne).  
 For the downloading, preprocessing etc of the dataset: see https://github.com/matthijsvk/TCDTIMITprocessing  
