@@ -4,6 +4,8 @@ This is the repository containing most of the code for my thesis 'Design, Implem
 Author: Matthijs Van keirsbilck  
 Supervisor: Bert Moons  
 Promotor: Marian Verhelst  
+
+The code and thesis text are bound by the [KU Leuven's Student Thesis Copyright Regulations](https://admin.kuleuven.be/sab/jd/en/student-thesis-copyright).  
 ___
 
 
