@@ -40,5 +40,15 @@ Thanks to the authors of all the data and software used in this work. An inexhau
 To Set up Python, I recommend using [Anaconda](https://www.continuum.io/downloads). You can use the provided `environment.yml` to install all python packages (although some aren't used anymore).    
 For the installation of Theano/Lasagne and CUDA, I recommend following [this tutorial](https://github.com/Lasagne/Lasagne/wiki/From-Zero-to-Lasagne-on-Ubuntu-14.04).
 
+If you find this thesis or code useful, please cite according to the following bib entry
+
+@MastersThesis{Vankeirsbilck:Thesis:2017,
+    author     =     {Matthijs Van keirsbilck},
+    title     =     {{Design, implementation and analysis of a deep convolutional-recurrent neural network for speech recognition through audiovisual sensor fusion}},
+    school     =     {KU Leuven},
+    address     =     {Belgium},
+    year     =     {2017},
+    }
+
 
 
