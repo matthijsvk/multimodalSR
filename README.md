@@ -41,7 +41,7 @@ To Set up Python, I recommend using [Anaconda](https://www.continuum.io/download
 For the installation of Theano/Lasagne and CUDA, I recommend following [this tutorial](https://github.com/Lasagne/Lasagne/wiki/From-Zero-to-Lasagne-on-Ubuntu-14.04).
 
 If you find this thesis or code useful, please cite according to the following bib entry
-
+```
 @MastersThesis{Vankeirsbilck:Thesis:2017,
     author     =     {Matthijs Van keirsbilck},
     title     =     {{Design, implementation and analysis of a deep convolutional-recurrent neural network for speech recognition through audiovisual sensor fusion}},
@@ -49,6 +49,6 @@ If you find this thesis or code useful, please cite according to the following b
     address     =     {Belgium},
     year     =     {2017},
     }
-
+```
 
 
