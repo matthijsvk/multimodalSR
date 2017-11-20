@@ -20,7 +20,7 @@ Lipreading-audio combination networks achieve 75.70% accuracy for clean audio, a
 ___
 
 The networks are implemented using [Lasagne](https://github.com/Lasagne).  
-The implementation is far from perfect and not very clean as it was developed while researching; I'll try to improve it if I can find the time.
+There is room for improvement of the code; I'll try to improve it if I can find the time.
 
 For the downloading, preprocessing etc of the dataset: see https://github.com/matthijsvk/TCDTIMITprocessing  
 For the lipreading networks, see the folder `code/lipreading`   
